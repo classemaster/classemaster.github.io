@@ -88,6 +88,7 @@ position:fixed;inset:0;z-index:30;overflow:hidden;color-scheme:light;font-family
 .eye .pu{fill:currentColor}.eye .sl{display:none}.eye[aria-pressed=true] .sl{display:block}
 .aerr{margin:12px 4px 0;text-align:center;font-size:13.5px;line-height:1.3;color:#b42b3a}
 .aerr:empty{display:none}
+.aerr.aok{color:#1f7a4d}
 .acard .abtn{display:block;width:100%;height:55px;margin:26px 0 0;padding:0;border:0;border-radius:999px;background:#0d0d0d;color:#fff;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer}
 .abtn:hover{background:#262626}.abtn:active{transform:scale(.99)}
 .aterms{margin:25px 0 0;min-height:40px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13.5px;line-height:20px;color:#666}
