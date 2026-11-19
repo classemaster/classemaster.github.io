@@ -6,7 +6,7 @@ function load(){
   var id=uid();return{cur:id,classes:[{id:id,name:"Ma classe",students:[],records:{}}]};
 }
 function local(){if(!KEY)return;try{localStorage.setItem(KEY,JSON.stringify(D));}catch(e){}}
-function save(){local();if(col){dirty[D.cur]=1;clearTimeout(timer);timer=setTimeout(pushNow,600);}}
+function save(){local();if(ME){dirty[D.cur]=Date.now();persistDirty();if(col){clearTimeout(timer);timer=setTimeout(pushNow,600);}}}
 function cl(){return D.classes.find(function(c){return c.id===D.cur})||D.classes[0];}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]});}
 function fmt(k,long){var p=k.split("-");var d=new Date(+p[0],+p[1]-1,+p[2]);return d.toLocaleDateString("fr-FR",long?{weekday:"long",day:"numeric",month:"long",year:"numeric"}:{day:"numeric",month:"short"});}

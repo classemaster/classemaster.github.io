@@ -45,10 +45,10 @@ function importJSON(file){
         if(!x||!ok.test(x.id)||!x.name||!Array.isArray(x.students)||!x.students.every(function(s){return s&&ok.test(s.id)&&s.name})||typeof x.records!=="object"){bad++;return;}
         var n={id:x.id,name:String(x.name),subj:String(x.subj||""),students:x.students.map(function(s){return{id:s.id,name:String(s.name),g:s.g==="F"||s.g==="M"?s.g:""}}),records:x.records||{},notes:x.notes||{},ev:Array.isArray(x.ev)?x.ev:[],ob:Array.isArray(x.ob)?x.ob:[],th:x.th||{a:3,r:3}};
         var i=D.classes.findIndex(function(c){return c.id===n.id});
-        if(i<0){D.classes.push(n);add++;nid2.push(n.id);dirty[n.id]=1;}
-        else if(confirm("La classe « "+n.name+" » existe déjà. La remplacer par la version du fichier ?")){D.classes[i]=n;rep++;dirty[n.id]=1;}
+        if(i<0){D.classes.push(n);add++;nid2.push(n.id);dirty[n.id]=Date.now();}
+        else if(confirm("La classe « "+n.name+" » existe déjà. La remplacer par la version du fichier ?")){D.classes[i]=n;rep++;dirty[n.id]=Date.now();}
       });
-      if(emp&&add){D.classes=D.classes.filter(function(c){return c.id!==emp});dirty[emp]=1;D.cur=nid2[0];}
+      if(emp&&add){D.classes=D.classes.filter(function(c){return c.id!==emp});dirty[emp]=Date.now();D.cur=nid2[0];}
       save();
       msg=add+" classe(s) ajoutée(s), "+rep+" remplacée(s)"+(bad?", "+bad+" ignorée(s) (format invalide)":"")+".";
     }catch(e){msg="Ce fichier n’est pas une sauvegarde de cette application.";}

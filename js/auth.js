@@ -1,15 +1,6 @@
-/* Comptes, mot de passe, code PIN, écrans de connexion */
+/* Comptes (Supabase Auth), code PIN, écrans de connexion */
 function loadAcc(){try{var o=JSON.parse(localStorage.getItem("appel-comptes-v1"));if(o&&Array.isArray(o.users))return o;}catch(e){}return{users:[],cur:null};}
 function saveAcc(){try{localStorage.setItem("appel-comptes-v1",JSON.stringify(ACC));return true;}catch(e){return false;}}
-function toHex(b){return Array.prototype.map.call(new Uint8Array(b),function(x){return("0"+x.toString(16)).slice(-2)}).join("");}
-function rnd(){try{return toHex(crypto.getRandomValues(new Uint8Array(16)));}catch(e){return uid()+uid()+uid();}}
-function pwHash(pw,salt){
-  if(window.crypto&&crypto.subtle&&window.TextEncoder){
-    var en=new TextEncoder();
-    return crypto.subtle.importKey("raw",en.encode(pw),"PBKDF2",false,["deriveBits"]).then(function(k){return crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:en.encode(salt),iterations:150000},k,256);}).then(toHex);
-  }
-  return hashPin("pw:"+salt+":"+pw);
-}
 function blank(){var id=uid();return{cur:id,classes:[{id:id,name:"Ma classe",students:[],records:{}}]};}
 function hasLegacy(){try{var o=JSON.parse(localStorage.getItem("appel-matin-v1"));return!!(o&&o.classes&&o.classes.some(function(c){return(c.students&&c.students.length)||Object.keys(c.records||{}).length;}));}catch(e){return false;}}
 
@@ -39,18 +30,28 @@ function pinCard(){
 var GLOGO='<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
 function eyeBtn(id){return'<button type="button" class="eye" data-eye="'+id+'" aria-pressed="false" aria-label="Afficher le mot de passe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle class="pu" cx="12" cy="12" r="3"/><path class="sl" d="M4 4l16 16"/></svg></button>';}
 function guestLink(){return'<p class="afoot gl"><button class="alink" data-guest="1">'+(GUEST?"Revenir en mode invité":"Continuer sans compte")+'</button></p>';}
-function authShell(title,body){
+function authShell(title,body,nog){
   return'<div class="authpage"><div class="ascroll"><div class="acard"><div class="ahead"><i class="c1"></i><i class="c2"></i><h1><span>'+title+'</span></h1></div><div class="apanel">'+
-  '<button type="button" class="gbtn" id="gbtn">'+GLOGO+'<span>Se connecter avec Google</span></button><div class="aor">ou</div>'+body+'</div></div></div></div>';
+  (nog?'':'<button type="button" class="gbtn" id="gbtn">'+GLOGO+'<span>Se connecter avec Google</span></button><div class="aor">ou</div>')+body+'</div></div></div></div>';
+}
+function legacyNote(){return ACC.users.some(function(u){return u.hash})?'<p class="aterms">Mise à jour : les comptes sont maintenant en ligne. Connectez-vous avec la même adresse e-mail (ou créez le compte) pour retrouver vos données.</p>':"";}
+function renderReset(){
+  return authShell('Nouveau mot<br>de passe',
+  '<div class="arow pw"><input class="ai" type="password" id="rsp1" autocomplete="new-password" placeholder="Nouveau mot de passe" aria-label="Nouveau mot de passe (8 caractères minimum)">'+eyeBtn("rsp1")+'</div>'+
+  '<div class="arow pw"><input class="ai" type="password" id="rsp2" autocomplete="new-password" placeholder="Confirmer le mot de passe" aria-label="Confirmer le mot de passe">'+eyeBtn("rsp2")+'</div>'+
+  '<p class="aerr" id="rserr" role="alert"></p>'+
+  '<button class="abtn" id="rsgo">Enregistrer</button>'+
+  '<p class="aterms">Mot de passe de 8 caractères minimum.</p>'+
+  '<p class="afoot"><button class="alink" id="rscancel">Annuler</button></p>',true);
 }
 function renderLogin(){
   return authShell('Se connecter',
-  '<input class="ai afull" type="text" id="li" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="E-mail ou identifiant" aria-label="E-mail ou identifiant">'+
+  '<input class="ai afull" type="text" id="li" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="E-mail" aria-label="E-mail">'+
   '<div class="arow pw"><input class="ai" type="password" id="lw" autocomplete="current-password" placeholder="Mot de passe" aria-label="Mot de passe">'+eyeBtn("lw")+'</div>'+
   '<p class="aerr" id="lerr" role="alert"></p>'+
   '<button class="abtn" id="lgin">Se connecter</button>'+
   '<p class="aterms"><button class="alink" id="lfp">Mot de passe oublié ?</button></p>'+
-  '<p class="afoot">Pas encore de compte ? <button class="alink" data-go="signup">Créer un compte</button></p>'+guestLink());
+  '<p class="afoot">Pas encore de compte ? <button class="alink" data-go="signup">Créer un compte</button></p>'+legacyNote()+guestLink());
 }
 function renderSignup(){
   var lg=!ACC.users.length&&hasLegacy();
@@ -60,8 +61,8 @@ function renderSignup(){
   '<div class="arow pw"><input class="ai" type="password" id="spw" autocomplete="new-password" placeholder="Mot de passe" aria-label="Mot de passe (8 caractères minimum)">'+eyeBtn("spw")+'</div>'+
   '<p class="aerr" id="serr" role="alert"></p>'+
   '<button class="abtn" id="sgo">Créer un compte</button>'+
-  '<p class="aterms">'+(lg?"Vos classes déjà enregistrées sur cet appareil seront rattachées à ce compte.":"Mot de passe de 8 caractères minimum. Compte enregistré uniquement sur cet appareil.")+'</p>'+
-  '<p class="afoot">Déjà un compte ? <button class="alink" data-go="login">Connectez-vous ici</button></p>'+guestLink());
+  '<p class="aterms">'+(lg?"Vos classes déjà enregistrées sur cet appareil seront rattachées à ce compte.":"Mot de passe de 8 caractères minimum. Vos données sont sauvegardées en ligne et retrouvées sur tous vos appareils.")+'</p>'+
+  '<p class="afoot">Déjà un compte ? <button class="alink" data-go="login">Connectez-vous ici</button></p>'+legacyNote()+guestLink());
 }
 function renderCompte(){
   if(!ME)return'<h1 style="text-transform:none">Mon compte</h1><div class="card"><h2>Mode invité</h2><p class="sub" style="margin-top:0">Vous utilisez l’application sans compte : vos données ne sont pas enregistrées et disparaissent à la fermeture de la page. Connectez-vous ou créez un compte pour les sauvegarder ; ce que vous avez saisi pourra être ajouté à votre compte.</p><div class="bar" style="margin:0"><button class="btn" data-go="login">Se connecter</button><button class="btn ghost" data-go="signup">Créer un compte</button></div></div><div class="card"><h2>Importer des données</h2><p class="sub" style="margin-top:0">Chargez une sauvegarde reçue d’un collègue ou une ancienne sauvegarde. En mode invité, elle reste en mémoire jusqu’à la fermeture de la page : connectez-vous ensuite pour la conserver.</p><button class="btn ghost" data-go="part">Importer des données</button></div>';
@@ -79,6 +80,8 @@ function renderCompte(){
 
 function hasData(d){return!!d&&d.classes.some(function(c){return(c.students&&c.students.length)||Object.keys(c.records||{}).length;});}
 function enter(u,fresh){
+  if(ME&&ME.id===u.id&&!GUEST)return;
+  fresh=fresh||freshNext;freshNext=false;
   var g=GUEST&&hasData(D)?D:null;
   GUEST=false;ME=u;ACC.cur=u.id;saveAcc();KEY=u.key;D=load();view="home";date=today();qs="";gqs="";
   if(g&&(fresh||confirm("Ajouter les classes saisies en mode invité à ce compte ?"))){
@@ -89,12 +92,55 @@ function enter(u,fresh){
   initSync();render();window.scrollTo(0,0);
 }
 function removeUser(u){
-  try{localStorage.removeItem(u.key);}catch(e){}
+  try{localStorage.removeItem(u.key);localStorage.removeItem(u.key+"-dirty");}catch(e){}
   ACC.users=ACC.users.filter(function(x){return x.id!==u.id});
   if(ACC.cur===u.id)ACC.cur=null;
   saveAcc();
   if(ME&&ME.id===u.id){stopSync();ME=null;D=blank();KEY="";}
 }
-function doLogout(){
+function doLogout(forced){
   stopSync();ME=null;ACC.cur=null;saveAcc();D=blank();KEY="";view="login";render();window.scrollTo(0,0);
+  if(!forced&&sb)sb.auth.signOut({scope:"local"}).then(function(){},function(){});
+}
+
+/* Supabase : erreurs, profil, session */
+var freshNext=false;
+function authErr(e){
+  var m=String((e&&e.message)||"").toLowerCase(),c=String((e&&e.code)||"");
+  if(c==="invalid_credentials"||m.indexOf("invalid login")>=0)return"E-mail ou mot de passe incorrect.";
+  if(c==="email_not_confirmed"||m.indexOf("not confirmed")>=0)return"Adresse e-mail non confirmée. Ouvrez le message de confirmation reçu par e-mail.";
+  if(c==="user_already_exists"||m.indexOf("already registered")>=0)return"Un compte existe déjà avec cet e-mail. Connectez-vous.";
+  if(c==="weak_password")return"Mot de passe trop faible. Choisissez-en un plus long ou plus varié.";
+  if(c==="same_password")return"Le nouveau mot de passe doit être différent de l’ancien.";
+  if(c==="provider_disabled"||m.indexOf("provider is not enabled")>=0||m.indexOf("unsupported provider")>=0)return"La connexion avec Google n’est pas activée pour cette application.";
+  if(c.indexOf("rate_limit")>=0||(e&&e.status===429))return"Trop de tentatives. Patientez un moment avant de réessayer.";
+  if(!e||e.status===0||m.indexOf("fetch")>=0||m.indexOf("network")>=0)return"Connexion impossible. Vérifiez votre accès à internet.";
+  return"Une erreur est survenue. Réessayez.";
+}
+function noSb(){return sb?"":"Le service de connexion est indisponible. Vérifiez votre connexion internet puis rechargez la page.";}
+function amsg(el,txt,ok){if(!el)return;el.className=ok?"aerr aok":"aerr";el.textContent=txt;}
+function redirectUrl(){return location.origin+location.pathname;}
+/* Identité locale d’un utilisateur Supabase (reprend les données d’un ancien compte local de même e-mail) */
+function userFrom(su){
+  var md=su.user_metadata||{},email=(su.email||"").toLowerCase();
+  var name=(md.name||md.full_name||email.split("@")[0]||"Enseignant").trim();
+  var u=ACC.users.find(function(x){return x.id===su.id});
+  if(!u&&email){u=ACC.users.find(function(x){return x.hash&&x.login===email});if(u)u.id=su.id;}
+  if(u){delete u.hash;delete u.salt;u.name=name;u.school=md.school||u.school||"";u.login=email||u.login;}
+  else{u={id:su.id,name:name,school:md.school||"",login:email,key:ACC.users.length?"appel-matin-u-"+su.id:"appel-matin-v1"};ACC.users.push(u);}
+  saveAcc();return u;
+}
+function pushProfile(){if(sb&&ME)sb.auth.updateUser({data:{name:ME.name,school:ME.school||""}}).then(function(){},function(){});}
+function initAuth(){
+  if(!sb)return;
+  sb.auth.onAuthStateChange(function(ev,s){
+    setTimeout(function(){   /* hors du rappel : évite tout blocage interne de la bibliothèque */
+      if(ev==="PASSWORD_RECOVERY"){RECOVERY=true;view="reset";render();return;}
+      if(ev==="SIGNED_OUT"){if(ME)doLogout(true);return;}
+      if(!s||!s.user||RECOVERY)return;
+      if(ME&&ME.id===s.user.id){if(!col)initSync();return;}
+      if(ME){stopSync();ME=null;}
+      enter(userFrom(s.user));
+    },0);
+  });
 }

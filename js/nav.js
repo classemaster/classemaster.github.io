@@ -10,14 +10,15 @@ function header(){
 
 
 function render(){
-  if(!ME&&!GUEST&&view!=="login"&&view!=="signup")view=ACC.users.length?"login":"signup";
-  var auth=!ME&&(!GUEST||view==="login"||view==="signup");
+  if(RECOVERY)view="reset";
+  else if(!ME&&!GUEST&&view!=="login"&&view!=="signup")view=ACC.users.length?"login":"signup";
+  var auth=view==="reset"||(!ME&&(!GUEST||view==="login"||view==="signup"));
   header();
   document.querySelector("header").hidden=auth||view==="compte"||view==="search"||view==="home"||view==="classe"||view==="notes"||view==="eval"||view==="horaires"||view==="suivi";
   document.querySelector("nav").hidden=auth;
   document.getElementById("sync").hidden=auth;
   var el=document.getElementById("view");
-  var body=view==="home"?renderHome():view==="login"?renderLogin():view==="signup"?renderSignup():view==="appel"?renderAppel():view==="hist"?renderHist():view==="part"?renderPart():view==="mois"?renderMois():view==="fiche"?renderFiche():view==="classe"?renderClasse():view==="notes"?renderNotes():view==="horaires"?renderHoraires():view==="eval"?renderEval():view==="suivi"?renderSuivi():view==="search"?renderSearch():view==="compte"?renderCompte():renderEleves();
+  var body=view==="home"?renderHome():view==="login"?renderLogin():view==="signup"?renderSignup():view==="reset"?renderReset():view==="appel"?renderAppel():view==="hist"?renderHist():view==="part"?renderPart():view==="mois"?renderMois():view==="fiche"?renderFiche():view==="classe"?renderClasse():view==="notes"?renderNotes():view==="horaires"?renderHoraires():view==="eval"?renderEval():view==="suivi"?renderSuivi():view==="search"?renderSearch():view==="compte"?renderCompte():renderEleves();
   var bk='<button class="lnk" data-go="classe">← '+esc(cl().name)+'</button>';var pre={suivi:bk,horaires:bk,notes:bk,eval:'<button class="lnk" data-go="notes">← Notes</button>',appel:bk,eleves:bk,classe:'<button class="lnk" data-go="home">← Accueil</button>',mois:'<button class="lnk" data-go="hist">← Bilan</button>',part:'<button class="lnk" data-go="compte">← Compte</button>',hist:'<div class="bar"><button class="btn ghost" data-go="mois">Vue du mois</button></div>'};
   el.innerHTML=(GUEST&&!auth?'<div class="gban"><span>Mode invité : vos données ne sont pas enregistrées. Connectez-vous pour les sauvegarder.</span><button class="btn ghost" data-go="login">Se connecter</button></div>':"")+(pre[view]||"")+body;
   if(view==="appel")applyQ();
@@ -41,7 +42,8 @@ function trackHist(){
   var first=histKey==="";histKey=k;
   try{
     var u=location.pathname+location.search+"#"+view;
-    if(first||view==="login"||view==="signup")history.replaceState(snap(),"",u);else history.pushState(snap(),"",u);
+    if(/access_token=|error_code=|type=recovery/.test(location.hash))return;   /* laisse Supabase lire le retour de connexion */
+    if(first||view==="login"||view==="signup"||view==="reset")history.replaceState(snap(),"",u);else history.pushState(snap(),"",u);
   }catch(e){}
 }
 function onPop(e){

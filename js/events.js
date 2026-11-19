@@ -42,7 +42,12 @@ document.getElementById("view").addEventListener("click",function(e){
   if(t.closest("[data-guest]")){if(!GUEST){D=blank();KEY="";}GUEST=true;ME=null;view="home";date=today();qs="";render();window.scrollTo(0,0);return;}
   var ey=t.closest("[data-eye]");
   if(ey){var pi=document.getElementById(ey.dataset.eye);if(pi){var sh=pi.type==="password";pi.type=sh?"text":"password";ey.setAttribute("aria-pressed",String(sh));ey.setAttribute("aria-label",sh?"Masquer le mot de passe":"Afficher le mot de passe");}return;}
-  if(t.closest("#gbtn")){var ge0=document.getElementById(view==="login"?"lerr":"serr");if(ge0)ge0.textContent="La connexion avec Google n’est pas encore disponible. Utilisez votre e-mail.";return;}
+  if(t.closest("#gbtn")){
+    var ge0=document.getElementById(view==="login"?"lerr":"serr");
+    if(!sb){amsg(ge0,noSb());return;}
+    sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:redirectUrl()}}).then(function(r){if(r.error)amsg(ge0,authErr(r.error));},function(){amsg(ge0,authErr(null));});
+    return;
+  }
   var seg=t.closest(".seg");
   if(seg&&t.dataset.v){
     var r=rec(c,date),id=seg.dataset.s;
@@ -55,56 +60,92 @@ document.getElementById("view").addEventListener("click",function(e){
   if(hm){mo=dstr(new Date(+mo.slice(0,4),+mo.slice(5,7)-1+(+hm.dataset.mo),1)).slice(0,7);render();return;}
   if(t.id==="lgin"){
     var le=document.getElementById("lerr"),li=document.getElementById("li").value.trim().toLowerCase(),lw=document.getElementById("lw").value;
-    if(Date.now()<until){le.textContent="Trop d’essais. Patientez quelques secondes.";return;}
-    var lu=ACC.users.find(function(x){return x.login===li});
-    var bad=function(){fails++;if(fails>=5){until=Date.now()+30000;fails=0;}le.textContent="Identifiant ou mot de passe incorrect.";};
-    if(!lu||!lw){bad();return;}
-    pwHash(lw,lu.salt).then(function(h){if(h===lu.hash){fails=0;enter(lu);}else bad();});
+    if(Date.now()<until){amsg(le,"Trop d’essais. Patientez quelques secondes.");return;}
+    if(!sb){amsg(le,noSb());return;}
+    if(!li||!lw){amsg(le,"Entrez votre e-mail et votre mot de passe.");return;}
+    t.disabled=true;amsg(le,"");
+    sb.auth.signInWithPassword({email:li,password:lw}).then(function(r){
+      t.disabled=false;
+      if(r.error){if(r.error.code==="invalid_credentials"){fails++;if(fails>=5){until=Date.now()+30000;fails=0;}}amsg(le,authErr(r.error));return;}
+      fails=0;enter(userFrom(r.data.user));
+    },function(){t.disabled=false;amsg(le,authErr(null));});
     return;
   }
   if(t.id==="lfp"){
-    var fe=document.getElementById("lerr"),fl=document.getElementById("li").value.trim().toLowerCase(),fu=ACC.users.find(function(x){return x.login===fl});
-    if(!fu){fe.textContent="Entrez d’abord l’identifiant du compte concerné.";return;}
-    if(confirm("Sans serveur, il est impossible de retrouver un mot de passe. Vous pouvez supprimer le compte « "+fu.name+" » et ses données sur cet appareil, puis en créer un nouveau (une sauvegarde .json pourra être restaurée). Supprimer ce compte ?")){removeUser(fu);view=ACC.users.length?"login":"signup";render();}
+    var fe=document.getElementById("lerr"),fl=document.getElementById("li").value.trim().toLowerCase();
+    if(!sb){amsg(fe,noSb());return;}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fl)){amsg(fe,"Entrez d’abord votre adresse e-mail dans le champ ci-dessus.");return;}
+    t.disabled=true;
+    sb.auth.resetPasswordForEmail(fl,{redirectTo:redirectUrl()}).then(function(r){
+      t.disabled=false;
+      if(r.error)amsg(fe,authErr(r.error));else amsg(fe,"Si un compte existe pour cette adresse, un e-mail de réinitialisation vient d’être envoyé.",true);
+    },function(){t.disabled=false;amsg(fe,authErr(null));});
     return;
   }
   if(t.id==="sgo"){
     var ge=function(i){return document.getElementById(i)},er=ge("serr");
-    var fn=ge("sfn").value.trim(),ln=ge("sln").value.trim(),nm=(fn+" "+ln).trim(),sc="",si=ge("sid").value.trim().toLowerCase(),p1=ge("spw").value;
-    if(!fn||!ln){er.textContent="Entrez votre prénom et votre nom.";return;}
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(si)){er.textContent="Entrez une adresse e-mail valide.";return;}
-    if(ACC.users.some(function(x){return x.login===si})){er.textContent="Cet identifiant existe déjà sur cet appareil.";return;}
-    if(p1.length<8){er.textContent="Le mot de passe doit contenir au moins 8 caractères.";return;}
-    er.textContent="";
-    var salt=rnd();
-    pwHash(p1,salt).then(function(h){
-      var id=uid(),first=!ACC.users.length,nu={id:id,name:nm,school:sc,login:si,salt:salt,hash:h,key:first?"appel-matin-v1":"appel-matin-u-"+id};
-      ACC.users.push(nu);ACC.cur=id;
-      if(!saveAcc()){ACC.users.pop();ACC.cur=null;var e2=ge("serr");if(e2)e2.textContent="Impossible d’enregistrer le compte sur cet appareil.";return;}
-      enter(nu,true);
-    });
+    var fn=ge("sfn").value.trim(),ln=ge("sln").value.trim(),nm=(fn+" "+ln).trim(),si=ge("sid").value.trim().toLowerCase(),p1=ge("spw").value;
+    if(!fn||!ln){amsg(er,"Entrez votre prénom et votre nom.");return;}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(si)){amsg(er,"Entrez une adresse e-mail valide.");return;}
+    if(p1.length<8){amsg(er,"Le mot de passe doit contenir au moins 8 caractères.");return;}
+    if(!sb){amsg(er,noSb());return;}
+    amsg(er,"");t.disabled=true;freshNext=true;
+    sb.auth.signUp({email:si,password:p1,options:{data:{name:nm,school:""},emailRedirectTo:redirectUrl()}}).then(function(r){
+      t.disabled=false;
+      if(r.error){freshNext=false;amsg(er,authErr(r.error));return;}
+      var nu=r.data.user;
+      if(nu&&nu.identities&&!nu.identities.length){freshNext=false;amsg(er,"Un compte existe déjà avec cet e-mail. Connectez-vous.");return;}
+      if(r.data.session){enter(userFrom(nu),true);return;}
+      freshNext=false;
+      amsg(er,"Compte créé. Un e-mail de confirmation vient de vous être envoyé : ouvrez-le pour activer votre compte, puis connectez-vous.",true);
+    },function(){t.disabled=false;freshNext=false;amsg(er,authErr(null));});
     return;
   }
+  if(t.id==="rsgo"){
+    var rm=document.getElementById("rserr"),r1=document.getElementById("rsp1").value,r2=document.getElementById("rsp2").value;
+    if(r1.length<8){amsg(rm,"Le mot de passe doit contenir au moins 8 caractères.");return;}
+    if(r1!==r2){amsg(rm,"Les deux mots de passe ne sont pas identiques.");return;}
+    if(!sb){amsg(rm,noSb());return;}
+    t.disabled=true;
+    sb.auth.updateUser({password:r1}).then(function(r){
+      t.disabled=false;
+      if(r.error){amsg(rm,authErr(r.error));return;}
+      RECOVERY=false;
+      sb.auth.getSession().then(function(x){var ss=x.data&&x.data.session;if(ss&&ss.user)enter(userFrom(ss.user),true);else{view="login";render();}});
+    },function(){t.disabled=false;amsg(rm,authErr(null));});
+    return;
+  }
+  if(t.id==="rscancel"){RECOVERY=false;if(sb)sb.auth.signOut({scope:"local"}).then(function(){},function(){});view=ACC.users.length?"login":"signup";render();return;}
   if(t.id==="cpw"){
     var cm=document.getElementById("cpm"),c0=document.getElementById("cp0").value,c1=document.getElementById("cp1").value,c2=document.getElementById("cp2").value;
     var cf=function(m){cm.className="err";cm.textContent=m;};
+    if(!sb){cf(noSb());return;}
+    if(!c0){cf("Entrez votre mot de passe actuel.");return;}
     if(c1.length<8){cf("Le nouveau mot de passe doit contenir au moins 8 caractères.");return;}
     if(c1!==c2){cf("Les deux mots de passe ne sont pas identiques.");return;}
-    pwHash(c0,ME.salt).then(function(h){
-      if(h!==ME.hash){cf("Le mot de passe actuel est incorrect.");return;}
-      var ns=rnd();
-      pwHash(c1,ns).then(function(h2){
-        ME.salt=ns;ME.hash=h2;
-        if(!saveAcc()){cf("Impossible d’enregistrer le nouveau mot de passe.");return;}
+    t.disabled=true;
+    sb.auth.signInWithPassword({email:ME.login,password:c0}).then(function(r){
+      if(r.error){t.disabled=false;cf(r.error.code==="invalid_credentials"?"Le mot de passe actuel est incorrect.":authErr(r.error));return;}
+      return sb.auth.updateUser({password:c1}).then(function(r2){
+        t.disabled=false;
+        if(r2.error){cf(authErr(r2.error));return;}
         ["cp0","cp1","cp2"].forEach(function(i){var x=document.getElementById(i);if(x)x.value="";});
         cm.className="err ok";cm.textContent="Mot de passe modifié.";
       });
-    });
+    }).catch(function(){t.disabled=false;cf(authErr(null));});
     return;
   }
   if(t.id==="lout"){doLogout();return;}
   if(t.id==="adel"){
-    if(confirm("Supprimer votre compte ainsi que toutes les classes, élèves et appels enregistrés sur cet appareil ? Pensez à faire une sauvegarde avant.")){removeUser(ME);view=ACC.users.length?"login":"signup";render();window.scrollTo(0,0);}
+    if(!confirm("Supprimer définitivement votre compte ainsi que toutes les classes, élèves et appels enregistrés, en ligne et sur cet appareil ? Pensez à faire une sauvegarde avant."))return;
+    if(!sb){alert(noSb());return;}
+    t.disabled=true;
+    sb.rpc("delete_my_account").then(function(r){
+      t.disabled=false;
+      if(r.error){alert("Suppression impossible pour le moment. Vérifiez votre connexion internet puis réessayez.");return;}
+      var gone=ME;stopSync();sb.auth.signOut({scope:"local"}).then(function(){},function(){});
+      removeUser(gone);view=ACC.users.length?"login":"signup";render();window.scrollTo(0,0);
+    },function(){t.disabled=false;alert("Suppression impossible pour le moment. Vérifiez votre connexion internet puis réessayez.");});
     return;
   }
   var sfh=t.closest("[data-sf]");
@@ -164,13 +205,13 @@ document.getElementById("view").addEventListener("click",function(e){
     if(s&&confirm("Retirer "+s.name+" de la liste ?")){c.students=c.students.filter(function(x){return x.id!==s.id});save();render();}return;
   }
   if(t.id==="delc"){
-    if(confirm("Supprimer la classe "+c.name+" et tout son historique ?")){D.classes=D.classes.filter(function(x){return x.id!==c.id});D.cur=D.classes[0].id;dirty[c.id]=1;save();view="home";render();window.scrollTo(0,0);}
+    if(confirm("Supprimer la classe "+c.name+" et tout son historique ?")){D.classes=D.classes.filter(function(x){return x.id!==c.id});D.cur=D.classes[0].id;dirty[c.id]=Date.now();save();view="home";render();window.scrollTo(0,0);}
   }
 });
 document.getElementById("view").addEventListener("change",function(e){
   var t=e.target,c=cl();
-  if(t.id==="an"&&ME){if(t.value.trim()){ME.name=t.value.trim();saveAcc();}else t.value=ME.name;return;}
-  if(t.id==="as"&&ME){ME.school=t.value.trim();saveAcc();return;}
+  if(t.id==="an"&&ME){if(t.value.trim()){ME.name=t.value.trim();who=ME.name;saveAcc();pushProfile();}else t.value=ME.name;return;}
+  if(t.id==="as"&&ME){ME.school=t.value.trim();saveAcc();pushProfile();return;}
   if(t.id==="cn"&&t.value.trim()){c.name=t.value.trim();save();header();return;}
   if(t.id==="cs"){c.subj=t.value.trim();save();return;}
   if(t.id==="imp"&&t.files&&t.files[0]){importJSON(t.files[0]);return;}
