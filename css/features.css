@@ -1,0 +1,41 @@
+/* Styles des fonctions ajoutées : séances du jour, observations */
+.bn{background:var(--rbg);color:var(--r);border-radius:14px;padding:8px 12px;font-weight:700;margin:0 0 10px}
+.tg{display:inline-block;border-radius:999px;padding:1px 9px;font-size:.74rem;font-weight:700}
+.k-pos{background:var(--pbg);color:var(--p)}
+.k-cmp{background:var(--rbg);color:var(--r)}
+.k-dif{background:var(--abg);color:var(--a)}
+.k-aut{background:var(--soft);color:var(--accent)}
+textarea{width:100%;resize:vertical}
+
+/* Page Sauvegarde et partage : sections claires, boutons pleine largeur */
+.sec-t{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);margin:20px 4px 8px}
+.bar.stk .btn{flex:1 1 100%}
+.bar.two .btn{flex:1 1 0;min-width:0;padding-left:10px;padding-right:10px}
+.sr{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+.fbtn{display:flex;align-items:center;justify-content:center;width:100%;cursor:pointer;text-align:center}
+.sr:focus-visible+.fbtn{outline:2px solid var(--accent);outline-offset:2px}
+.note{text-align:center;font-size:.85rem;margin:16px 8px}
+.card .flt{margin-bottom:12px}
+/* Garde la page et la barre du bas dans la largeur de l'écran */
+html,body{max-width:100%;overflow-x:hidden}
+main{min-width:0}
+nav{left:50%;right:auto;transform:translateX(-50%);width:min(420px,calc(100% - 24px));margin:0}
+
+/* Devoirs rendus et statistiques d'une évaluation */
+.rdt{display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:600}
+.rdt input{width:20px;height:20px}
+.er{border-bottom:1px solid var(--line)}.er .li{border-bottom:0;padding-bottom:4px}
+.rd{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:0 0 10px}
+.rd button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;min-height:40px;font-weight:700;font-size:.85rem;cursor:pointer}
+.rd button[aria-pressed=true].rd-r{background:var(--p);color:var(--bg);border-color:var(--p)}
+.rd button[aria-pressed=true].rd-l{background:var(--r);color:var(--bg);border-color:var(--r)}
+.rd button[aria-pressed=true].rd-n{background:var(--a);color:var(--bg);border-color:var(--a)}
+.dist{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;height:130px;align-items:end}
+.dist div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.dist em{font-style:normal;font-weight:700;font-size:.9rem}
+.dist i{display:block;width:100%;background:var(--accent);border-radius:8px 8px 0 0;min-height:4px}
+.dist span{font-size:.78rem;color:var(--mute)}
+
+/* Élèves à suivre */
+.sv-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sv-c{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
