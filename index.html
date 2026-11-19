@@ -3,7 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Appel du matin</title>
+<title>Classe Master : appel, absences et notes pour enseignants</title>
+<meta name="description" content="Classe Master : l’application gratuite pour enseignants. Faites l’appel en quelques secondes, suivez les absences et retards, saisissez les notes et partagez le bilan de vos classes.">
+<meta name="keywords" content="Classe Master, appel, présence, absences, retards, notes, enseignant, école, classe, Congo, Brazzaville">
+<meta name="author" content="MPOUCK Digital Agency">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://classemaster.github.io/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231E3F8A'/%3E%3Cpath d='M17 34l10 10 20-22' fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<meta name="application-name" content="Classe Master">
+<meta name="apple-mobile-web-app-title" content="Classe Master">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Classe Master">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="Classe Master : appel, absences et notes pour enseignants">
+<meta property="og:description" content="Classe Master : l’application gratuite pour enseignants. Faites l’appel en quelques secondes, suivez les absences et retards, saisissez les notes et partagez le bilan de vos classes.">
+<meta property="og:url" content="https://classemaster.github.io/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Classe Master">
+<meta name="twitter:description" content="Classe Master : l’application gratuite pour enseignants. Faites l’appel en quelques secondes, suivez les absences et retards, saisissez les notes et partagez le bilan de vos classes.">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Classe Master","url":"https://classemaster.github.io/","description":"Classe Master : l’application gratuite pour enseignants. Faites l’appel en quelques secondes, suivez les absences et retards, saisissez les notes et partagez le bilan de vos classes.","applicationCategory":"EducationalApplication","operatingSystem":"Any","inLanguage":"fr","offers":{"@type":"Offer","price":"0","priceCurrency":"XAF"},"author":{"@type":"Organization","name":"MPOUCK Digital Agency"}}</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Figtree:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/theme.css">
@@ -24,10 +43,14 @@
 </nav>
 <p class="sync" id="sync"></p>
 <div id="view"></div>
+<p class="site-link"><a href="https://classemaster.github.io/" target="_blank" rel="noopener">Classe Master · classemaster.github.io</a></p>
 </main>
-<div id="lock" class="lock" hidden><div class="card"><h1 style="text-transform:none">Appel du matin</h1><p class="sub">Entrez votre code pour continuer.</p><input id="lp" class="pin" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="8" placeholder="4 à 8 chiffres" aria-label="Code"><p class="sub" id="lm"></p><button class="btn" id="lgo" style="width:100%">Déverrouiller</button><button class="lnk" id="lfg" style="margin-top:10px">Code oublié ?</button></div></div>
+<noscript><p style="padding:24px;font-family:sans-serif">Classe Master nécessite JavaScript. Activez-le puis rechargez la page : <a href="https://classemaster.github.io/">classemaster.github.io</a></p></noscript>
+<div id="lock" class="lock" hidden><div class="card"><h1 style="text-transform:none">Classe Master</h1><p class="sub">Entrez votre code pour continuer.</p><input id="lp" class="pin" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="8" placeholder="4 à 8 chiffres" aria-label="Code"><p class="sub" id="lm"></p><button class="btn" id="lgo" style="width:100%">Déverrouiller</button><button class="lnk" id="lfg" style="margin-top:10px">Code oublié ?</button></div></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous" defer></script>
 <script src="js/state.js" defer></script>
+<script src="js/supabase.js" defer></script>
 <script src="js/utils.js" defer></script>
 <script src="js/auth.js" defer></script>
 <script src="js/nav.js" defer></script>
