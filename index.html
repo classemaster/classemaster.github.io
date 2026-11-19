@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Appel du matin</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/features.css">
+<meta name="theme-color" content="#1E3F8A">
+</head>
+<body>
+<main>
+<header>
+  <select id="cls" aria-label="Classe"></select>
+  <input type="date" id="dt" aria-label="Date de l’appel">
+</header>
+<nav role="tablist" aria-label="Navigation principale">
+  <button role="tab" data-v="home" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5V20H4z"/><path d="M10 20v-5h4v5"/></svg><span>Accueil</span></button>
+  <button role="tab" data-v="hist" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7"/></svg><span>Bilan</span></button>
+  <button role="tab" data-v="search" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5.5 5.5"/></svg><span>Recherche</span></button>
+  <button role="tab" data-v="compte" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c0-4 3.4-6.500 7.500-6.500s7.500 2.500 7.500 6.500"/></svg><span>Compte</span></button>
+</nav>
+<p class="sync" id="sync"></p>
+<div id="view"></div>
+</main>
+<div id="lock" class="lock" hidden><div class="card"><h1 style="text-transform:none">Appel du matin</h1><p class="sub">Entrez votre code pour continuer.</p><input id="lp" class="pin" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="8" placeholder="4 à 8 chiffres" aria-label="Code"><p class="sub" id="lm"></p><button class="btn" id="lgo" style="width:100%">Déverrouiller</button><button class="lnk" id="lfg" style="margin-top:10px">Code oublié ?</button></div></div>
+
+<script src="js/state.js" defer></script>
+<script src="js/utils.js" defer></script>
+<script src="js/auth.js" defer></script>
+<script src="js/nav.js" defer></script>
+<script src="js/appel.js" defer></script>
+<script src="js/export.js" defer></script>
+<script src="js/bilan.js" defer></script>
+<script src="js/classes.js" defer></script>
+<script src="js/notes.js" defer></script>
+<script src="js/devoirs.js" defer></script>
+<script src="js/suivi.js" defer></script>
+<script src="js/recherche.js" defer></script>
+<script src="js/sync.js" defer></script>
+<script src="js/horaires.js" defer></script>
+<script src="js/observations.js" defer></script>
+<script src="js/events.js" defer></script>
+<script src="js/main.js" defer></script>
+</body>
+</html>
