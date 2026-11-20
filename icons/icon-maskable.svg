@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2F55B5"/><stop offset="1" stop-color="#172F6B"/></linearGradient>
+<linearGradient id="sheet" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E6ECF8"/></linearGradient>
+</defs>
+<rect width="512" height="512"  fill="url(#bg)"/>
+<g transform="translate(256 256) scale(.82) translate(-256 -251)"><rect x="116" y="96" width="280" height="334" rx="34" fill="#0F2253" opacity=".35" transform="translate(0 12)"/>
+<rect x="116" y="96" width="280" height="334" rx="34" fill="url(#sheet)"/>
+<rect x="196" y="72" width="120" height="58" rx="22" fill="#F5B83D"/>
+<rect x="224" y="90" width="64" height="22" rx="11" fill="#172F6B"/>
+<g stroke-linecap="round" stroke-linejoin="round" fill="none">
+<circle cx="170" cy="198" r="22" fill="#1FA971" stroke="none"/><path d="M160 198l7 8 14-16" stroke="#fff" stroke-width="7"/>
+<circle cx="170" cy="278" r="22" fill="#1FA971" stroke="none"/><path d="M160 278l7 8 14-16" stroke="#fff" stroke-width="7"/>
+<circle cx="170" cy="358" r="22" fill="#F5B83D" stroke="none"/><path d="M170 347v13M170 368v1" stroke="#172F6B" stroke-width="7"/>
+<path d="M214 198h128M214 278h128M214 358h96" stroke="#9FB1D6" stroke-width="16"/>
+</g>
+</g>
+</svg>
