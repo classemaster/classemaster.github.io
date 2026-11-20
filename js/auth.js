@@ -117,7 +117,7 @@ function authErr(e){
   if(!e||e.status===0||m.indexOf("fetch")>=0||m.indexOf("network")>=0)return"Connexion impossible. Vérifiez votre accès à internet.";
   return"Une erreur est survenue. Réessayez.";
 }
-function noSb(){return sb?"":"Le service de connexion est indisponible. Vérifiez votre connexion internet puis rechargez la page.";}
+function noSb(){if(sb)return"";if(typeof SUPABASE_KEY!=="undefined"&&SUPABASE_KEY.indexOf("COLLEZ")===0)return"Configuration incomplète : la clé publique Supabase n’a pas encore été ajoutée dans js/supabase.js.";return"Le service de connexion est indisponible. Vérifiez votre connexion internet puis rechargez la page.";}
 function amsg(el,txt,ok){if(!el)return;el.className=ok?"aerr aok":"aerr";el.textContent=txt;}
 function redirectUrl(){return location.origin+location.pathname;}
 /* Identité locale d’un utilisateur Supabase (reprend les données d’un ancien compte local de même e-mail) */
