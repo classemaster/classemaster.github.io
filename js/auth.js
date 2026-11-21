@@ -118,15 +118,119 @@ function authErr(e){
   return"Une erreur est survenue. Réessayez.";
 }
 function noSb(){if(sb)return"";if(typeof SUPABASE_KEY!=="undefined"&&SUPABASE_KEY.indexOf("COLLEZ")===0)return"Configuration incomplète : la clé publique Supabase n’a pas encore été ajoutée dans js/supabase.js.";return"Le service de connexion est indisponible. Vérifiez votre connexion internet puis rechargez la page.";}
+function showDialog(title,txt,label,cb){
+  var old=document.getElementById("adlg");if(old)old.remove();
+  var o=document.createElement("div");o.className="adlg";o.id="adlg";o.setAttribute("role","alertdialog");o.setAttribute("aria-modal","true");o.setAttribute("aria-labelledby","adt");o.setAttribute("aria-describedby","adm");
+  o.innerHTML='<div class="adbox"><div class="adico" aria-hidden="true">✓</div><h2 id="adt"></h2><p id="adm"></p><button type="button" class="abtn" id="adok"></button></div>';
+  document.body.appendChild(o);
+  o.querySelector("#adt").textContent=title;o.querySelector("#adm").textContent=txt;
+  var b=o.querySelector("#adok");b.textContent=label||"OK";
+  function close(){o.remove();if(cb)cb();}
+  b.addEventListener("click",close);
+  o.addEventListener("keydown",function(e){if(e.key==="Escape")close();});
+  setTimeout(function(){b.focus();},30);
+}
 function amsg(el,txt,ok){if(!el)return;el.className=ok?"aerr aok":"aerr";el.textContent=txt;}
 function redirectUrl(){return location.origin+location.pathname;}
+
+/* Identifiants locaux : permettent de créer un compte et de se connecter sans internet */
+function rnd(){var a=new Uint8Array(16),i;if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else for(i=0;i<16;i++)a[i]=Math.floor(Math.random()*256);return Array.prototype.map.call(a,function(x){return("0"+x.toString(16)).slice(-2)}).join("");}
+function hashPw(pw,salt){
+  if(window.crypto&&crypto.subtle&&window.TextEncoder){
+    var enc=new TextEncoder();
+    return crypto.subtle.importKey("raw",enc.encode(pw),"PBKDF2",false,["deriveBits"]).then(function(k){
+      return crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:enc.encode(salt),iterations:100000},k,256);
+    }).then(function(b){return Array.prototype.map.call(new Uint8Array(b),function(x){return("0"+x.toString(16)).slice(-2)}).join("");});
+  }
+  return Promise.resolve("x"+btoa(unescape(encodeURIComponent(salt+":"+pw))));
+}
+function setCred(u,pw){var s=rnd();return hashPw(pw,s).then(function(h){u.s2=s;u.h2=h;saveAcc();},function(){});}
+function checkCred(u,pw){return hashPw(pw,u.s2||"").then(function(h){return!!u.h2&&h===u.h2;},function(){return false;});}
+function netErr(e){return!navigator.onLine||!e||e.status===0||/fetch|network/i.test(String(e.message||""))||String(e.name||"")==="AuthRetryableFetchError";}
+
+/* Compte créé hors ligne : enregistré sur l’appareil, envoyé à Supabase plus tard (voir finalizeDialog) */
+function offlineSignup(nm,email,pw,er,btn){
+  freshNext=false;
+  if(ACC.users.some(function(x){return x.login===email&&!x.hash})){btn.disabled=false;amsg(er,"Un compte existe déjà sur cet appareil avec cet e-mail. Connectez-vous.");return;}
+  var id=uid(),u={id:id,name:nm,school:"",login:email,key:ACC.users.length?"appel-matin-u-"+id:"appel-matin-v1",pending:true};
+  setCred(u,pw).then(function(){
+    btn.disabled=false;
+    if(!u.h2){amsg(er,"Impossible de créer le compte sur cet appareil.");return;}
+    ACC.users.push(u);saveAcc();
+    enter(u,true);
+    showDialog("Compte créé hors ligne","Vos données sont enregistrées sur cet appareil. Dès que vous serez connecté à internet, appuyez sur « Finaliser » pour les sauvegarder en ligne.","J’ai compris");
+  });
+}
+function offlineLogin(email,pw,el,btn){
+  var u=ACC.users.find(function(x){return x.login===email&&x.h2});
+  if(!u){btn.disabled=false;amsg(el,"Pas de connexion internet. Hors ligne, seuls les comptes déjà utilisés sur cet appareil peuvent se connecter.");return;}
+  checkCred(u,pw).then(function(ok){
+    btn.disabled=false;
+    if(!ok){fails++;if(fails>=5){until=Date.now()+30000;fails=0;}amsg(el,"E-mail ou mot de passe incorrect.");return;}
+    fails=0;if(!u.pending)u.resync=true;saveAcc();enter(u);
+  });
+}
+
+/* Bandeau : compte à finaliser / synchronisation à reprendre */
+function needOnline(){return!!ME&&!!(ME.pending||ME.resync);}
+function updPend(){
+  var el=document.getElementById("pend");if(!el)return;
+  if(!needOnline()||view==="reset"){el.innerHTML="";return;}
+  if(!navigator.onLine){el.innerHTML=ME.pending?'<div class="gban"><span>Compte créé hors ligne : vos données sont sur cet appareil. Finalisez-le dès que vous avez internet.</span></div>':"";return;}
+  el.innerHTML='<div class="gban"><span>'+(ME.pending?"Finalisez votre compte pour sauvegarder vos données en ligne.":"Reconnectez-vous pour reprendre la synchronisation.")+'</span><button class="btn ghost" id="pfin">'+(ME.pending?"Finaliser":"Reconnecter")+'</button></div>';
+}
+function closeDlg(){var o=document.getElementById("adlg");if(o)o.remove();}
+function finalizeDialog(){
+  var u=ME;if(!u||!sb)return;
+  closeDlg();
+  var o=document.createElement("div");o.className="adlg";o.id="adlg";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.setAttribute("aria-labelledby","adt");
+  o.innerHTML='<div class="adbox"><h2 id="adt"></h2><p id="adm"></p><div class="adrow"><input class="adi" type="password" id="fpw" autocomplete="current-password" placeholder="Mot de passe" aria-label="Mot de passe">'+eyeBtn("fpw")+'</div><p class="aerr" id="ferr" role="alert"></p><button type="button" class="abtn" id="fgo">Continuer</button><p class="afoot"><button type="button" class="alink" id="fno">Plus tard</button></p></div>';
+  document.body.appendChild(o);
+  o.querySelector("#adt").textContent=u.pending?"Finaliser mon compte":"Reprendre la synchronisation";
+  o.querySelector("#adm").textContent="Entrez le mot de passe de "+u.login+" pour "+(u.pending?"créer votre compte en ligne et y envoyer vos données.":"vous reconnecter et reprendre la sauvegarde en ligne.");
+  var pw=o.querySelector("#fpw"),er=o.querySelector("#ferr"),go=o.querySelector("#fgo");
+  o.querySelector("#fno").addEventListener("click",closeDlg);
+  o.querySelector(".eye").addEventListener("click",function(){var sh=pw.type==="password";pw.type=sh?"text":"password";this.setAttribute("aria-pressed",String(sh));});
+  pw.addEventListener("keydown",function(e){if(e.key==="Enter")go.click();if(e.key==="Escape")closeDlg();});
+  function done(su){
+    closeDlg();
+    if(ME&&ME.id===su.id){delete ME.pending;delete ME.resync;saveAcc();initSync();updPend();render();}
+    else{stopSync();ME=null;enter(userFrom(su),true);}
+  }
+  go.addEventListener("click",function(){
+    var p=pw.value;if(!p){amsg(er,"Entrez votre mot de passe.");return;}
+    go.disabled=true;amsg(er,"");
+    checkCred(u,p).then(function(ok){
+      if(!ok){go.disabled=false;amsg(er,"Mot de passe incorrect.");return;}
+      return sb.auth.signInWithPassword({email:u.login,password:p}).then(function(r){
+        if(!r.error){go.disabled=false;done(r.data.user);return;}
+        if(r.error.code==="email_not_confirmed"||/not confirmed/i.test(r.error.message||"")){go.disabled=false;closeDlg();showDialog("Confirmez votre e-mail","Votre compte existe mais votre adresse e-mail n’est pas encore confirmée. Ouvrez le message de confirmation reçu par e-mail, puis appuyez de nouveau sur « Finaliser ».","J’ai compris");return;}
+        if((r.error.code==="invalid_credentials"||/invalid login/i.test(r.error.message||""))&&u.pending){
+          return sb.auth.signUp({email:u.login,password:p,options:{data:{name:u.name,school:u.school||""},emailRedirectTo:redirectUrl()}}).then(function(r2){
+            go.disabled=false;
+            if(r2.error){amsg(er,authErr(r2.error));return;}
+            var nu=r2.data.user;
+            if(nu&&nu.identities&&!nu.identities.length){amsg(er,"Un compte existe déjà avec cet e-mail et un autre mot de passe. Déconnectez-vous puis connectez-vous avec celui de ce compte.");return;}
+            if(r2.data.session){done(nu);return;}
+            closeDlg();showDialog("Compte créé","Un e-mail de confirmation vient de vous être envoyé. Ouvrez-le pour activer votre compte, puis appuyez de nouveau sur « Finaliser ».","J’ai compris");
+          });
+        }
+        go.disabled=false;amsg(er,r.error.code==="invalid_credentials"?"E-mail ou mot de passe incorrect.":authErr(r.error));
+      });
+    }).catch(function(){go.disabled=false;amsg(er,authErr(null));});
+  });
+  setTimeout(function(){pw.focus();},30);
+}
+document.addEventListener("click",function(e){if(e.target.closest&&e.target.closest("#pfin"))finalizeDialog();});
+window.addEventListener("online",updPend);window.addEventListener("offline",updPend);
+
 /* Identité locale d’un utilisateur Supabase (reprend les données d’un ancien compte local de même e-mail) */
 function userFrom(su){
   var md=su.user_metadata||{},email=(su.email||"").toLowerCase();
   var name=(md.name||md.full_name||email.split("@")[0]||"Enseignant").trim();
   var u=ACC.users.find(function(x){return x.id===su.id});
-  if(!u&&email){u=ACC.users.find(function(x){return x.hash&&x.login===email});if(u)u.id=su.id;}
-  if(u){delete u.hash;delete u.salt;u.name=name;u.school=md.school||u.school||"";u.login=email||u.login;}
+  if(!u&&email){u=ACC.users.find(function(x){return(x.hash||x.pending)&&x.login===email});if(u)u.id=su.id;}
+  if(u){delete u.hash;delete u.salt;delete u.pending;delete u.resync;u.name=name;u.school=md.school||u.school||"";u.login=email||u.login;}
   else{u={id:su.id,name:name,school:md.school||"",login:email,key:ACC.users.length?"appel-matin-u-"+su.id:"appel-matin-v1"};ACC.users.push(u);}
   saveAcc();return u;
 }

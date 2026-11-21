@@ -22,6 +22,7 @@ function render(){
   var bk='<button class="lnk" data-go="classe">← '+esc(cl().name)+'</button>';var pre={suivi:bk,horaires:bk,notes:bk,eval:'<button class="lnk" data-go="notes">← Notes</button>',appel:bk,eleves:bk,classe:'<button class="lnk" data-go="home">← Accueil</button>',mois:'<button class="lnk" data-go="hist">← Bilan</button>',part:'<button class="lnk" data-go="compte">← Compte</button>',hist:'<div class="bar"><button class="btn ghost" data-go="mois">Vue du mois</button></div>'};
   el.innerHTML=(GUEST&&!auth?'<div class="gban"><span>Mode invité : vos données ne sont pas enregistrées. Connectez-vous pour les sauvegarder.</span><button class="btn ghost" data-go="login">Se connecter</button></div>':"")+(pre[view]||"")+body;
   if(view==="appel")applyQ();
+  updPend();
   if(view==="search")drawSearch();
   document.documentElement.style.overflow=auth?"hidden":"";
   trackHist();

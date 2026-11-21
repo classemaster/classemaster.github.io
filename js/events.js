@@ -44,6 +44,7 @@ document.getElementById("view").addEventListener("click",function(e){
   if(ey){var pi=document.getElementById(ey.dataset.eye);if(pi){var sh=pi.type==="password";pi.type=sh?"text":"password";ey.setAttribute("aria-pressed",String(sh));ey.setAttribute("aria-label",sh?"Masquer le mot de passe":"Afficher le mot de passe");}return;}
   if(t.closest("#gbtn")){
     var ge0=document.getElementById(view==="login"?"lerr":"serr");
+    if(!navigator.onLine){amsg(ge0,"Connexion avec Google impossible hors ligne. Utilisez votre e-mail et votre mot de passe.");return;}
     if(!sb){amsg(ge0,noSb());return;}
     sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:redirectUrl()}}).then(function(r){if(r.error)amsg(ge0,authErr(r.error));},function(){amsg(ge0,authErr(null));});
     return;
@@ -61,14 +62,17 @@ document.getElementById("view").addEventListener("click",function(e){
   if(t.id==="lgin"){
     var le=document.getElementById("lerr"),li=document.getElementById("li").value.trim().toLowerCase(),lw=document.getElementById("lw").value;
     if(Date.now()<until){amsg(le,"Trop d’essais. Patientez quelques secondes.");return;}
-    if(!sb){amsg(le,noSb());return;}
     if(!li||!lw){amsg(le,"Entrez votre e-mail et votre mot de passe.");return;}
     t.disabled=true;amsg(le,"");
+    if(!sb||!navigator.onLine){offlineLogin(li,lw,le,t);return;}
     sb.auth.signInWithPassword({email:li,password:lw}).then(function(r){
-      t.disabled=false;
-      if(r.error){if(r.error.code==="invalid_credentials"){fails++;if(fails>=5){until=Date.now()+30000;fails=0;}}amsg(le,authErr(r.error));return;}
-      fails=0;enter(userFrom(r.data.user));
-    },function(){t.disabled=false;amsg(le,authErr(null));});
+      if(r.error){
+        if(netErr(r.error)){offlineLogin(li,lw,le,t);return;}
+        t.disabled=false;
+        if(r.error.code==="invalid_credentials"){fails++;if(fails>=5){until=Date.now()+30000;fails=0;}}amsg(le,authErr(r.error));return;
+      }
+      t.disabled=false;fails=0;var lu=userFrom(r.data.user);setCred(lu,lw);enter(lu);
+    },function(){offlineLogin(li,lw,le,t);});
     return;
   }
   if(t.id==="lfp"){
@@ -88,17 +92,19 @@ document.getElementById("view").addEventListener("click",function(e){
     if(!fn||!ln){amsg(er,"Entrez votre prénom et votre nom.");return;}
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(si)){amsg(er,"Entrez une adresse e-mail valide.");return;}
     if(p1.length<8){amsg(er,"Le mot de passe doit contenir au moins 8 caractères.");return;}
-    if(!sb){amsg(er,noSb());return;}
-    amsg(er,"");t.disabled=true;freshNext=true;
+    amsg(er,"");t.disabled=true;
+    if(!sb||!navigator.onLine){offlineSignup(nm,si,p1,er,t);return;}
+    freshNext=true;
     sb.auth.signUp({email:si,password:p1,options:{data:{name:nm,school:""},emailRedirectTo:redirectUrl()}}).then(function(r){
+      if(r.error&&netErr(r.error)){offlineSignup(nm,si,p1,er,t);return;}
       t.disabled=false;
       if(r.error){freshNext=false;amsg(er,authErr(r.error));return;}
       var nu=r.data.user;
       if(nu&&nu.identities&&!nu.identities.length){freshNext=false;amsg(er,"Un compte existe déjà avec cet e-mail. Connectez-vous.");return;}
-      if(r.data.session){enter(userFrom(nu),true);return;}
+      if(r.data.session){var su=userFrom(nu);setCred(su,p1);enter(su,true);return;}
       freshNext=false;
-      amsg(er,"Compte créé. Un e-mail de confirmation vient de vous être envoyé : ouvrez-le pour activer votre compte, puis connectez-vous.",true);
-    },function(){t.disabled=false;freshNext=false;amsg(er,authErr(null));});
+      showDialog("Compte créé","Un e-mail de confirmation vient de vous être envoyé. Ouvrez-le pour activer votre compte, puis connectez-vous.","J’ai compris",function(){view="login";render();window.scrollTo(0,0);});
+    },function(){offlineSignup(nm,si,p1,er,t);});
     return;
   }
   if(t.id==="rsgo"){
@@ -119,7 +125,8 @@ document.getElementById("view").addEventListener("click",function(e){
   if(t.id==="cpw"){
     var cm=document.getElementById("cpm"),c0=document.getElementById("cp0").value,c1=document.getElementById("cp1").value,c2=document.getElementById("cp2").value;
     var cf=function(m){cm.className="err";cm.textContent=m;};
-    if(!sb){cf(noSb());return;}
+    if(ME&&ME.pending){cf("Finalisez d’abord votre compte (bouton « Finaliser » en haut de l’écran).");return;}
+    if(!sb||!navigator.onLine){cf("Le changement de mot de passe nécessite une connexion internet.");return;}
     if(!c0){cf("Entrez votre mot de passe actuel.");return;}
     if(c1.length<8){cf("Le nouveau mot de passe doit contenir au moins 8 caractères.");return;}
     if(c1!==c2){cf("Les deux mots de passe ne sont pas identiques.");return;}
@@ -130,6 +137,7 @@ document.getElementById("view").addEventListener("click",function(e){
         t.disabled=false;
         if(r2.error){cf(authErr(r2.error));return;}
         ["cp0","cp1","cp2"].forEach(function(i){var x=document.getElementById(i);if(x)x.value="";});
+        setCred(ME,c1);
         cm.className="err ok";cm.textContent="Mot de passe modifié.";
       });
     }).catch(function(){t.disabled=false;cf(authErr(null));});
@@ -138,6 +146,7 @@ document.getElementById("view").addEventListener("click",function(e){
   if(t.id==="lout"){doLogout();return;}
   if(t.id==="adel"){
     if(!confirm("Supprimer définitivement votre compte ainsi que toutes les classes, élèves et appels enregistrés, en ligne et sur cet appareil ? Pensez à faire une sauvegarde avant."))return;
+    if(ME.pending){var pg=ME;stopSync();removeUser(pg);view=ACC.users.length?"login":"signup";render();window.scrollTo(0,0);return;}
     if(!sb){alert(noSb());return;}
     t.disabled=true;
     sb.rpc("delete_my_account").then(function(r){

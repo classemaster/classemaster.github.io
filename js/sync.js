@@ -121,7 +121,7 @@ function initSync(){
     var s=r.data&&r.data.session;
     if(g!==sgen)return;
     if(!s||!s.user||s.user.id!==ME.id){setSync("Hors connexion : vos données restent sur cet appareil");return;}
-    who=ME.name;col={uid:s.user.id};setSync("Connexion en cours…");startSync();
+    if(ME.resync){delete ME.resync;saveAcc();}if(ME.pending&&ME.id===s.user.id){delete ME.pending;saveAcc();}updPend();who=ME.name;col={uid:s.user.id};setSync("Connexion en cours…");startSync();
   },function(){});
 }
 
