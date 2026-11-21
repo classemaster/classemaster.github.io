@@ -18,9 +18,20 @@ function persistDirty(){var k=dkey();if(!k)return;try{var a=Object.keys(dirty);i
 function loadDirty(){var k=dkey();if(!k)return;try{var a=JSON.parse(localStorage.getItem(k)||"[]");if(Array.isArray(a))a.forEach(function(id){if(typeof id==="string"&&!dirty[id])dirty[id]=Date.now();});}catch(e){}}
 
 function hasCls(c){return!!((c.students&&c.students.length)||Object.keys(c.records||{}).length);}
-function toRow(c,uid,ts){return{user_id:uid,id:c.id,name:c.name,subj:c.subj||"",students:c.students||[],records:c.records||{},notes:c.notes||{},ev:c.ev||[],ob:c.ob||[],th:c.th||{a:3,r:3},updated_at:new Date(ts).toISOString()};}
-function fromRow(v){return{id:v.id,name:v.name||"Classe",students:v.students||[],records:v.records||{},notes:v.notes||{},ev:v.ev||[],ob:v.ob||[],th:v.th||{a:3,r:3},subj:v.subj||""};}
-function sameCls(o,n){return JSON.stringify([o.name,o.students,o.records,o.notes||{},o.ev||[],o.ob||[],th(o),o.subj||""])===JSON.stringify([n.name,n.students,n.records,n.notes||{},n.ev||[],n.ob||[],th(n),n.subj||""]);}
+/* Cahier de textes, programme, carnet et appréciations : rangés dans la colonne « th » (clé « x »), sans changer la base */
+var XK=["cr","ct","pg","bc"];
+function xPack(c){var x={};XK.forEach(function(k){var v=c[k];if(v&&(Array.isArray(v)?v.length:Object.keys(v).length))x[k]=v;});return x;}
+function thRow(c){var o={},b=c.th||{a:3,r:3},k;for(k in b)o[k]=b[k];var x=xPack(c);if(Object.keys(x).length)o.x=x;return o;}
+function xUnpack(n){
+  var x=n.th&&n.th.x,t={},k;
+  if(!x)return n;
+  XK.forEach(function(q){if(x[q])n[q]=x[q];});
+  for(k in n.th)if(k!=="x")t[k]=n.th[k];
+  n.th=t;return n;
+}
+function toRow(c,uid,ts){return{user_id:uid,id:c.id,name:c.name,subj:c.subj||"",students:c.students||[],records:c.records||{},notes:c.notes||{},ev:c.ev||[],ob:c.ob||[],th:thRow(c),updated_at:new Date(ts).toISOString()};}
+function fromRow(v){return xUnpack({id:v.id,name:v.name||"Classe",students:v.students||[],records:v.records||{},notes:v.notes||{},ev:v.ev||[],ob:v.ob||[],th:v.th||{a:3,r:3},subj:v.subj||""});}
+function sameCls(o,n){return JSON.stringify([o.name,o.students,o.records,o.notes||{},o.ev||[],o.ob||[],th(o),o.subj||"",xPack(o)])===JSON.stringify([n.name,n.students,n.records,n.notes||{},n.ev||[],n.ob||[],th(n),n.subj||"",xPack(n)]);}
 
 function pushNow(){
   if(!col||!sb)return;

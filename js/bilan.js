@@ -27,9 +27,9 @@ function renderFiche(){
     rows+='<div class="li"><span><b>'+esc(fmt(k,true))+'</b><br><span class="sub">'+(v==="a"?"Absent"+(n.j===true?" · justifiée":n.j===false?" · non justifiée":""):"Retard")+(n.m?" · "+esc(n.m):"")+'</span></span><button style="color:var(--accent)" data-open="'+k+'">Voir</button></div>';
   });
   var al=alertTxt(c,o);
-  return'<button class="btn ghost" data-go="'+fb+'" style="margin-bottom:10px">← '+(fb==="classe"?"Retour à la classe":fb==="notes"?"Retour aux notes":fb==="suivi"?"Retour aux élèves à suivre":"Retour au bilan")+'</button><h1>'+esc(s.name)+'</h1><p class="sub">'+esc(c.name)+(c.subj?" · "+esc(c.subj):"")+(s.g==="F"?" · Fille":s.g==="M"?" · Garçon":"")+'</p>'+filterUI()+
+  return'<button class="btn ghost" data-go="'+fb+'" style="margin-bottom:10px">← '+(fb==="classe"?"Retour à la classe":fb==="notes"?"Retour aux notes":fb==="suivi"?"Retour aux élèves à suivre":fb==="carnet"?"Retour au carnet":"Retour au bilan")+'</button><h1>'+esc(s.name)+'</h1><p class="sub">'+esc(c.name)+(c.subj?" · "+esc(c.subj):"")+(s.g==="F"?" · Fille":s.g==="M"?" · Garçon":"")+'</p>'+filterUI()+
   '<div class="card"><h2>Taux de fréquentation</h2><div class="rate">'+fr(rate(o))+'</div><p class="sub" style="margin:0">'+o.n+" appel(s) · "+o.a+" absence(s) dont "+o.j+" justifiée(s) · "+o.r+" retard(s)</p>"+(al?'<p style="margin:8px 0 0"><span class="al" style="margin:0">⚠ '+al+"</span></p>":"")+"</div>"+
-  '<div class="card"><h2>Absences et retards</h2>'+(rows||'<p class="sub" style="margin:0">Aucune absence ni aucun retard sur cette période.</p>')+"</div>"+ficheNotes(c,s)+ficheDevoirs(c,s)+ficheObs(c,s);
+  '<div class="card"><h2>Absences et retards</h2>'+(rows||'<p class="sub" style="margin:0">Aucune absence ni aucun retard sur cette période.</p>')+"</div>"+ficheNotes(c,s)+ficheDevoirs(c,s)+ficheObs(c,s)+ficheCarnet(c,s);
 }
 
 function renderHist(){

@@ -1,5 +1,5 @@
 /* Navigation, en-tête et rendu principal */
-function navOf(v){return{mois:"hist",fiche:"hist",part:"compte",classe:"home",appel:"home",eleves:"home",notes:"home",eval:"home",horaires:"home",suivi:"home"}[v]||v;}
+function navOf(v){return{mois:"hist",fiche:"hist",part:"compte",classe:"home",appel:"home",eleves:"home",notes:"home",eval:"home",horaires:"home",suivi:"home",cahier:"home",carnet:"home"}[v]||v;}
 
 function header(){
   var s=document.getElementById("cls");
@@ -14,12 +14,12 @@ function render(){
   else if(!ME&&!GUEST&&view!=="login"&&view!=="signup")view=ACC.users.length?"login":"signup";
   var auth=view==="reset"||(!ME&&(!GUEST||view==="login"||view==="signup"));
   header();
-  document.querySelector("header").hidden=auth||view==="compte"||view==="search"||view==="home"||view==="classe"||view==="notes"||view==="eval"||view==="horaires"||view==="suivi";
+  document.querySelector("header").hidden=auth||view==="compte"||view==="search"||view==="home"||view==="classe"||view==="notes"||view==="eval"||view==="horaires"||view==="suivi"||view==="cahier"||view==="carnet";
   document.querySelector("nav").hidden=auth;
   document.getElementById("sync").hidden=auth;
   var el=document.getElementById("view");
-  var body=view==="home"?renderHome():view==="login"?renderLogin():view==="signup"?renderSignup():view==="reset"?renderReset():view==="appel"?renderAppel():view==="hist"?renderHist():view==="part"?renderPart():view==="mois"?renderMois():view==="fiche"?renderFiche():view==="classe"?renderClasse():view==="notes"?renderNotes():view==="horaires"?renderHoraires():view==="eval"?renderEval():view==="suivi"?renderSuivi():view==="search"?renderSearch():view==="compte"?renderCompte():renderEleves();
-  var bk='<button class="lnk" data-go="classe">← '+esc(cl().name)+'</button>';var pre={suivi:bk,horaires:bk,notes:bk,eval:'<button class="lnk" data-go="notes">← Notes</button>',appel:bk,eleves:bk,classe:'<button class="lnk" data-go="home">← Accueil</button>',mois:'<button class="lnk" data-go="hist">← Bilan</button>',part:'<button class="lnk" data-go="compte">← Compte</button>',hist:'<div class="bar"><button class="btn ghost" data-go="mois">Vue du mois</button></div>'};
+  var body=view==="home"?renderHome():view==="login"?renderLogin():view==="signup"?renderSignup():view==="reset"?renderReset():view==="appel"?renderAppel():view==="hist"?renderHist():view==="part"?renderPart():view==="mois"?renderMois():view==="fiche"?renderFiche():view==="classe"?renderClasse():view==="notes"?renderNotes():view==="horaires"?renderHoraires():view==="eval"?renderEval():view==="suivi"?renderSuivi():view==="cahier"?renderCahier():view==="carnet"?renderCarnet():view==="search"?renderSearch():view==="compte"?renderCompte():renderEleves();
+  var bk='<button class="lnk" data-go="classe">← '+esc(cl().name)+'</button>';var pre={cahier:bk,carnet:bk,suivi:bk,horaires:bk,notes:bk,eval:'<button class="lnk" data-go="notes">← Notes</button>',appel:bk,eleves:bk,classe:'<button class="lnk" data-go="home">← Accueil</button>',mois:'<button class="lnk" data-go="hist">← Bilan</button>',part:'<button class="lnk" data-go="compte">← Compte</button>',hist:'<div class="bar"><button class="btn ghost" data-go="mois">Vue du mois</button></div>'};
   el.innerHTML=(GUEST&&!auth?'<div class="gban"><span>Mode invité : vos données ne sont pas enregistrées. Connectez-vous pour les sauvegarder.</span><button class="btn ghost" data-go="login">Se connecter</button></div>':"")+(pre[view]||"")+body;
   if(view==="appel")applyQ();
   updPend();

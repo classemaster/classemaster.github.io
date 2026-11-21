@@ -21,6 +21,7 @@ document.getElementById("view").addEventListener("input",function(e){
   else if(t.id==="evd"){if(!t.value)return;ev.d=t.value;}
   else if(t.id==="evm"){var m=parseFloat(t.value);if(!(m>0))return;ev.m=m;}
   else if(t.id==="evk"){var k=parseFloat(t.value);if(!(k>=0))return;ev.k=k;}
+  else if(t.id==="evtr"){if(t.value)ev.tr=+t.value;else delete ev.tr;}
   else return;
   save();var st=document.getElementById("evs");if(st)st.textContent=evLine(ev,c);var sx=document.getElementById("evst");if(sx)sx.innerHTML=evStatsHTML(ev,c);
 });
@@ -56,7 +57,7 @@ document.getElementById("view").addEventListener("click",function(e){
     save();var y=window.scrollY;render();window.scrollTo(0,y);return;
   }
   var hf=t.closest("[data-fiche]");
-  if(hf){sel=hf.dataset.fiche;fb=view==="classe"||view==="notes"||view==="suivi"?view:"hist";view="fiche";render();window.scrollTo(0,0);return;}
+  if(hf){sel=hf.dataset.fiche;fb=view==="classe"||view==="notes"||view==="suivi"||view==="carnet"?view:"hist";view="fiche";render();window.scrollTo(0,0);return;}
   var hm=t.closest("[data-mo]");
   if(hm){mo=dstr(new Date(+mo.slice(0,4),+mo.slice(5,7)-1+(+hm.dataset.mo),1)).slice(0,7);render();return;}
   if(t.id==="lgin"){
@@ -205,9 +206,8 @@ document.getElementById("view").addEventListener("click",function(e){
   if(ho){date=ho.dataset.open;view="appel";render();window.scrollTo(0,0);return;}
   if(t.id==="sort"){c.students.sort(function(a,b){return a.name.localeCompare(b.name,"fr",{sensitivity:"base"})});save();render();return;}
   if(t.id==="add"){
-    var lines=document.getElementById("ta").value.split("\n").map(function(x){return x.trim()}).filter(Boolean);
-    lines.forEach(function(n){c.students.push({id:uid(),name:n,g:document.getElementById("dg").value});});
-    if(lines.length){save();render();}return;
+    var list=rowsToStudents(textRows(document.getElementById("ta").value),document.getElementById("dg").value);
+    if(list.length)addStudents(list);return;
   }
   if(t.dataset.del){
     var s=c.students.find(function(x){return x.id===t.dataset.del});
