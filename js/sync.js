@@ -2,7 +2,15 @@
 var sending={},pushed={},sgen=0,chan=null,hid=0;
 
 function setSync(t){document.getElementById("sync").textContent=(who?"Connecté : "+who+" · ":"")+t;}
-var SYNC_KO="Synchronisation impossible : vos données restent sur cet appareil";
+var SYNC_KO="Synchronisation impossible : vos données restent sur cet appareil",pullT=null;
+/* Détail technique de l’échec, affiché à la suite du message pour savoir quoi corriger */
+function syncKo(e){
+  var d="";
+  if(e){d=String(e.code||e.status||"");var m=String(e.message||"");if(m)d+=(d?" · ":"")+m;}
+  if(!navigator.onLine)d="pas d’internet";
+  setSync(SYNC_KO+(d?" ("+d.slice(0,140)+")":""));
+}
+function retryPull(mine,first){clearTimeout(pullT);pullT=setTimeout(function(){if(col===mine)pull(first);},15000);}
 
 /* Classes modifiées mais pas encore envoyées : conservées sur l’appareil pour ne rien perdre hors connexion */
 function dkey(){return KEY?KEY+"-dirty":"";}
@@ -25,13 +33,13 @@ function pushNow(){
     p.then(function(r){
       delete sending[id];
       if(col!==mine)return;
-      if(r.error){setSync(SYNC_KO);clearTimeout(timer);timer=setTimeout(pushNow,15000);return;}
+      if(r.error){syncKo(r.error);clearTimeout(timer);timer=setTimeout(pushNow,15000);return;}
       pushed[id]=ts;
       if(dirty[id]&&dirty[id]<=ts)delete dirty[id];
       persistDirty();
       if(dirty[id]){clearTimeout(timer);timer=setTimeout(pushNow,300);}
       else if(!Object.keys(dirty).length)setSync("Synchronisé entre vos appareils");
-    },function(){delete sending[id];if(col===mine){setSync(SYNC_KO);clearTimeout(timer);timer=setTimeout(pushNow,15000);}});
+    },function(e){delete sending[id];if(col===mine){syncKo(e);clearTimeout(timer);timer=setTimeout(pushNow,15000);}});
   });
 }
 
@@ -48,7 +56,7 @@ function pull(first){
   var t0=Date.now();
   sb.from("classes").select("*").then(function(r){
     if(col!==mine)return;
-    if(r.error){setSync(SYNC_KO);return;}
+    if(r.error){syncKo(r.error);retryPull(mine,first);return;}
     var ids={},ch=false;
     r.data.forEach(function(v){ids[v.id]=1;});
     if(!r.data.length&&first){
@@ -76,7 +84,7 @@ function pull(first){
     persistDirty();
     if(Object.keys(dirty).length)pushNow();
     finSync(ch);
-  },function(){if(col===mine)setSync(SYNC_KO);});
+  },function(e){if(col===mine){syncKo(e);retryPull(mine,first);}});
 }
 
 /* Changement reçu en direct depuis un autre appareil */
@@ -109,7 +117,7 @@ function startSync(){
 function stopSync(){
   sgen++;
   if(chan&&sb){try{sb.removeChannel(chan);}catch(e){}}
-  chan=null;col=null;dirty={};sending={};pushed={};clearTimeout(timer);who="";
+  chan=null;col=null;dirty={};sending={};pushed={};clearTimeout(timer);clearTimeout(pullT);who="";
 }
 function initSync(){
   stopSync();var g=sgen;
