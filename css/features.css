@@ -44,3 +44,43 @@ nav{left:50%;right:auto;transform:translateX(-50%);width:min(420px,calc(100% - 2
 .site-link{text-align:center;font-size:.8rem;margin:24px 8px 96px}
 .site-link a{color:var(--mute);text-decoration:none}
 .site-link a:hover{text-decoration:underline}
+
+/* Graphiques de progression */
+.gx{display:block;width:100%;height:auto;max-height:230px}
+.gx .gl{stroke:var(--line);stroke-width:1}
+.gx .g10{stroke:var(--mute);stroke-width:1;stroke-dasharray:4 4;opacity:.7}
+.gx .gt{fill:var(--mute);font-size:9.5px}
+.gx .gv{fill:var(--ink);font-size:9.5px;font-weight:700}
+.gx .gp{fill:none;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.gx .gp.s1,.gleg i.s1{stroke:var(--accent);background:var(--accent)}
+.gx .gp.s2,.gleg i.s2{stroke:var(--r);background:var(--r)}
+.gx .gp.s2{stroke-dasharray:5 4}
+.gx .gd.s1{fill:var(--accent);stroke:var(--surface);stroke-width:1.5}
+.gx .gd.s2{fill:var(--r);stroke:var(--surface);stroke-width:1.5}
+.gleg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.8rem;color:var(--mute);font-weight:700;margin-top:6px}
+.gleg i{display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle}
+
+/* Carnet de correspondance */
+.c-obs{background:var(--rbg);color:var(--r)}
+.c-conv{background:var(--abg);color:var(--a)}
+.c-inf{background:var(--soft);color:var(--accent)}
+.c-fel{background:var(--pbg);color:var(--p)}
+.cr-i{padding:10px 0;border-bottom:1px solid var(--line)}
+.cr-i:last-child{border-bottom:0;padding-bottom:0}
+.card>.cr-i:last-child{padding-bottom:0}
+.cr-i p{margin:6px 0 8px;white-space:pre-wrap;overflow-wrap:anywhere}
+.cr-h{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.cr-b{display:flex;gap:6px;flex-wrap:wrap}
+.cr-b button{border:1px solid var(--line);background:var(--surface);color:var(--accent);border-radius:999px;padding:6px 12px;min-height:36px;font-weight:700;font-size:.82rem;cursor:pointer}
+.cr-b button.cr-v[aria-pressed=true]{background:var(--pbg);color:var(--p);border-color:transparent}
+.cr-i.vu p{opacity:.8}
+
+/* Cahier de textes : progression du programme */
+.pgv{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.pgv b{font-size:2rem;line-height:1.1;color:var(--accent)}
+.pgv span{color:var(--mute);font-weight:700;font-size:.9rem}
+.pgb{height:12px;border-radius:999px;background:var(--soft);overflow:hidden;margin-top:8px}
+.pgb i{display:block;height:100%;background:var(--p);border-radius:999px;min-width:0}
+.pgl{display:flex;gap:10px;align-items:flex-start;flex:1;min-width:0;cursor:pointer}
+.pgl input{width:22px;height:22px;flex:0 0 auto;margin-top:2px}
+.pgl span{min-width:0;overflow-wrap:anywhere}
