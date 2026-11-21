@@ -9,9 +9,15 @@ Site : https://classemaster.github.io/
 3. **Adresses autorisées** : Authentication > URL Configuration
    - Site URL : `https://classemaster.github.io/`
    - Redirect URLs : `https://classemaster.github.io/**`
-4. **E-mails** : Authentication > Providers > Email. Laissez « Confirm email » activé (recommandé) ou désactivez-le pour une inscription immédiate.
+4. **E-mails** : Authentication > Providers > Email. **Désactivez « Confirm email »** : les comptes sont alors actifs immédiatement, sans e-mail de confirmation (l'application connecte l'utilisateur dès l'inscription).
 5. **Google (facultatif)** : Authentication > Providers > Google, puis renseigner l'ID et le secret client Google Cloud.
    Tant que ce n'est pas fait, le bouton affiche « La connexion avec Google n'est pas activée ».
 6. Publier les fichiers sur le dépôt GitHub `classemaster.github.io`.
 
 Les anciens comptes locaux : à la première ouverture, l'utilisateur se connecte (ou crée son compte) avec la même adresse e-mail et retrouve ses données de l'appareil, qui sont ensuite envoyées en ligne.
+
+## Mode hors ligne
+- L'application s'installe en cache au premier chargement (`sw.js`) et s'ouvre ensuite sans internet. La bibliothèque Supabase est hébergée dans `js/vendor/supabase.js`.
+- **Après chaque mise à jour du site**, changez `VERSION` en haut de `sw.js` (ex. `cm-v3`) pour que les téléphones récupèrent les nouveaux fichiers.
+- Sans internet, on peut créer un compte et se connecter : les données restent sur l'appareil. Au retour d'internet, un bandeau « Finaliser » demande le mot de passe une fois pour créer le compte Supabase et envoyer les données.
+- Si « Confirm email » est activé, l'e-mail de confirmation n'est envoyé qu'à ce moment-là.
