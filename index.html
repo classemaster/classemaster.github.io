@@ -47,13 +47,14 @@
   <button role="tab" data-v="compte" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c0-4 3.4-6.500 7.500-6.500s7.500 2.500 7.500 6.500"/></svg><span>Compte</span></button>
 </nav>
 <p class="sync" id="sync"></p>
+<div id="pend"></div>
 <div id="view"></div>
 <p class="site-link"><a href="https://classemaster.github.io/" target="_blank" rel="noopener">Classe Master · classemaster.github.io</a></p>
 </main>
 <noscript><p style="padding:24px;font-family:sans-serif">Classe Master nécessite JavaScript. Activez-le puis rechargez la page : <a href="https://classemaster.github.io/">classemaster.github.io</a></p></noscript>
 <div id="lock" class="lock" hidden><div class="card"><h1 style="text-transform:none">Classe Master</h1><p class="sub">Entrez votre code pour continuer.</p><input id="lp" class="pin" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="8" placeholder="4 à 8 chiffres" aria-label="Code"><p class="sub" id="lm"></p><button class="btn" id="lgo" style="width:100%">Déverrouiller</button><button class="lnk" id="lfg" style="margin-top:10px">Code oublié ?</button></div></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous" defer></script>
+<script src="js/vendor/supabase.js" defer></script>
 <script src="js/state.js" defer></script>
 <script src="js/supabase.js" defer></script>
 <script src="js/utils.js" defer></script>
@@ -72,5 +73,6 @@
 <script src="js/observations.js" defer></script>
 <script src="js/events.js" defer></script>
 <script src="js/main.js" defer></script>
+<script>if("serviceWorker" in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>
 </body>
 </html>
