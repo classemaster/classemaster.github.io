@@ -1,8 +1,8 @@
 /* Classe Master : fonctionnement hors ligne.
    Les fichiers de l’application sont gardés sur l’appareil ; les échanges avec Supabase ne passent jamais par ici.
    Changez VERSION à chaque mise à jour pour forcer le rafraîchissement du cache. */
-var VERSION="cm-v3";
-var CORE=["./", "index.html", "manifest.webmanifest", "css/features.css", "css/style.css", "css/theme.css", "js/appel.js", "js/auth.js", "js/bilan.js", "js/classes.js", "js/devoirs.js", "js/events.js", "js/export.js", "js/horaires.js", "js/main.js", "js/nav.js", "js/notes.js", "js/observations.js", "js/recherche.js", "js/state.js", "js/suivi.js", "js/supabase.js", "js/sync.js", "js/utils.js", "js/vendor/supabase.js", "icons/apple-touch-icon.png", "icons/favicon-32.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/icon-maskable.svg", "icons/icon.svg"];
+var VERSION="cm-v4";
+var CORE=["./", "index.html", "manifest.webmanifest", "css/features.css", "css/style.css", "css/theme.css", "js/appel.js", "js/bulletins.js", "js/cahier.js", "js/carnet.js", "js/import.js", "js/moyennes.js", "js/progression.js", "js/auth.js", "js/bilan.js", "js/classes.js", "js/devoirs.js", "js/events.js", "js/export.js", "js/horaires.js", "js/main.js", "js/nav.js", "js/notes.js", "js/observations.js", "js/recherche.js", "js/state.js", "js/suivi.js", "js/supabase.js", "js/sync.js", "js/utils.js", "js/vendor/supabase.js", "icons/apple-touch-icon.png", "icons/favicon-32.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/icon-maskable.svg", "icons/icon.svg"];
 self.addEventListener("install",function(e){
   e.waitUntil(caches.open(VERSION).then(function(c){return Promise.all(CORE.map(function(u){return c.add(u).catch(function(){});}));}).then(function(){return self.skipWaiting();}));
 });
