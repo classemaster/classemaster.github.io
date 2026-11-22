@@ -1,0 +1,64 @@
+/* Graphiques de la page Bilan : les jetons --ch-* des graphiques suivent le thème de l'application (clair / sombre).
+   Les styles des graphiques eux-mêmes sont dans charts.css. */
+.gr{
+  --ch-font:inherit;
+  --ch-card:var(--surface);--ch-bg:var(--bg);
+  --ch-ink:var(--ink);--ch-ink-inv:var(--surface);--ch-on-accent:#0C1424;
+  --ch-muted:var(--mute);--ch-line:var(--line);--ch-soft:var(--soft);--ch-accent:var(--accent);
+  --ch-tip-bg:var(--surface);--ch-tip-line:var(--line);
+  --ch-pos:var(--p);--ch-pos-bg:var(--pbg);--ch-neg:var(--a);--ch-neg-bg:var(--abg);
+  --ch-r-sm:10px;--ch-r-md:16px;--ch-r-lg:20px;
+  --ch-gap-1:4px;--ch-gap-2:8px;--ch-gap-3:12px;--ch-gap-4:16px;--ch-gap-5:24px;
+  --ch-shadow-card:var(--shadow);--ch-shadow-tip:0 10px 24px rgba(18,33,59,.22);
+  display:grid;gap:12px;min-width:0;font-family:inherit;
+}
+.gr>*{min-width:0}
+.gr-note{margin:0;font-size:.85rem}
+.gr-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.gr-kpi{background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:14px;min-width:0}
+.gr-kpi-l{font-size:.8rem;color:var(--mute);font-weight:600}
+.gr-kpi-v{display:flex;align-items:baseline;gap:5px;margin-top:4px;font-size:1.7rem;font-weight:700;line-height:1.1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.gr-kpi-v small{font-size:.8rem;font-weight:600;letter-spacing:0;color:var(--mute)}
+.gr-kpi-f{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:8px}
+.gr-kpi-d{display:inline-block;white-space:nowrap;padding:2px 9px;border-radius:999px;font-size:.74rem;font-weight:700;background:var(--pbg);color:var(--p)}
+.gr-kpi-d.neg{background:var(--abg);color:var(--a)}
+.gr-kpi-s{width:100%;max-width:120px}
+.gr-card{min-width:0;overflow:hidden}
+.gr-card .sub{margin:-4px 0 14px;font-size:.85rem}
+
+/* Liste des élèves (feuille du bas) */
+.gr-tap .ch-hit,.gr-tap .ch-cell,.gr-tap .dc-seg,.gr-tap .dc-item,.gr-tap [data-gr=gauge] svg{cursor:pointer}
+.gr-sh{position:fixed;inset:0;z-index:1000;display:flex;align-items:flex-end;justify-content:center}
+.gr-sh-b{position:absolute;inset:0;background:rgba(12,20,36,.5)}
+.gr-sh-p{position:relative;width:min(520px,100%);max-height:78vh;overflow:auto;overscroll-behavior:contain;background:var(--surface);color:var(--ink);border-radius:24px 24px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px));box-shadow:0 -12px 40px rgba(0,0,0,.25)}
+.gr-sh-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+.gr-sh-h h3{margin:0;font-size:1.05rem;font-weight:700}
+.gr-sh-x{flex:none;width:40px;height:40px;border:0;border-radius:50%;background:var(--soft);color:var(--accent);font-size:1rem;font-weight:700;cursor:pointer}
+.gr-sh-l{display:grid;gap:8px}
+
+/* Mois des graphiques, boutons d'export, phrase de lecture */
+.gr-per{position:sticky;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:12;box-shadow:0 6px 16px rgba(22,32,46,.10);display:flex;gap:2px;padding:3px;overflow-x:auto;scrollbar-width:none;border:1px solid var(--line);border-radius:999px;background:var(--surface);touch-action:pan-x;-webkit-overflow-scrolling:touch}
+.gr-per::-webkit-scrollbar{display:none}
+.gr-per button{flex:none;white-space:nowrap;padding:8px 14px;border:0;border-radius:999px;background:transparent;color:var(--mute);font:inherit;font-size:.82rem;font-weight:600;cursor:pointer}
+.gr-per button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.gr-per button:focus-visible,.gr-tools button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.gr-card{position:relative}
+.gr-card h2{padding-right:128px}
+.gr-tools{position:absolute;top:14px;right:14px;display:flex;gap:4px}
+.gr-tools button{padding:4px 9px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--mute);font:inherit;font-size:.7rem;font-weight:600;cursor:pointer}
+.gr-tools button:hover{color:var(--ink);background:var(--soft)}
+.gr-read{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:.84rem;line-height:1.5;color:var(--mute)}
+.gr-read[hidden]{display:none}
+.gr-read b{color:var(--ink);font-weight:600}
+
+/* Écran large (vue PC) : la page Bilan s'élargit et les graphiques passent deux par rangée */
+@media screen and (min-width:900px){
+  main.wide .gr{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+  main.wide .gr-card{display:flex;flex-direction:column}
+  main.wide .gr-card>[data-gr]{flex:1 1 auto;min-height:0}
+  main.wide .gr>.gr-note,main.wide .gr>.gr-per,main.wide .gr>.gr-kpis{grid-column:1/-1}
+  main.wide .gr-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+  main.wide .gr-per{max-width:520px}
+}
+.gr-kpi-d.none{background:var(--soft);color:var(--mute);font-weight:600;white-space:normal}
+.gr-empty{margin:0;padding:18px 4px;font-size:.88rem;line-height:1.45;color:var(--mute)}

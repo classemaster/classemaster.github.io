@@ -84,3 +84,99 @@ nav{left:50%;right:auto;transform:translateX(-50%);width:min(420px,calc(100% - 2
 .pgl{display:flex;gap:10px;align-items:flex-start;flex:1;min-width:0;cursor:pointer}
 .pgl input{width:22px;height:22px;flex:0 0 auto;margin-top:2px}
 .pgl span{min-width:0;overflow-wrap:anywhere}
+
+/* Alertes aux parents */
+.pm-btn{margin-top:8px;border:0;border-radius:999px;background:var(--soft);color:var(--accent);font-weight:700;font-size:.85rem;min-height:40px;padding:6px 14px;cursor:pointer}
+.pm-li{flex-wrap:wrap}
+.pm-li .pm-tel{flex:1 1 100%;min-width:0}
+.pm-act{display:flex;gap:4px;flex:none}
+.pm-l{display:block;font-size:.8rem;font-weight:700;color:var(--mute);margin:10px 0 4px}
+#pm-tel{width:100%}
+.pm-b{display:flex;gap:8px;flex-wrap:wrap}
+.pm-b .btn{flex:1 1 0;min-width:96px}
+input[type=tel]{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;min-height:44px;min-width:0}
+
+/* Comparaison de deux mois */
+.cm-sel{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cm-sel label{display:grid;gap:4px;font-size:.8rem;font-weight:700;color:var(--mute);min-width:0}
+.cm-sel select{width:100%;min-width:0}
+.cm-k{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:baseline}
+.cm-k.a,.cm-bar.a{background:var(--mute)}
+.cm-k.b,.cm-bar.b{background:var(--accent)}
+.cm-r{padding:10px 0;border-top:1px solid var(--line)}
+.cm-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+.cm-d{font-weight:700;font-size:.85rem;border-radius:999px;padding:1px 9px;white-space:nowrap}
+.cm-d.cm-g{background:var(--pbg);color:var(--p)}.cm-d.cm-b{background:var(--abg);color:var(--a)}.cm-d.cm-n{background:var(--soft);color:var(--accent)}
+span.cm-g{color:var(--p)}span.cm-b{color:var(--a)}
+.cm-l{display:grid;grid-template-columns:72px 1fr;align-items:center;gap:8px;margin-top:4px;font-variant-numeric:tabular-nums;font-size:.85rem}
+.cm-t{height:10px;border-radius:999px;background:var(--soft);overflow:hidden}
+.cm-bar{display:block;height:100%;border-radius:999px}
+.cm-s{font-size:.95rem;margin:14px 0 6px}
+
+/* Choix du mode jour / nuit */
+.seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg3 button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:14px;min-height:44px;font-weight:700;cursor:pointer;padding:6px 4px}
+.seg3 button[aria-pressed=true]{background:var(--accent);color:var(--surface);border-color:var(--accent)}
+input.ns-bad{border-color:var(--a) !important;background:var(--abg) !important}
+
+/* Boutons de la classe : un bouton principal et une grille de tuiles alignées */
+.cl-act{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+.cl-main{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:10px;min-height:56px;font-size:1.05rem;padding:12px 20px}
+.cl-tile{display:flex;align-items:center;gap:10px;min-height:58px;padding:10px 14px;border-radius:18px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:var(--shadow);font-weight:700;font-size:.95rem;text-align:left;cursor:pointer;min-width:0}
+.cl-tile svg{flex:none;color:var(--accent)}
+.cl-tile span,.cl-main span{min-width:0;line-height:1.2}
+.cl-tile:active{transform:scale(.98)}
+.cl-tile:focus-visible,.cl-main:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* Adaptation à tous les écrans : petits téléphones, tablettes, ordinateurs */
+@media (max-width:359px){
+  main{padding-left:10px;padding-right:10px}
+  .cl-act{grid-template-columns:1fr}
+  .cl-t b{font-size:1.1rem}.cl-t span{font-size:.66rem}
+  .cm-sel{grid-template-columns:1fr}
+}
+@media (min-width:700px){
+  main{max-width:860px}
+  .cl-act{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .cl-main{grid-column:1/-1}
+  .hm-cls{grid-template-columns:repeat(3,1fr)}
+  nav{width:min(520px,calc(100% - 24px))}
+}
+@media (min-width:1100px){
+  main{max-width:1000px}
+  .hm-cls{grid-template-columns:repeat(4,1fr)}
+}
+@media (max-height:480px) and (orientation:landscape){nav{padding:3px 6px;gap:0}nav button{flex-direction:row;justify-content:center;gap:6px;padding:5px 0}nav svg{width:19px;height:19px}main{padding-bottom:72px}}
+img,svg,canvas,video{max-width:100%}
+table{max-width:100%}
+
+/* Mémoire de l'appareil et rappels de sauvegarde (v17) */
+.sto-m{height:10px;border-radius:999px;background:var(--line,#d9dee8);overflow:hidden}
+.sto-m i{display:block;height:100%;border-radius:999px;background:var(--p,#1E3F8A)}
+.sto-m i.mid{background:#c77700}
+.sto-m i.hi{background:#c0392b}
+.gban-w{border-left:4px solid #c77700}
+.gban-w .btn{margin-left:6px}
+
+/* Bilan de fin d'année (v18) */
+.an-s{max-width:10.5rem;font:inherit;padding:4px 6px}
+.an-b{display:grid;grid-template-columns:6.5rem 1fr 2rem;align-items:center;gap:8px;margin:4px 0;font-size:.9rem}
+.an-b b{text-align:right}
+
+/* Graphiques de progression (v19) */
+.pg{min-height:120px}
+.pg-x{display:flex;gap:16px;margin-top:6px}
+
+/* Vue PC (écran large) : la navigation passe en colonne sur le côté gauche (v25) */
+@media screen and (min-width:900px){
+  nav{left:16px;right:auto;top:50%;bottom:auto;transform:translateY(-50%);width:76px;max-width:none;flex-direction:column;gap:4px;padding:8px 6px;border-radius:28px}
+  nav button{flex:none;flex-direction:column;gap:3px;padding:8px 0}
+  nav svg{width:23px;height:23px}
+  main{max-width:744px;padding-left:104px;padding-bottom:40px}
+  main.wide{max-width:1284px}
+}
+@media screen and (min-width:900px) and (max-height:480px){
+  nav{padding:5px 6px;gap:2px}
+  nav button{padding:5px 0}
+  nav svg{width:20px;height:20px}
+}

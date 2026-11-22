@@ -1,0 +1,21 @@
+/* Impression du Bilan : fond blanc, sans menus ni boutons, en-tête avec la classe et la période */
+.prt-head{display:none}
+@media print{
+  @page{size:A4;margin:12mm}
+  html,body{background:#fff !important;color:#12213B;-webkit-print-color-adjust:exact;print-color-adjust:exact;overflow:visible !important;height:auto !important}
+  header,nav,#sync,#pend,.site-link,.flt,.no-prt,.gban,.btn,.bar,.gr-sh,.pm-btn,#pm-sh,.ch-btn,.ch-tip,.ch-cursor{display:none !important}
+  main{max-width:none !important;padding:0 !important;margin:0 !important}
+  .prt-head{display:block;border-bottom:2px solid #1E3F8A;margin:0 0 12px;padding:0 0 8px}
+  .prt-head h1{font-size:18pt;margin:0 0 4px;text-transform:none}
+  .prt-head p{margin:0;font-size:10pt;color:#5d6b7e}
+  .card,.hm-card,.gr-card,.gr-kpi{box-shadow:none !important;break-inside:avoid;page-break-inside:avoid}
+  .scroll{overflow:visible !important}
+  table{font-size:9.5pt}
+  tr{break-inside:avoid}
+  .gr-note{display:none}
+  .gr-card h2{padding-right:0 !important}
+  .gr{display:block !important;column-count:2;column-gap:10px}
+  .gr>*{break-inside:avoid;margin:0 0 10px !important}
+  .gr-kpis{column-span:all;break-inside:avoid}
+  h2.hm-h{break-after:avoid}
+}

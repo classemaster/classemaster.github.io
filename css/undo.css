@@ -1,0 +1,9 @@
+/* Message « Annuler » et corbeille */
+#toast{position:fixed;left:12px;right:12px;bottom:calc(92px + env(safe-area-inset-bottom,0px));max-width:420px;margin:0 auto;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px 12px 16px;border-radius:16px;background:var(--ink);color:var(--bg);font-size:.92rem;font-weight:600;box-shadow:0 12px 30px rgba(10,18,34,.35);animation:toast-in .22s ease}
+#toast[hidden]{display:none}
+#toast button{flex:none;min-height:40px;padding:6px 14px;border:0;border-radius:12px;background:var(--p);color:#fff;font:inherit;font-weight:700;cursor:pointer}
+#toast button[hidden]{display:none}
+@keyframes toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.tr-li{align-items:center;gap:10px}
+@media (prefers-reduced-motion:reduce){#toast{animation:none}}
+@media print{#toast{display:none}}
