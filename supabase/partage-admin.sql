@@ -56,7 +56,7 @@ security definer
 set search_path = ''
 as $$
   select coalesce(
-    jsonb_agg(r.snapshot || jsonb_build_object('updated_at', r.updated_at)
+    jsonb_agg((r.snapshot - 'dis') || jsonb_build_object('updated_at', r.updated_at)
               order by r.snapshot->>'subj', r.snapshot->>'cls', r.snapshot->>'teacher'),
     '[]'::jsonb)
   from (

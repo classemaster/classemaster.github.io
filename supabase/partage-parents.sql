@@ -41,7 +41,7 @@ stable
 security definer
 set search_path = ''
 as $$
-  select s.snapshot || jsonb_build_object('updated_at', s.updated_at)
+  select (s.snapshot - 'dis') || jsonb_build_object('updated_at', s.updated_at)
   from public.parent_shares s
   where s.token = p_token
 $$;

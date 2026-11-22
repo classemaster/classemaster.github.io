@@ -14,7 +14,9 @@ Site : https://classemaster.github.io/
    Tant que ce n'est pas fait, le bouton affiche « La connexion avec Google n'est pas activée ».
 6. **Suivi parent (lien en lecture seule)** : Supabase > SQL Editor > New query > coller le contenu de `partage-parents.sql` > Run. À faire une seule fois ; sans cela, le lien parent affiche une erreur.
 7. **Dossiers élèves et lien unique famille** : SQL Editor > New query > coller le contenu de `partage-admin.sql` > Run. À faire une seule fois, après l'étape 6 ; sans cela, la page `admin.html` affiche une erreur (les liens par matière continuent de marcher). Ensuite, l'administrateur ouvre `https://classemaster.github.io/admin.html`.
-8. Publier les fichiers sur le dépôt GitHub `classemaster.github.io`.
+8. **Tableau de bord administrateur (v46)** : SQL Editor > New query > coller le contenu de `tableau-bord-admin.sql` > Run. À faire après `acces-admin.sql` ; si la v45 l'avait déjà exécuté, le réexécuter pour la v46 (rien n'est perdu). Sans cela, le tableau de bord affiche « Statistiques indisponibles » et les départs ne sont pas enregistrés.
+9. **Enseignants, discipline, fin de période (v47)** : SQL Editor > New query > coller le contenu de `vie-scolaire-admin.sql` > Run. À faire après l'étape 8 ; peut être réexécuté sans risque. Sans cela, les onglets Enseignants, Discipline et Fin de période affichent « Indisponible », et les décisions de passage ne sont pas enregistrées. Ce script retire aussi les incidents de discipline des données lues par les parents.
+10. Publier les fichiers sur le dépôt GitHub `classemaster.github.io`.
 
 Les anciens comptes locaux : à la première ouverture, l'utilisateur se connecte (ou crée son compte) avec la même adresse e-mail et retrouve ses données de l'appareil, qui sont ensuite envoyées en ligne.
 
