@@ -73,9 +73,9 @@ function ficheProg(c,s){
   var me=E.map(function(e){var v=n20(e,e.s[s.id]);return{v:v,t:e.t+" : "+nf(v)+" / 20"};});
   var cl2=E.map(function(e){var v=evAvg20(e,c);return{v:v,t:"Classe, "+e.t+" : "+nf(v)+" / 20"};});
   var S=[{n:s.name,cls:"s1",pts:me,lab:true},{n:"Moyenne de la classe",cls:"s2",pts:cl2}];
-  var first=me[0].v,last=me[me.length-1].v,d=last-first;
+  var first=me[0].v,last=me[me.length-1].v,tr=stTrend(me.map(function(p){return p.v;}));
   var alt="Notes sur 20 de "+s.name+" : "+me.map(function(p,i){return lab[i]+" "+nf(p.v);}).join(", ");
-  return'<div class="card"><h2>Progression</h2>'+pgChart(lab,S,alt,"progression-"+s.name)+'<p class="sub" style="margin:8px 0 0">'+(Math.abs(d)<1?"Notes stables":d>0?"En progrès":"En baisse")+" : de "+nf(first)+" à "+nf(last)+" sur 20 depuis la première évaluation.</p></div>";
+  return'<div class="card"><h2>Progression</h2>'+pgChart(lab,S,alt,"progression-"+s.name)+'<p class="sub" style="margin:8px 0 0">'+stTrendTxt(tr)+" ("+stSg(tr.d)+" pt sur l’année, d’après toutes les notes). Première note "+nf(first)+", dernière "+nf(last)+" sur 20.</p></div>";
 }
 
 /* Page Notes : moyenne de la classe évaluation après évaluation */
