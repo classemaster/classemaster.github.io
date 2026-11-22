@@ -36,7 +36,7 @@ document.getElementById("cls").addEventListener("change",function(e){qs="";
   render();
 });
 document.getElementById("dt").addEventListener("change",function(e){if(e.target.value){date=e.target.value;render();}});
-document.querySelector("nav").addEventListener("click",function(e){var b=e.target.closest("button");if(b){view=b.dataset.v;render();window.scrollTo(0,0);if(view==="search"){var g=document.getElementById("gq");if(g)g.focus();}}});
+document.querySelector("nav").addEventListener("click",function(e){var b=e.target.closest("button");if(b&&b.dataset.v){view=b.dataset.v;render();window.scrollTo(0,0);if(view==="search"){var g=document.getElementById("gq");if(g)g.focus();}}});
 
 document.getElementById("view").addEventListener("click",function(e){
   var t=e.target,c=cl();

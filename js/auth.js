@@ -64,7 +64,7 @@ function eyeBtn(id){return'<button type="button" class="eye" data-eye="'+id+'" a
 function guestLink(){return'<p class="afoot gl"><button class="alink" data-guest="1">'+(GUEST?"Revenir en mode invité":"Continuer sans compte")+'</button></p>';}
 function authShell(title,body,nog){
   return'<div class="authpage"><div class="ascroll"><div class="acard"><div class="ahead"><i class="c1"></i><i class="c2"></i><h1><span>'+title+'</span></h1></div><div class="apanel">'+
-  (nog?'':'<button type="button" class="gbtn" id="gbtn">'+GLOGO+'<span>Se connecter avec Google</span></button><div class="aor">ou</div>')+body+'</div></div></div></div>';
+  (nog?'':'<div class="arole" role="group" aria-label="Type de connexion"><span aria-current="page">Enseignant</span><a href="parent.html">Parent</a></div><button type="button" class="gbtn" id="gbtn">'+GLOGO+'<span>Se connecter avec Google</span></button><div class="aor">ou</div>')+body+'</div></div></div></div>';
 }
 function legacyNote(){return ACC.users.some(function(u){return u.hash})?'<p class="aterms">Mise à jour : les comptes sont maintenant en ligne. Connectez-vous avec la même adresse e-mail (ou créez le compte) pour retrouver vos données.</p>':"";}
 function renderReset(){
