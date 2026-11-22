@@ -39,6 +39,15 @@ h1{font-size:1.5rem;margin:8px 0 2px}h2{font-size:1.05rem;margin:0 0 8px}
 .sj{display:flex;justify-content:space-between;gap:10px;align-items:center;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;padding:10px 0;cursor:pointer}
 .sj:first-of-type{border-top:0}.sj small{display:block;color:var(--mute)}
 .sj b{white-space:nowrap}
+.role{display:flex;gap:4px;background:var(--soft);border-radius:999px;padding:4px;margin:6px 0 10px}
+.role a,.role span{flex:1;text-align:center;padding:9px 10px;border-radius:999px;font-weight:700;font-size:.92rem;text-decoration:none;color:var(--mute)}
+.role span{background:var(--accent);color:var(--bg)}
+.fld{display:block;font-weight:700;font-size:.9rem;margin-bottom:6px}
+.in{width:100%;min-height:48px;padding:0 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font:inherit;font-size:1.1rem;letter-spacing:.08em;text-transform:uppercase}
+.in:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.err2{color:var(--a);font-size:.9rem;min-height:1.2em;margin:8px 0 0}
+.vm.go{background:var(--accent);color:var(--bg);margin-top:10px}
+.lnk{background:none;border:0;padding:6px 2px;font:inherit;font-size:.85rem;color:var(--accent);text-decoration:underline;cursor:pointer}
 [hidden]{display:none!important}
 footer{color:var(--mute);font-size:.8rem;text-align:center;margin-top:18px}
 </style>
@@ -94,13 +103,17 @@ footer{color:var(--mute);font-size:.8rem;text-align:center;margin-top:18px}
   });
   function foot(u){return'<footer>Mis à jour le '+fu(u)+' · Classe Master<br>Lecture seule, réservé à la famille de l’élève.</footer>';}
 
-  var q=new URLSearchParams(location.search),tok=q.get("t"),code=(q.get("c")||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
 
-  /* ---- Lien famille : toutes les matières de l'élève (?c=CODE) ---- */
-  if(code||q.has("c")){
-    if(code.length<10||code.length>40)return fail("Lien invalide","Demandez un nouveau lien à l’établissement ou à l’enseignant.");
-    rpc("get_family_shares",{p_code:code}).then(function(L){
-      if(!Array.isArray(L)||!L.length)return fail("Lien introuvable ou désactivé","Demandez un nouveau lien à l’établissement ou à l’enseignant.");
+  /* ---- Espace parents : un ou plusieurs enfants, chacun avec son code famille ---- */
+  var LSK="cm-parent-codes",LSS="cm-parent-sel",MAXK=12;
+  function saved(){try{var a=JSON.parse(localStorage.getItem(LSK)||"[]");return Array.isArray(a)?a.filter(function(x){return x&&typeof x.c==="string"&&x.c.length>=10&&x.c.length<=40;}).slice(0,MAXK):[];}catch(e){return[];}}
+  function store(a){try{localStorage.setItem(LSK,JSON.stringify(a));}catch(e){}}
+  function selGet(){try{return localStorage.getItem(LSS)||"";}catch(e){return"";}}
+  function selSet(c){try{localStorage.setItem(LSS,c);}catch(e){}}
+  function cleanCode(s){return String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");}
+  function loadCode(c){return rpc("get_family_shares",{p_code:c}).then(function(L){return Array.isArray(L)?L:[];});}
+  function famName(L){var cnt={};L.forEach(function(d){if(d.name)cnt[d.name]=(cnt[d.name]||0)+1;});return Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a]||b.length-a.length;})[0]||"Élève";}
+  function renderFamily(L,box){
       /* nom affiché : le plus fréquent, à égalité le plus long */
       var cnt={};L.forEach(function(d){if(d.name)cnt[d.name]=(cnt[d.name]||0)+1;});
       var name=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a]||b.length-a.length;})[0]||"Élève";
@@ -120,7 +133,7 @@ footer{color:var(--mute);font-size:.8rem;text-align:center;margin-top:18px}
       h+='<section role="tabpanel" id="pn0" aria-labelledby="tb0">'+ov+'</section>';
       L.forEach(function(d,i){h+='<section role="tabpanel" id="pn'+(i+1)+'" aria-labelledby="tb'+(i+1)+'" hidden><h2 style="margin:14px 0 2px;font-size:1.2rem">'+esc(lab[i])+'</h2><p class="sub">'+esc(d.name||"")+(d.cls?" · "+esc(d.cls):"")+(d.teacher?" · "+esc(d.teacher):"")+'</p>'+body(d)+'<p class="sub" style="text-align:center">Mis à jour le '+fu(d.updated_at)+'</p></section>';});
       h+=foot(last);
-      m.innerHTML=h;document.title="Suivi de "+name+" · Classe Master";
+      box.innerHTML=h;document.title="Suivi de "+name+" · Classe Master";
       function show(i){
         for(var j=0;j<=L.length;j++){
           var on=j===i,t=document.getElementById("tb"+j),pn=document.getElementById("pn"+j);
@@ -129,13 +142,81 @@ footer{color:var(--mute);font-size:.8rem;text-align:center;margin-top:18px}
         var cur=document.getElementById("tb"+i);if(cur&&cur.scrollIntoView)cur.scrollIntoView({block:"nearest",inline:"center"});
         window.scrollTo(0,0);
       }
-      m.addEventListener("click",function(e){var b=e.target.closest("[data-tab]");if(b)show(+b.dataset.tab);});
+      box.addEventListener("click",function(e){var b=e.target.closest("[data-tab]");if(b)show(+b.dataset.tab);});
+  }
+  function roleSwitch(){return'<div class="role" role="group" aria-label="Type de connexion"><a href="index.html">Enseignant</a><span aria-current="page">Parent</span></div>';}
+  function loginView(msg,canCancel){
+    m.innerHTML=roleSwitch()+'<h1>'+(canCancel?'Ajouter un enfant':'Espace parents')+'</h1><p class="sub">Entrez le code famille remis par l’école pour voir le suivi de votre enfant.</p>'+
+      '<div class="card"><label class="fld" for="pc">Code famille</label><input class="in" id="pc" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40" placeholder="Ex. : K7M2Q9XA4TBC">'+
+      '<p class="err2" id="pe" role="alert">'+esc(msg||"")+'</p><button type="button" class="vm go" data-login="1">'+(canCancel?'Ajouter':'Se connecter')+'</button>'+
+      (canCancel?'<button type="button" class="vm" data-cancel="1">Annuler</button>':'<p class="sub" style="margin-top:10px">Plusieurs enfants ? Connectez-vous avec le premier code, puis utilisez « + Ajouter un enfant » pour les autres.</p>')+'</div>'+
+      '<footer>Classe Master · réservé aux familles des élèves</footer>';
+    var i=document.getElementById("pc");if(i)i.focus();
+  }
+  var CACHE={};
+  function parentSpace(){
+    var kids=saved();
+    if(!kids.length)return loginView("",false);
+    m.innerHTML='<p class="sub" style="text-align:center;margin-top:40px">Chargement…</p>';
+    Promise.all(kids.map(function(k){return loadCode(k.c).then(function(L){CACHE[k.c]=L;return{c:k.c,L:L};},function(){return{c:k.c,L:null};});})).then(showSpace);
+  }
+  function showSpace(R){
+    var cur=selGet();if(!R.some(function(x){return x.c===cur;}))cur=R[0].c;selSet(cur);
+    var sel=R.filter(function(x){return x.c===cur;})[0],n=R.length;
+    function lab(x,i){return x.L&&x.L.length?famName(x.L):"Enfant "+(i+1);}
+    var h=roleSwitch()+'<p class="sub">Espace parents · '+n+' enfant'+(n>1?'s':'')+' sur cet appareil</p>'+
+      '<div class="tabs" role="tablist" aria-label="Mes enfants">'+R.map(function(x,i){return'<button type="button" role="tab" aria-selected="'+(x.c===cur)+'" data-kid="'+esc(x.c)+'">'+esc(lab(x,i))+'</button>';}).join("")+
+      (n<MAXK?'<button type="button" data-addkid="1">+ Ajouter un enfant</button>':'')+'</div><div id="fam"></div>'+
+      '<footer><button type="button" class="lnk" data-rm="'+esc(cur)+'">Retirer cet enfant</button> · <button type="button" class="lnk" data-logout="1">Se déconnecter</button></footer>';
+    m.innerHTML=h;
+    var box=document.getElementById("fam");
+    if(sel.L===null)box.innerHTML='<div class="err"><h2>Impossible de charger le suivi</h2><p class="sub">Vérifiez votre connexion internet puis réessayez.</p><button type="button" class="vm" data-retry="1">Réessayer</button></div>';
+    else if(!sel.L.length)box.innerHTML='<div class="err"><h2>Code introuvable ou désactivé</h2><p class="sub">Demandez un nouveau code à l’établissement, puis retirez celui-ci.</p></div>';
+    else renderFamily(sel.L,box);
+  }
+  document.addEventListener("click",function(e){
+    var t=e.target.closest&&e.target.closest("[data-kid],[data-addkid],[data-login],[data-cancel],[data-rm],[data-logout],[data-retry],[data-savekid]");if(!t)return;
+    var d=t.dataset;
+    if(d.kid){selSet(d.kid);parentSpace();window.scrollTo(0,0);return;}
+    if(d.addkid){loginView("",true);window.scrollTo(0,0);return;}
+    if(d.cancel||d.retry){parentSpace();return;}
+    if(d.logout){if(confirm("Se déconnecter ? Les codes enregistrés sur cet appareil seront effacés."))  {store([]);selSet("");parentSpace();window.scrollTo(0,0);}return;}
+    if(d.rm){store(saved().filter(function(x){return x.c!==d.rm;}));selSet("");parentSpace();window.scrollTo(0,0);return;}
+    if(d.savekid){var c0=cleanCode(d.savekid),a0=saved();if(c0&&!a0.some(function(x){return x.c===c0;}))a0.push({c:c0});store(a0.slice(0,MAXK));selSet(c0);location.replace("parent.html");return;}
+    if(d.login){
+      var inp=document.getElementById("pc"),er=document.getElementById("pe"),c=cleanCode(inp&&inp.value);
+      function bad(s){if(er)er.textContent=s;}
+      if(c.length<10||c.length>40)return bad("Ce code n’a pas la bonne forme. Vérifiez-le sur la carte remise par l’école.");
+      t.disabled=true;bad("");
+      loadCode(c).then(function(L){
+        if(!L.length){t.disabled=false;return bad("Code introuvable ou désactivé. Vérifiez-le ou demandez-en un nouveau.");}
+        var a=saved();if(!a.some(function(x){return x.c===c;})){if(a.length>=MAXK){t.disabled=false;return bad("Nombre maximum d’enfants atteint.");}a.push({c:c});}
+        store(a);selSet(c);CACHE[c]=L;parentSpace();window.scrollTo(0,0);
+      }).catch(function(){t.disabled=false;bad("Impossible de se connecter. Vérifiez votre connexion internet.");});
+    }
+  });
+  document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target&&e.target.id==="pc"){var b=document.querySelector("[data-login]");if(b)b.click();}});
+
+  var q=new URLSearchParams(location.search),tok=q.get("t"),code=cleanCode(q.get("c"));
+
+  /* ---- Lien famille direct (?c=CODE) : un seul enfant, comme avant ---- */
+  if(code||q.has("c")){
+    if(code.length<10||code.length>40)return fail("Lien invalide","Demandez un nouveau lien à l’établissement ou à l’enseignant.");
+    loadCode(code).then(function(L){
+      if(!L.length)return fail("Lien introuvable ou désactivé","Demandez un nouveau lien à l’établissement ou à l’enseignant.");
+      var box=document.createElement("div");m.innerHTML="";m.appendChild(box);renderFamily(L,box);
+      var has=saved().some(function(x){return x.c===code;});
+      m.insertAdjacentHTML("afterbegin",'<p class="sub" style="text-align:right;margin:0 0 4px"><a class="lnk" href="parent.html">Espace parents</a></p>');
+      if(!has)m.insertAdjacentHTML("beforeend",'<button type="button" class="vm" data-savekid="'+esc(code)+'">Enregistrer cet enfant sur cet appareil</button>');
     }).catch(function(){fail("Impossible de charger le suivi","Vérifiez votre connexion internet puis réessayez.");});
     return;
   }
 
+  /* ---- Ni code ni jeton : connexion parent ---- */
+  if(!tok)return parentSpace();
+
   /* ---- Lien d'une seule matière (?t=jeton) : inchangé ---- */
-  if(!tok||tok.length<24)return fail("Lien invalide","Demandez un nouveau lien à l’enseignant.");
+  if(tok.length<24)return fail("Lien invalide","Demandez un nouveau lien à l’enseignant.");
   rpc("get_parent_share",{p_token:tok}).then(function(d){
     if(!d||!d.name)return fail("Lien introuvable ou désactivé","Demandez un nouveau lien à l’enseignant.");
     var h='<h1>'+esc(d.name)+'</h1><p class="sub">'+esc(d.cls)+(d.subj?" · "+esc(d.subj):"")+(d.teacher?" · "+esc(d.teacher):"")+(d.school?" · "+esc(d.school):"")+'</p>'+body(d)+foot(d.updated_at);
