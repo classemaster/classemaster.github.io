@@ -2,7 +2,7 @@
 function loadAcc(){try{var o=JSON.parse(localStorage.getItem("appel-comptes-v1"));if(o&&Array.isArray(o.users))return o;}catch(e){}return{users:[],cur:null};}
 function saveAcc(){try{localStorage.setItem("appel-comptes-v1",JSON.stringify(ACC));return true;}catch(e){return false;}}
 function blank(){var id=uid();return{cur:id,classes:[{id:id,name:"Ma classe",students:[],records:{}}]};}
-function hasLegacy(){try{var o=JSON.parse(localStorage.getItem("appel-matin-v1"));return!!(o&&o.classes&&o.classes.some(function(c){return(c.students&&c.students.length)||Object.keys(c.records||{}).length;}));}catch(e){return false;}}
+function hasLegacy(){try{var o=JSON.parse(kvGet("appel-matin-v1"));return!!(o&&o.classes&&o.classes.some(function(c){return(c.students&&c.students.length)||Object.keys(c.records||{}).length;}));}catch(e){return false;}}
 
 var PK="appel-pin-v1";
 function hashPin(v){   /* ancien format (sans sel) : gardé pour reconnaître les codes déjà enregistrés */
@@ -138,7 +138,7 @@ function enter(u,fresh){
   IS_ADMIN=false;initSync();render();window.scrollTo(0,0);checkAdmin();
 }
 function removeUser(u){
-  try{localStorage.removeItem(u.key);localStorage.removeItem(u.key+"-dirty");localStorage.removeItem(u.key+"-base");localStorage.removeItem(u.key+"-trash");["-shh","-lastbk","-lastsync","-bk0","-bksnz"].forEach(function(x){localStorage.removeItem(u.key+x);});}catch(e){}
+  try{kvWipe(u.key);}catch(e){}
   ACC.users=ACC.users.filter(function(x){return x.id!==u.id});
   if(ACC.cur===u.id)ACC.cur=null;
   saveAcc();
@@ -219,7 +219,8 @@ function offlineLogin(email,pw,el,btn){
 
 /* Bandeau : compte à finaliser / synchronisation à reprendre */
 function needOnline(){return!!ME&&!!(ME.pending||ME.resync);}
-function updPend(){
+function updPend(){pendCore();hookRun("pend");}   /* les bandeaux supplémentaires s’ajoutent par hookOn("pend") */
+function pendCore(){
   var el=document.getElementById("pend");if(!el)return;
   if(!needOnline()||view==="reset"){el.innerHTML="";return;}
   if(!navigator.onLine){el.innerHTML=ME.pending?'<div class="gban"><span>Compte créé hors ligne : vos données sont sur cet appareil. Finalisez-le dès que vous avez internet.</span></div>':"";return;}

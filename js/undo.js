@@ -4,11 +4,11 @@ var KINDS={ev:"Évaluation",ob:"Observation",cr:"Message du carnet",ct:"Séance 
 
 function clone(x){return JSON.parse(JSON.stringify(x));}
 function tkey(){return KEY?KEY+"-trash":"";}
-function tLoad(){var k=tkey(),a;if(!k)return[];try{a=JSON.parse(localStorage.getItem(k)||"[]");}catch(e){a=[];}return Array.isArray(a)?a:[];}
+function tLoad(){var k=tkey(),a;if(!k)return[];try{a=JSON.parse(kvGet(k)||"[]");}catch(e){a=[];}return Array.isArray(a)?a:[];}
 function tSave(a){
   var k=tkey();if(!k)return;
-  try{if(a.length)localStorage.setItem(k,JSON.stringify(a));else localStorage.removeItem(k);}
-  catch(e){try{localStorage.setItem(k,JSON.stringify(a.slice(0,8)));}catch(e2){}}   /* mémoire pleine : on garde les plus récents */
+  try{if(a.length)kvSet(k,JSON.stringify(a));else kvDel(k);}
+  catch(e){try{kvSet(k,JSON.stringify(a.slice(0,8)));}catch(e2){}}   /* mémoire pleine : on garde les plus récents */
 }
 function tPurge(a){var lim=Date.now()-TRASH_DAYS*864e5;return a.filter(function(x){return x&&x.ts>lim;}).slice(0,TRASH_MAX);}
 function trashAdd(kind,label,cid,data){

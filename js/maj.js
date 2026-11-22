@@ -23,7 +23,8 @@
     document.body.appendChild(d);
     document.getElementById("majgo").onclick=function(){
       try{if(typeof local==="function")local();}catch(e){}   /* enregistre ce qui est en cours avant de recharger */
-      location.reload();
+      var go=function(){location.reload();};
+      try{Promise.resolve(typeof idbFlush==="function"&&idbFlush()).then(go,go);setTimeout(go,3000);}catch(e){go();}
     };
     document.getElementById("majno").onclick=function(){dismissed=true;shown=false;d.remove();};
   }

@@ -46,10 +46,7 @@ function renderAnnee(){
 function anCard(c){
   return'<div class="card"><h2>Bilan de fin d’année</h2><p class="sub" style="margin-top:0">Moyenne annuelle de la classe, répartition des notes et propositions de passage en classe supérieure.</p><button class="btn" data-go="annee">Ouvrir le bilan</button></div>';
 }
-(function(){
-  var base=renderNotes;
-  renderNotes=function(){var h=base.apply(this,arguments),c=cl();return c.students.length?h+anCard(c):h;};
-})();
+hookOn("notes",function(h){var c=cl();return c.students.length?h+anCard(c):h;});
 
 /* Exports */
 function anRows(c){

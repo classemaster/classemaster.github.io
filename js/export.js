@@ -56,7 +56,8 @@ function importJSON(file){
   };
   fr.readAsText(file);
 }
-function renderPart(){
+function renderPart(){return hookPipe("part",partCore());}   /* compléments par hookOn("part") */
+function partCore(){
   var f=renderPartFull();
   return'<h1>Sauvegarde et partage</h1><p class="sub">Gardez vos données en sécurité, partagez une classe ou imprimez un bilan.</p>'+(ME?f:f.slice(f.indexOf('<div class="card"><h2>Recevoir des données</h2>')))+(ME?trashCard():"");
 }

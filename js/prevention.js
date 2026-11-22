@@ -11,6 +11,7 @@ function stoUsed(fresh){
   if(!fresh&&stoMemo!==null&&Date.now()-stoMemo.t<20000)return stoMemo.v;
   var n=0,i,k;
   try{for(i=0;i<localStorage.length;i++){k=localStorage.key(i);n+=k.length+(localStorage.getItem(k)||"").length;}}catch(e){}
+  if(IDB.ok)n+=idbSize();
   stoMemo={t:Date.now(),v:n};return n;
 }
 function stoPct(fresh){return Math.min(100,Math.round(stoUsed(fresh)/STO_QUOTA*100));}
@@ -26,7 +27,7 @@ function stoFail(){
 }
 function stoOk(){STO_KO=false;stoMemo=null;if(typeof updPend==="function")updPend();}
 
-function stoSize(n){return n>=1e6?(n/1e6).toFixed(1).replace(".",",")+" Mo":Math.max(1,Math.round(n/1000))+" Ko";}
+function stoSize(n){return n>=1e9?(n/1e9).toFixed(1).replace(".",",")+" Go":n>=1e6?(n/1e6).toFixed(1).replace(".",",")+" Mo":Math.max(1,Math.round(n/1000))+" Ko";}
 function stoArch(){
   return D.classes.filter(isArch).map(function(c){return{c:c,n:JSON.stringify(c).length};}).sort(function(a,b){return b.n-a.n;});
 }
@@ -70,28 +71,20 @@ function bkDate(t){return new Date(t).toLocaleDateString("fr-FR",{day:"numeric",
 function bkAgo(t){var d=Math.floor((Date.now()-t)/864e5);return d<=0?"aujourd’hui":d===1?"hier":"il y a "+d+" jours";}
 
 /* Un envoi réussi de toutes les classes compte comme une sauvegarde en ligne */
-(function(){
-  var base=setSync;
-  setSync=function(t){
-    base.apply(this,arguments);
-    if(t==="Synchronisé entre vos appareils"&&Date.now()-lastSyncT>600000){lastSyncT=Date.now();pkSet("-lastsync",lastSyncT);}
-    if(t==="Synchronisé entre vos appareils"&&typeof shKick==="function")shKick(3000);
-  };
-})();
+hookOn("sync",function(t){
+  if(t==="Synchronisé entre vos appareils"&&Date.now()-lastSyncT>600000){lastSyncT=Date.now();pkSet("-lastsync",lastSyncT);}
+  if(t==="Synchronisé entre vos appareils"&&typeof shKick==="function")shKick(3000);
+});
 
 /* ---- Bandeaux (sous la barre de synchronisation) ---- */
-(function(){
-  var base=updPend;
-  updPend=function(){
-    base.apply(this,arguments);
+hookOn("pend",function(){
     var el=document.getElementById("pend");if(!el||!ME||view==="reset")return;
     var calm=view==="home"||view==="compte"||view==="part",h="";
     if(STO_KO)h+='<div class="gban gban-w" role="alert"><span><b>Mémoire de l’appareil pleine.</b> Vos dernières saisies ne sont pas enregistrées ici'+(col?" (elles restent envoyées à votre compte en ligne tant que la connexion fonctionne)":"")+'. Libérez de l’espace maintenant.</span><button class="btn ghost" data-pk="go">Libérer</button></div>';
     else if(calm&&stoPct()>=STO_WARN*100)h+='<div class="gban gban-w"><span>Mémoire de l’appareil utilisée à '+stoPct()+' %. Libérez de l’espace avant qu’elle soit pleine.</span><button class="btn ghost" data-pk="go">Libérer</button></div>';
     if(calm&&bkDue())h+='<div class="gban gban-w"><span>Aucune sauvegarde depuis '+bkDays()+' jours. Si le téléphone est perdu ou réinitialisé, vos classes disparaissent.</span><button class="btn ghost" data-pk="go">Sauvegarder</button><button class="btn ghost" data-pk="snz">Plus tard</button></div>';
     if(h)el.innerHTML+=h;
-  };
-})();
+});
 document.getElementById("pend").addEventListener("click",function(e){
   var b=e.target.closest("[data-pk]");if(!b)return;
   if(b.dataset.pk==="go"){view="part";render();window.scrollTo(0,0);}
@@ -114,13 +107,10 @@ function stoCard(){
   h+='<p class="sub" id="stomsg" role="status" style="margin:8px 0 0"></p></div>';
   return h;
 }
-(function(){
-  var base=renderPart;
-  renderPart=function(){
-    var h=base.apply(this,arguments),m='<h3 class="sec-t">Sauvegarder</h3>';
-    return ME&&h.indexOf(m)>=0?h.replace(m,m+stoCard()):h;
-  };
-})();
+hookOn("part",function(h){
+  var m='<h3 class="sec-t">Sauvegarder</h3>';
+  return ME&&h.indexOf(m)>=0?h.replace(m,m+stoCard()):h;
+});
 document.getElementById("view").addEventListener("click",function(e){
   var a=e.target.closest("[data-stoa]");
   if(a){stoPurge(a.dataset.stoa);return;}

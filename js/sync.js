@@ -3,7 +3,7 @@ var sending={},pushed={},sgen=0,chan=null,hid=0;
 /* Fusion entre appareils : rv = version en ligne connue de chaque classe, bases = dernière version commune, cf = conflits récents */
 var rv={},bases={},cf={},baseT=null;
 
-function setSync(t){document.getElementById("sync").textContent=(who?"Connecté : "+who+" · ":"")+t;}
+function setSync(t){document.getElementById("sync").textContent=(who?"Connecté : "+who+" · ":"")+t;hookRun("sync",t);}
 var SYNC_KO="Synchronisation impossible : vos données restent sur cet appareil",pullT=null;
 /* Détail technique de l’échec, affiché à la suite du message pour savoir quoi corriger */
 function syncKo(e){
@@ -16,8 +16,8 @@ function retryPull(mine,first){clearTimeout(pullT);pullT=setTimeout(function(){i
 
 /* Classes modifiées mais pas encore envoyées : conservées sur l’appareil pour ne rien perdre hors connexion */
 function dkey(){return KEY?KEY+"-dirty":"";}
-function persistDirty(){var k=dkey();if(!k)return;try{var a=Object.keys(dirty);if(a.length)localStorage.setItem(k,JSON.stringify(a));else localStorage.removeItem(k);}catch(e){if(typeof stoFail==="function")stoFail(e);}}
-function loadDirty(){var k=dkey();if(!k)return;try{var a=JSON.parse(localStorage.getItem(k)||"[]");if(Array.isArray(a))a.forEach(function(id){if(typeof id==="string"&&!dirty[id])dirty[id]=Date.now();});}catch(e){}}
+function persistDirty(){var k=dkey();if(!k)return;try{var a=Object.keys(dirty);if(a.length)kvSet(k,JSON.stringify(a));else kvDel(k);}catch(e){if(typeof stoFail==="function")stoFail(e);}}
+function loadDirty(){var k=dkey();if(!k)return;try{var a=JSON.parse(kvGet(k)||"[]");if(Array.isArray(a))a.forEach(function(id){if(typeof id==="string"&&!dirty[id])dirty[id]=Date.now();});}catch(e){}}
 
 function hasCls(c){return!!((c.students&&c.students.length)||Object.keys(c.records||{}).length);}
 /* Cahier de textes, programme, carnet et appréciations : rangés dans la colonne « th » (clé « x »), sans changer la base */
@@ -37,10 +37,10 @@ function sameCls(o,n){return JSON.stringify([o.name,o.students,o.records,o.notes
 
 /* Dernière version commune de chaque classe, gardée sur l’appareil pour fusionner après un travail hors connexion */
 function bkey(){return KEY?KEY+"-base":"";}
-function loadBases(){var k=bkey();if(!k)return;try{var o=JSON.parse(localStorage.getItem(k)||"{}");if(o&&typeof o==="object"&&!Array.isArray(o))bases=o;}catch(e){}}
+function loadBases(){var k=bkey();if(!k)return;try{var o=JSON.parse(kvGet(k)||"{}");if(o&&typeof o==="object"&&!Array.isArray(o))bases=o;}catch(e){}}
 function persistBases(){
-  clearTimeout(baseT);
-  baseT=setTimeout(function(){var k=bkey();if(!k)return;try{localStorage.setItem(k,JSON.stringify(bases));}catch(e){if(typeof stoFail==="function")stoFail(e);}},400);
+  var k=bkey();if(!k)return;
+  try{var b=bases;kvSet(k,function(){return JSON.stringify(b);});}catch(e){if(typeof stoFail==="function")stoFail(e);}   /* l’écriture est regroupée par idb.js */
 }
 var CKEYS=["name","subj","students","records","notes","ev","ob","th"].concat(XK);
 function canon(c){return JSON.parse(JSON.stringify(fromRow(toRow(c,"",0))));}
@@ -125,16 +125,34 @@ function finSync(ch){
   if(!Object.keys(dirty).length)setSync("Synchronisé entre vos appareils");
 }
 
-/* Lecture complète des classes en ligne. first : première connexion de cette session. */
+/* Lecture des classes en ligne, en plusieurs petites requêtes :
+   1) la liste légère (identifiant + date de version) de toutes les classes ;
+   2) puis seulement les classes dont la version a changé, PULL_N à la fois.
+   Une classe déjà à jour n’est donc plus retéléchargée à chaque reprise. first : première connexion de cette session. */
+var PULL_N=4;
 function pull(first){
   var mine=col;if(!mine||!sb)return;
   var t0=Date.now();
-  sb.from("classes").select("*").then(function(r){
+  function ko(e){if(col===mine){syncKo(e);retryPull(mine,first);}}
+  sb.from("classes").select("id,updated_at").then(function(r){
     if(col!==mine)return;
-    if(r.error){syncKo(r.error);retryPull(mine,first);return;}
+    if(r.error){ko(r.error);return;}
+    var list=r.data||[],need=[],rows=[];
+    list.forEach(function(v){if(!(rv[v.id]&&Date.parse(v.updated_at)===Date.parse(rv[v.id])))need.push(v.id);});
+    (function more(a){
+      if(a>=need.length){apply(list,rows);return;}
+      if(need.length>PULL_N)setSync("Synchronisation… "+Math.min(a+PULL_N,need.length)+" classes sur "+need.length);
+      sb.from("classes").select("*").in("id",need.slice(a,a+PULL_N)).then(function(r2){
+        if(col!==mine)return;
+        if(r2.error){ko(r2.error);return;}
+        rows=rows.concat(r2.data||[]);more(a+PULL_N);
+      },ko);
+    })(0);
+  },ko);
+  function apply(list,rows){
     var ids={},ch=false;
-    r.data.forEach(function(v){ids[v.id]=1;});
-    if(!r.data.length&&first){
+    list.forEach(function(v){ids[v.id]=1;});
+    if(!list.length&&first){
       /* Compte vide en ligne : on envoie ce qui existe sur l’appareil */
       D.classes.forEach(function(c){if(hasCls(c))dirty[c.id]=Date.now();});
       persistDirty();
@@ -152,11 +170,11 @@ function pull(first){
       ch=true;                                                              /* supprimée ailleurs, ou classe vide */
     });
     D.classes=keep;
-    r.data.forEach(function(v){if(adopt(v))ch=true;});
+    rows.forEach(function(v){if(adopt(v))ch=true;});
     persistDirty();persistBases();
     if(Object.keys(dirty).length)pushNow();
     finSync(ch);
-  },function(e){if(col===mine){syncKo(e);retryPull(mine,first);}});
+  }
 }
 
 /* Changement reçu en direct depuis un autre appareil */

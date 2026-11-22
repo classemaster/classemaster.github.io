@@ -70,7 +70,8 @@ function shPush(c,s){
     return r;
   });
 }
-/* Envoi des seuls résumés modifiés, en une requête par paquet de 40 */
+/* Envoi des seuls résumés modifiés, par paquets limités en nombre et en taille */
+var SH_MAX=300000;
 function shSweep(){
   if(!ME||!shOn()||!navigator.onLine)return;
   if(shBusy){shAgain=true;return;}
@@ -92,12 +93,16 @@ function shSweep(){
     else{shFail++;shPend=true;shNext=Date.now()+Math.min(shFail,5)*60000;}
     if(shAgain){shAgain=false;shSweep();}
   }
-  (function next(a){
-    if(a>=rows.length){done(true);return;}
-    sb.from("parent_shares").upsert(rows.slice(a,a+40),{onConflict:"token"}).then(function(r){
+  var batches=[],cur=[],sz=0;   /* paquets de 40 résumés au plus ET d’environ 300 Ko au plus (les résumés d’historique complet sont plus gros) */
+  rows.forEach(function(r,i){var n=JSON.stringify(r).length;if(cur.length&&(cur.length>=40||sz+n>SH_MAX)){batches.push(cur);cur=[];sz=0;}cur.push(i);sz+=n;});
+  if(cur.length)batches.push(cur);
+  (function next(b){
+    if(b>=batches.length){done(true);return;}
+    var ix=batches[b];
+    sb.from("parent_shares").upsert(ix.map(function(i){return rows[i];}),{onConflict:"token"}).then(function(r){
       if(r.error){done(false);return;}
-      hs.slice(a,a+40).forEach(function(p){shH[p[0]]=p[1];});shHSave();
-      next(a+40);
+      ix.forEach(function(i){shH[hs[i][0]]=hs[i][1];});shHSave();
+      next(b+1);
     },function(){done(false);});
   })(0);
 }
@@ -220,10 +225,7 @@ document.getElementById("view").addEventListener("click",function(e){
   })(0);
 });
 /* Mise à jour automatique : quelques secondes après chaque enregistrement, au retour d'internet, et par reprise toutes les minutes si un envoi est en attente */
-(function(){
-  var base=save;
-  save=function(){var r=base.apply(this,arguments);shKick(4000);return r;};
-})();
+hookOn("saved",function(){shKick(4000);});
 window.addEventListener("online",function(){shKick(2000,true);});
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&shPend)shKick(3000);});
 setInterval(function(){if(shPend&&!shBusy&&Date.now()>=shNext)shSweep();},60000);
