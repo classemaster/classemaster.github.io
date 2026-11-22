@@ -9,14 +9,17 @@ document.getElementById("view").addEventListener("click",function(e){
   }
   var eb=t.closest("[data-ev]");
   if(eb){evid=eb.dataset.ev;view="eval";render();window.scrollTo(0,0);return;}
-  if(t.id==="delev"&&confirm("Supprimer cette évaluation ?")){c.ev=evs(c).filter(function(x){return x.id!==evid});save();view="notes";render();window.scrollTo(0,0);}
+  if(t.id==="delev"&&confirm("Supprimer cette évaluation ?")){var ev0=evs(c).find(function(x){return x.id===evid;});delItem(c,"ev",evid,ev0?ev0.t:"Évaluation");view="notes";render();window.scrollTo(0,0);}
 });
 document.getElementById("view").addEventListener("input",function(e){
   if(view!=="eval")return;
   var t=e.target,c=cl(),ev=evs(c).find(function(x){return x.id===evid});if(!ev)return;
   if(t.dataset.ns){
     var v=t.value.trim().replace(",",".");
-    if(v==="")delete ev.s[t.dataset.ns];else{var n=parseFloat(v);if(isNaN(n))return;ev.s[t.dataset.ns]=n;}
+    if(v==="")delete ev.s[t.dataset.ns];else{var n=Number(v);
+      if(isNaN(n)||n<0||n>ev.m){t.setAttribute("aria-invalid","true");t.classList.add("ns-bad");var sm=document.getElementById("evs");if(sm)sm.textContent="Note non enregistrée : elle doit être comprise entre 0 et "+nf(ev.m)+".";return;}
+      ev.s[t.dataset.ns]=n;}
+    t.removeAttribute("aria-invalid");t.classList.remove("ns-bad");
   }else if(t.id==="evt")ev.t=t.value;
   else if(t.id==="evd"){if(!t.value)return;ev.d=t.value;}
   else if(t.id==="evm"){var m=parseFloat(t.value);if(!(m>0))return;ev.m=m;}
@@ -145,6 +148,7 @@ document.getElementById("view").addEventListener("click",function(e){
     return;
   }
   if(t.id==="lout"){doLogout();return;}
+  if(t.id==="adminbtn"){location.href="admin.html";return;}
   if(t.id==="adel"){
     if(!confirm("Supprimer définitivement votre compte ainsi que toutes les classes, élèves et appels enregistrés, en ligne et sur cet appareil ? Pensez à faire une sauvegarde avant."))return;
     if(ME.pending){var pg=ME;stopSync();removeUser(pg);view=ACC.users.length?"login":"signup";render();window.scrollTo(0,0);return;}
@@ -167,18 +171,19 @@ document.getElementById("view").addEventListener("click",function(e){
   if(t.id==="pon"){
     var pv=document.getElementById("np").value.replace(/\D/g,""),pm=document.getElementById("pmsg");
     if(!/^\d{4,8}$/.test(pv)){pm.textContent="Le code doit contenir 4 à 8 chiffres.";return;}
-    hashPin(pv).then(function(h){try{localStorage.setItem(PK,h);}catch(e){pm.textContent="Impossible d’enregistrer le code sur cet appareil.";return;}render();document.getElementById("pmsg").textContent="Code activé.";});
+    pinMake(pv).then(function(h){try{localStorage.setItem(PK,h);pinGood();}catch(e){pm.textContent="Impossible d’enregistrer le code sur cet appareil.";return;}render();document.getElementById("pmsg").textContent="Code activé.";});
     return;
   }
   if(t.id==="poff"){
     var pw=document.getElementById("np").value.replace(/\D/g,""),pn=document.getElementById("pmsg");
-    hashPin(pw).then(function(h){if(h===pinSet()){try{localStorage.removeItem(PK);}catch(e){}render();document.getElementById("pmsg").textContent="Code désactivé.";}else pn.innerHTML='Code incorrect. <button class="lnk" id="poff2">Code oublié ? Désactiver quand même</button>';});
+    pinCheck(pw).then(function(ok){if(ok){try{localStorage.removeItem(PK);}catch(e){}render();document.getElementById("pmsg").textContent="Code désactivé.";}else pn.innerHTML='Code incorrect. <button class="lnk" id="poff2">Code oublié ? Désactiver quand même</button>';});
     return;
   }
   if(t.id==="poff2"){if(confirm("Désactiver le verrouillage sans saisir le code ?")){try{localStorage.removeItem(PK);}catch(e){}render();document.getElementById("pmsg").textContent="Code désactivé.";}return;}
   if(t.id==="qx"){qs="";var qi=document.getElementById("q");if(qi){qi.value="";qi.focus();}applyQ();return;}
   if(t.id==="pnow"){lock();return;}
   if(t.id==="exp"){exportCSV();return;}
+  if(t.id==="prt"){bilanPrint();return;}
   if(t.id==="rpdf"||t.id==="rsvg"){
     var R=reportData(),nm="bilan-"+cl().name.replace(/[^\w-]+/g,"_"),mf=function(m){var e=document.getElementById("rmsg");if(e)e.textContent=m;};
     if(t.id==="rpdf")saveFile(nm+".pdf",reportPDF(R),"application/pdf",mf);else saveFile(nm+".svg",reportSVG(R),"image/svg+xml",mf);
@@ -194,7 +199,7 @@ document.getElementById("view").addEventListener("click",function(e){
   }
   if(t.id==="ipt"){var pv=document.getElementById("pst").value.trim();if(pv)importJSON(pv);return;}
   if(t.id==="allp"){var r2=rec(c,date);c.students.forEach(function(s){if(!r2[s.id])r2[s.id]="p";});save();render();return;}
-  if(t.id==="rst"){if(confirm("Effacer l’appel de ce jour ?")){delete c.records[date];save();render();}return;}
+  if(t.id==="rst"){if(confirm("Effacer l’appel de ce jour ?")){delAppel(c,date);render();}return;}
   if(t.id==="cp"){
     var txt=summary(c,date);
     try{navigator.clipboard.writeText(txt).then(function(){t.textContent="Message copié";},function(){t.textContent="Sélectionnez le texte ci-dessus";});}
@@ -211,10 +216,10 @@ document.getElementById("view").addEventListener("click",function(e){
   }
   if(t.dataset.del){
     var s=c.students.find(function(x){return x.id===t.dataset.del});
-    if(s&&confirm("Retirer "+s.name+" de la liste ?")){c.students=c.students.filter(function(x){return x.id!==s.id});save();render();}return;
+    if(s){delItem(c,"students",s.id,s.name);render();}return;
   }
   if(t.id==="delc"){
-    if(confirm("Supprimer la classe "+c.name+" et tout son historique ?")){D.classes=D.classes.filter(function(x){return x.id!==c.id});D.cur=D.classes[0].id;dirty[c.id]=Date.now();save();view="home";render();window.scrollTo(0,0);}
+    if(confirm("Supprimer la classe "+c.name+" et tout son historique ?")){delClass(c);D.classes=D.classes.filter(function(x){return x.id!==c.id});D.cur=D.classes[0].id;dirty[c.id]=Date.now();save();view="home";render();window.scrollTo(0,0);}
   }
 });
 document.getElementById("view").addEventListener("change",function(e){
@@ -225,6 +230,7 @@ document.getElementById("view").addEventListener("change",function(e){
   if(t.id==="cs"){c.subj=t.value.trim();save();return;}
   if(t.id==="imp"&&t.files&&t.files[0]){importJSON(t.files[0]);return;}
   if(t.dataset.n!==undefined){var sn=c.students.find(function(x){return x.id===t.dataset.n}),nv=t.value.trim();if(sn&&nv){sn.name=nv;save();}else if(sn){t.value=sn.name;}return;}
+  if(t.dataset.p!==undefined){var sp=c.students.find(function(x){return x.id===t.dataset.p}),pv2=pmClean(t.value);if(sp){if(pv2)sp.p=pv2;else delete sp.p;t.value=pv2;save();}return;}
   if(t.dataset.g!==undefined){var sg=c.students.find(function(x){return x.id===t.dataset.g});if(sg){sg.g=t.value;save();}return;}
   var upd=function(){var m=document.getElementById("sum");if(m)m.textContent=summary(c,date);};
   if(t.dataset.j!==undefined){var n=nt(c,date,t.dataset.j);if(t.value==="")delete n.j;else n.j=t.value==="1";save();upd();return;}
@@ -232,5 +238,6 @@ document.getElementById("view").addEventListener("change",function(e){
   if(t.id==="fm"){flt.mode=t.value;render();return;}
   if(t.id==="ff"){flt.from=t.value;render();return;}
   if(t.id==="ft"){flt.to=t.value;render();return;}
-  if(t.id==="tha"||t.id==="thr"||t.id==="thd"){var q=th(c);c.th={a:q.a,r:q.r,d:q.d};c.th[t.id==="tha"?"a":t.id==="thr"?"r":"d"]=Math.max(0,parseInt(t.value,10)||0);save();return;}
+  if(t.id==="tha"||t.id==="thr"||t.id==="thd"){var q=th(c);c.th=Object.assign({},c.th,{a:q.a,r:q.r,d:q.d});c.th[t.id==="tha"?"a":t.id==="thr"?"r":"d"]=Math.max(0,parseInt(t.value,10)||0);save();return;}
+  if(t.id==="tho"){var ov=parseFloat(String(t.value).replace(",","."));c.th=Object.assign({},c.th);if(ov>0&&ov<=20)c.th.o=Math.round(ov*10)/10;else delete c.th.o;save();return;}
 });

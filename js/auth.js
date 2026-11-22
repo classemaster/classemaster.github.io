@@ -5,10 +5,40 @@ function blank(){var id=uid();return{cur:id,classes:[{id:id,name:"Ma classe",stu
 function hasLegacy(){try{var o=JSON.parse(localStorage.getItem("appel-matin-v1"));return!!(o&&o.classes&&o.classes.some(function(c){return(c.students&&c.students.length)||Object.keys(c.records||{}).length;}));}catch(e){return false;}}
 
 var PK="appel-pin-v1";
-function hashPin(v){
+function hashPin(v){   /* ancien format (sans sel) : gardé pour reconnaître les codes déjà enregistrés */
   if(window.crypto&&crypto.subtle&&window.TextEncoder)return crypto.subtle.digest("SHA-256",new TextEncoder().encode("appel:"+v)).then(function(b){return Array.prototype.map.call(new Uint8Array(b),function(x){return("0"+x.toString(16)).slice(-2)}).join("");});
   return Promise.resolve("x"+btoa("appel:"+v));
 }
+function hx(b){return Array.prototype.map.call(new Uint8Array(b),function(x){return("0"+x.toString(16)).slice(-2)}).join("");}
+function pinDerive(v,saltHex){
+  var salt=new Uint8Array((saltHex.match(/../g)||[]).map(function(h){return parseInt(h,16);}));
+  return crypto.subtle.importKey("raw",new TextEncoder().encode(v),"PBKDF2",false,["deriveBits"]).then(function(k){
+    return crypto.subtle.deriveBits({name:"PBKDF2",salt:salt,iterations:150000,hash:"SHA-256"},k,256);
+  }).then(hx);
+}
+/* Nouveau format : v2$sel$empreinte (PBKDF2, sel aléatoire propre à l’appareil) */
+function pinMake(v){
+  if(!(window.crypto&&crypto.subtle&&window.TextEncoder))return hashPin(v);
+  var s=hx(crypto.getRandomValues(new Uint8Array(16)));
+  return pinDerive(v,s).then(function(h){return"v2$"+s+"$"+h;});
+}
+function pinCheck(v){
+  var st=pinSet();
+  if(st.indexOf("v2$")===0){var p=st.split("$");return pinDerive(v,p[1]).then(function(h){return h===p[2];});}
+  return hashPin(v).then(function(h){
+    if(h!==st)return false;
+    pinMake(v).then(function(n){try{if(pinSet()===st)localStorage.setItem(PK,n);}catch(e){}});   /* met l’ancien code au nouveau format */
+    return true;
+  });
+}
+/* Limite d’essais : 5 erreurs, puis attente de 30 s, qui double à chaque nouvelle série (15 min au maximum) */
+var PF="appel-pin-fail";
+function pinFailGet(){try{var o=JSON.parse(localStorage.getItem(PF)||"{}");return{n:+o.n||0,until:+o.until||0,s:+o.s||0};}catch(e){return{n:0,until:0,s:0};}}
+function pinFailSet(o){try{localStorage.setItem(PF,JSON.stringify(o));}catch(e){}}
+function pinWait(){var f=pinFailGet(),w=Math.ceil((f.until-Date.now())/1000);return w>0?w:0;}
+function pinWaitMsg(){var w=pinWait();return"Trop d’essais. Réessayez dans "+(w>=60?Math.ceil(w/60)+" min":w+" s")+".";}
+function pinBad(){var f=pinFailGet();f.n++;if(f.n>=5){f.s++;f.n=0;f.until=Date.now()+Math.min(900,30*Math.pow(2,f.s-1))*1000;}pinFailSet(f);}
+function pinGood(){try{localStorage.removeItem(PF);}catch(e){}}
 function pinSet(){try{return localStorage.getItem(PK)||"";}catch(e){return"";}}
 function lock(){
   if(!pinSet()||!ME)return;
@@ -17,14 +47,16 @@ function lock(){
   setTimeout(function(){document.getElementById("lp").focus();},50);
 }
 function tryUnlock(){
-  hashPin(document.getElementById("lp").value.replace(/\D/g,"")).then(function(h){
-    if(h===pinSet())document.getElementById("lock").hidden=true;
-    else{document.getElementById("lm").textContent="Code incorrect.";document.getElementById("lp").value="";}
+  var lm=document.getElementById("lm");
+  if(pinWait()){lm.textContent=pinWaitMsg();document.getElementById("lp").value="";return;}
+  pinCheck(document.getElementById("lp").value.replace(/\D/g,"")).then(function(ok){
+    if(ok){pinGood();document.getElementById("lock").hidden=true;}
+    else{pinBad();lm.textContent=pinWait()?pinWaitMsg():"Code incorrect.";document.getElementById("lp").value="";}
   });
 }
 function pinCard(){
   var on=!!pinSet();
-  return'<div class="card"><h2>Verrouillage par code</h2><p class="sub" style="margin-top:0">'+(on?"Un code est actif sur cet appareil. Il est demandé à l’ouverture et après une minute d’absence.":"Protégez l’accès à l’application sur cet appareil avec un code de 4 à 8 chiffres.")+'</p><input class="pin" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="8" id="np" placeholder="'+(on?"Code actuel (4 à 8 chiffres)":"Nouveau code (4 à 8 chiffres)")+'" aria-label="Code" style="margin-bottom:8px"><div class="bar" style="margin:0">'+(on?'<button class="btn ghost" id="poff">Désactiver</button><button class="btn" id="pnow">Verrouiller maintenant</button>':'<button class="btn" id="pon">Activer le code</button>')+'</div><p class="sub" id="pmsg"></p></div>';
+  return'<div class="card"><h2>Verrouillage par code</h2><p class="sub" style="margin-top:0">'+(on?"Un code est actif sur cet appareil. Il est demandé à l’ouverture et après une minute d’absence. C’est un verrou d’écran : il ne chiffre pas les données de l’appareil.":"Protégez l’accès à l’application sur cet appareil avec un code de 4 à 8 chiffres.")+'</p><input class="pin" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="8" id="np" placeholder="'+(on?"Code actuel (4 à 8 chiffres)":"Nouveau code (4 à 8 chiffres)")+'" aria-label="Code" style="margin-bottom:8px"><div class="bar" style="margin:0">'+(on?'<button class="btn ghost" id="poff">Désactiver</button><button class="btn" id="pnow">Verrouiller maintenant</button>':'<button class="btn" id="pon">Activer le code</button>')+'</div><p class="sub" id="pmsg"></p></div>';
 }
 
 var GLOGO='<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
@@ -65,7 +97,7 @@ function renderSignup(){
   '<p class="afoot">Déjà un compte ? <button class="alink" data-go="login">Connectez-vous ici</button></p>'+legacyNote()+guestLink());
 }
 function renderCompte(){
-  if(!ME)return'<h1 style="text-transform:none">Mon compte</h1><div class="card"><h2>Mode invité</h2><p class="sub" style="margin-top:0">Vous utilisez l’application sans compte : vos données ne sont pas enregistrées et disparaissent à la fermeture de la page. Connectez-vous ou créez un compte pour les sauvegarder ; ce que vous avez saisi pourra être ajouté à votre compte.</p><div class="bar" style="margin:0"><button class="btn" data-go="login">Se connecter</button><button class="btn ghost" data-go="signup">Créer un compte</button></div></div><div class="card"><h2>Importer des données</h2><p class="sub" style="margin-top:0">Chargez une sauvegarde reçue d’un collègue ou une ancienne sauvegarde. En mode invité, elle reste en mémoire jusqu’à la fermeture de la page : connectez-vous ensuite pour la conserver.</p><button class="btn ghost" data-go="part">Importer des données</button></div>';
+  if(!ME)return'<h1 style="text-transform:none">Mon compte</h1>'+themeCard()+'<div class="card"><h2>Mode invité</h2><p class="sub" style="margin-top:0">Vous utilisez l’application sans compte : vos données ne sont pas enregistrées et disparaissent à la fermeture de la page. Connectez-vous ou créez un compte pour les sauvegarder ; ce que vous avez saisi pourra être ajouté à votre compte.</p><div class="bar" style="margin:0"><button class="btn" data-go="login">Se connecter</button><button class="btn ghost" data-go="signup">Créer un compte</button></div></div><div class="card"><h2>Importer des données</h2><p class="sub" style="margin-top:0">Chargez une sauvegarde reçue d’un collègue ou une ancienne sauvegarde. En mode invité, elle reste en mémoire jusqu’à la fermeture de la page : connectez-vous ensuite pour la conserver.</p><button class="btn ghost" data-go="part">Importer des données</button></div>';
   var u=ME,nC=D.classes.length,nE=0,nA=0;
   D.classes.forEach(function(c){nE+=c.students.length;nA+=Object.keys(c.records).filter(function(k){return Object.keys(c.records[k]).length}).length;});
   var ini=u.name.split(/\s+/).slice(0,2).map(function(w){return w.charAt(0).toUpperCase()}).join("");
@@ -74,10 +106,24 @@ function renderCompte(){
   '<div class="card"><h2>Profil</h2><label class="fld">Nom<input type="text" id="an" value="'+esc(u.name)+'"></label><label class="fld">Établissement<input type="text" id="as" value="'+esc(u.school||"")+'"></label></div>'+
   '<div class="card"><h2>Mot de passe</h2><label class="fld">Mot de passe actuel<input type="password" id="cp0" autocomplete="current-password"></label><label class="fld">Nouveau mot de passe<input type="password" id="cp1" autocomplete="new-password"></label><label class="fld">Confirmer<input type="password" id="cp2" autocomplete="new-password"></label><p class="err" id="cpm" role="status"></p><button class="btn" id="cpw">Changer le mot de passe</button></div>'+
   '<div class="card"><h2>Sauvegarde et partage</h2><p class="sub" style="margin-top:0">Exportez vos données, partagez une classe, imprimez le bilan.</p><button class="btn ghost" data-go="part">Ouvrir</button></div>'+
-  pinCard()+
+  adminCard()+themeCard()+pinCard()+
   '<div class="bar"><button class="btn" id="lout">Se déconnecter</button><button class="btn ghost" id="adel">Supprimer mon compte</button></div>';
 }
 
+/* Accès administrateur : le bouton n’apparaît que pour les comptes inscrits dans public.admin_users (voir supabase/acces-admin.sql) */
+function adminCard(){
+  if(!IS_ADMIN)return"";
+  return'<div class="card"><h2>Administration</h2><p class="sub" style="margin-top:0">Votre compte a accès au mode administrateur : dossiers des élèves, codes et liens parents.</p><button class="btn" id="adminbtn">Se connecter en tant qu’administrateur</button></div>';
+}
+function checkAdmin(){
+  if(!sb||!ME||GUEST||ME.pending){return;}
+  var id=ME.id;
+  try{sb.rpc("is_admin").then(function(r){
+    if(!ME||ME.id!==id)return;
+    var v=!r.error&&r.data===true;
+    if(v!==IS_ADMIN){IS_ADMIN=v;if(view==="compte")render();}
+  },function(){});}catch(e){}
+}
 function hasData(d){return!!d&&d.classes.some(function(c){return(c.students&&c.students.length)||Object.keys(c.records||{}).length;});}
 function enter(u,fresh){
   if(ME&&ME.id===u.id&&!GUEST)return;
@@ -89,17 +135,17 @@ function enter(u,fresh){
     g.classes.forEach(function(c){D.classes.push(c);});
     D.cur=g.cur;local();
   }
-  initSync();render();window.scrollTo(0,0);
+  IS_ADMIN=false;initSync();render();window.scrollTo(0,0);checkAdmin();
 }
 function removeUser(u){
-  try{localStorage.removeItem(u.key);localStorage.removeItem(u.key+"-dirty");}catch(e){}
+  try{localStorage.removeItem(u.key);localStorage.removeItem(u.key+"-dirty");localStorage.removeItem(u.key+"-base");localStorage.removeItem(u.key+"-trash");["-shh","-lastbk","-lastsync","-bk0","-bksnz"].forEach(function(x){localStorage.removeItem(u.key+x);});}catch(e){}
   ACC.users=ACC.users.filter(function(x){return x.id!==u.id});
   if(ACC.cur===u.id)ACC.cur=null;
   saveAcc();
   if(ME&&ME.id===u.id){stopSync();ME=null;D=blank();KEY="";}
 }
 function doLogout(forced){
-  stopSync();ME=null;ACC.cur=null;saveAcc();D=blank();KEY="";view="login";render();window.scrollTo(0,0);
+  stopSync();ME=null;IS_ADMIN=false;ACC.cur=null;saveAcc();D=blank();KEY="";view="login";render();window.scrollTo(0,0);
   if(!forced&&sb)sb.auth.signOut({scope:"local"}).then(function(){},function(){});
 }
 
@@ -242,7 +288,7 @@ function initAuth(){
       if(ev==="PASSWORD_RECOVERY"){RECOVERY=true;view="reset";render();return;}
       if(ev==="SIGNED_OUT"){if(ME)doLogout(true);return;}
       if(!s||!s.user||RECOVERY)return;
-      if(ME&&ME.id===s.user.id){if(!col)initSync();return;}
+      if(ME&&ME.id===s.user.id){if(!col)initSync();checkAdmin();return;}
       if(ME){stopSync();ME=null;}
       enter(userFrom(s.user));
     },0);

@@ -32,6 +32,39 @@ function chartLegend(series){
   return'<div class="gleg">'+series.map(function(s){return'<span><i class="'+s.cls+'"></i>'+esc(s.n)+"</span>";}).join("")+"</div>";
 }
 
+/* Graphique de la bibliothèque (js/graphiques/) : parcours au clavier, tableau de données, export CSV et PNG.
+   Si la bibliothèque n'est pas chargée, l'ancien dessin ci-dessus sert de repli. */
+var PG={opts:{},n:0};
+function pgClear(){
+  Object.keys(PG.opts).forEach(function(k){var r=PG.opts[k];if(r.chart){try{r.chart.destroy();}catch(e){}}});
+  PG.opts={};
+}
+/* S : séries au format {n, cls, pts:[{v,t}]} ; la série « s2 » (moyenne de la classe) est tracée en pointillés */
+function pgChart(labels,S,alt,name){
+  if(!window.LineChart||!window.Charts||!Charts.Chart)return lineChart(labels,S,alt)+(S.length>1?chartLegend(S):"");
+  var id="pg"+(++PG.n);
+  PG.opts[id]={name:name,chart:null,o:{
+    label:alt,unit:"/20",min:0,max:20,goal:{value:10,label:"Seuil"},labels:labels,
+    series:S.map(function(s,k){return{name:s.n,dashed:s.cls==="s2",color:k===0?Charts.palette[0]:undefined,values:s.pts.map(function(p){return p.v===null||p.v===undefined?0:Math.round(p.v*10)/10;})};})
+  }};
+  return'<div class="pg" data-pg="'+id+'"></div><div class="pg-x"><button type="button" class="lnk" data-pgx="csv:'+id+'">Tableau (CSV)</button><button type="button" class="lnk" data-pgx="png:'+id+'">Image (PNG)</button></div>';
+}
+function pgDraw(){
+  if(!window.LineChart)return;
+  document.querySelectorAll("[data-pg]").forEach(function(el){
+    var r=PG.opts[el.dataset.pg];if(!r||r.chart)return;
+    try{r.chart=new LineChart(el,r.o);}catch(e){el.textContent="Graphique indisponible.";}
+  });
+}
+document.getElementById("view").addEventListener("click",function(e){
+  var b=e.target.closest("[data-pgx]");if(!b)return;
+  var a=b.dataset.pgx.split(":"),r=PG.opts[a[1]];
+  if(!r||!r.chart)return;
+  var nm=fname(r.name||"progression");
+  if(a[0]==="csv"){var t=r.chart.toCSV();if(t)saveFile(nm+".csv","\ufeff"+t,"text/csv",toast);}
+  else if(a[0]==="png"){r.chart.toPNG().then(function(bl){saveFile(nm+".png",bl,"image/png",toast);},function(){toast("Export de l’image impossible ici.");});}
+});
+
 /* Fiche élève : sa courbe comparée à la moyenne de la classe */
 function ficheProg(c,s){
   var E=evs(c).filter(function(e){return e.s&&typeof e.s[s.id]==="number"&&e.m>0;}).sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0;});
@@ -42,7 +75,7 @@ function ficheProg(c,s){
   var S=[{n:s.name,cls:"s1",pts:me,lab:true},{n:"Moyenne de la classe",cls:"s2",pts:cl2}];
   var first=me[0].v,last=me[me.length-1].v,d=last-first;
   var alt="Notes sur 20 de "+s.name+" : "+me.map(function(p,i){return lab[i]+" "+nf(p.v);}).join(", ");
-  return'<div class="card"><h2>Progression</h2>'+lineChart(lab,S,alt)+chartLegend(S)+'<p class="sub" style="margin:8px 0 0">'+(Math.abs(d)<1?"Notes stables":d>0?"En progrès":"En baisse")+" : de "+nf(first)+" à "+nf(last)+" sur 20 depuis la première évaluation.</p></div>";
+  return'<div class="card"><h2>Progression</h2>'+pgChart(lab,S,alt,"progression-"+s.name)+'<p class="sub" style="margin:8px 0 0">'+(Math.abs(d)<1?"Notes stables":d>0?"En progrès":"En baisse")+" : de "+nf(first)+" à "+nf(last)+" sur 20 depuis la première évaluation.</p></div>";
 }
 
 /* Page Notes : moyenne de la classe évaluation après évaluation */
@@ -51,5 +84,5 @@ function classeProg(c,E){
   if(L.length<2)return"";
   var pts=L.map(function(e){var v=evAvg20(e,c);return{v:v,t:e.t+" : "+nf(v)+" / 20"};});
   var S=[{n:"Moyenne de la classe",cls:"s1",pts:pts,lab:true}];
-  return'<div class="card"><h2>Progression de la classe</h2>'+lineChart(L.map(function(e){return fmt(e.d);}),S,"Moyenne de la classe sur 20 : "+pts.map(function(p,i){return fmt(L[i].d)+" "+nf(p.v);}).join(", "))+'<p class="sub" style="margin:8px 0 0">Moyenne de chaque évaluation, ramenée sur 20.</p></div>';
+  return'<div class="card"><h2>Progression de la classe</h2>'+pgChart(L.map(function(e){return fmt(e.d);}),S,"Moyenne de la classe sur 20 : "+pts.map(function(p,i){return fmt(L[i].d)+" "+nf(p.v);}).join(", "),"progression-"+c.name)+'<p class="sub" style="margin:8px 0 0">Moyenne de chaque évaluation, ramenée sur 20.</p></div>';
 }

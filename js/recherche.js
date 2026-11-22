@@ -10,7 +10,7 @@ function drawSearch(){
   var m=function(t){var x=nrm(t);return words.every(function(w){return x.indexOf(w)>=0;});};
   var useD=words.some(function(w){return/\d/.test(w)||MD.indexOf(w)>=0;});
   var st=[],cs=[],ds=[],ms=[];
-  D.classes.forEach(function(c){
+  liveCls().forEach(function(c){
     if(m(c.name+" "+(c.subj||"")))cs.push(c);
     c.students.forEach(function(s){if(m(s.name))st.push([c,s]);});
     Object.keys(c.records).sort().reverse().forEach(function(k){

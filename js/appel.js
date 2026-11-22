@@ -6,7 +6,7 @@ function noteUI(c,id,v){
   if(v!=="a"&&v!=="r")return"";
   var n=gn(c,date,id),h='<div class="mot">';
   if(v==="a")h+='<select data-j="'+id+'" aria-label="Justification"><option value="">Justification ?</option><option value="1"'+(n.j===true?" selected":"")+'>Justifiée</option><option value="0"'+(n.j===false?" selected":"")+'>Non justifiée</option></select>';
-  return h+'<input type="text" data-m="'+id+'" placeholder="Motif (facultatif)" value="'+esc(n.m||"")+'" aria-label="Motif"></div>';
+  return h+'<input type="text" data-m="'+id+'" placeholder="Motif (facultatif)" value="'+esc(n.m||"")+'" aria-label="Motif"></div>'+pmButton(c,id,v);
 }
 
 function summary(c,k){
@@ -25,6 +25,7 @@ function renderAppel(){
   var h='<h1>'+esc(fmt(date,true))+'</h1><p class="sub">'+esc(c.name)+(c.subj?" · "+esc(c.subj):"")+" · "+c.students.length+" élèves</p>";
   h+='<div class="count"><div class="cp"><b>'+n.p+'</b>présents</div><div class="ca"><b>'+n.a+'</b>absents</div><div class="cr"><b>'+n.r+'</b>retards</div><div class="cn"><b>'+n.x+'</b>à faire</div></div>';
   h+='<div class="bar"><button class="btn" id="allp">Tous présents</button><button class="btn ghost" id="rst">Effacer</button></div>';
+  h+=pmBatchButton(c,date);
   if(c.students.length>5)h+='<div class="qb"><input type="search" id="q" placeholder="Rechercher un élève…" aria-label="Rechercher un élève" autocomplete="off" value="'+esc(qs)+'"><button class="btn ghost" id="qx"'+(qs?"":" hidden")+' aria-label="Effacer la recherche">✕</button></div><p class="sub" id="qm" role="status"></p>';
   c.students.forEach(function(s){
     var v=r[s.id]||"";

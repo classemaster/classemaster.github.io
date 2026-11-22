@@ -4,12 +4,15 @@ function renderEleves(){
   var h='<h1>Gérer la classe</h1><div class="card"><h2>Nom et matière</h2><input type="text" id="cn" value="'+esc(c.name)+'" aria-label="Nom de la classe" style="width:100%;margin-bottom:8px"><input type="text" id="cs" value="'+esc(c.subj||"")+'" placeholder="Matière (ex. Français)" aria-label="Matière" style="width:100%"></div>';
   var q=th(c);
   h+='<div class="card"><h2>Alertes</h2><p class="sub" style="margin-top:0">Un badge signale l’élève qui atteint ces seuils sur la période choisie dans le bilan. Mettez 0 pour désactiver.</p><div style="display:flex;gap:14px;flex-wrap:wrap"><label>Absences <input type="number" min="0" id="tha" value="'+q.a+'" style="width:76px"></label><label>Retards <input type="number" min="0" id="thr" value="'+q.r+'" style="width:76px"></label><label>Devoirs non rendus <input type="number" min="0" id="thd" value="'+q.d+'" style="width:76px"></label></div></div>';
+  h+='<div class="card"><h2>Objectif de moyenne</h2><p class="sub" style="margin-top:0">Une ligne « Objectif » est tracée sur les courbes du Bilan à la place du seuil de 10. Laissez vide pour ne pas en fixer.</p><label>Objectif sur 20 <input type="number" inputmode="decimal" min="0" max="20" step="0.5" id="tho" value="'+(q.o===null?"":q.o)+'" placeholder="ex. 12" style="width:96px"></label></div>';
+  h+=shRefCard(c);
   h+='<div class="card"><h2>Ajouter des élèves</h2><p class="sub" style="margin-top:0">Importez un fichier Excel (.xlsx) ou CSV, ou collez votre liste : un nom par ligne, ou des colonnes copiées depuis Excel (nom, prénom, sexe).</p><input type="file" id="impl" class="sr" accept=".xlsx,.csv,.tsv,.txt,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><label class="btn fbtn" for="impl">Importer un fichier Excel ou CSV</label><p class="sub" id="immsg" role="status" style="margin:8px 0"></p><textarea id="ta" placeholder="Camille Durand&#10;Lucas Martin"></textarea><select id="dg" aria-label="Sexe des élèves ajoutés" style="width:100%;margin-top:8px"><option value="">Sexe : non précisé</option><option value="F">Sexe : fille</option><option value="M">Sexe : garçon</option></select><div class="bar" style="margin:8px 0 0"><button class="btn" id="add">Ajouter à la liste</button></div></div>';
   h+='<div class="card"><h2>Liste ('+c.students.length+")</h2>";
   if(c.students.length>1)h+='<button class="btn ghost" id="sort" style="margin-bottom:8px">Trier de A à Z</button>';
   if(!c.students.length)h+='<p class="sub">Aucun élève.</p>';
-  c.students.forEach(function(s){h+='<div class="li"><input type="text" data-n="'+s.id+'" value="'+esc(s.name)+'" aria-label="Nom de l’élève" style="flex:1;min-width:0"><select data-g="'+s.id+'" aria-label="Sexe de '+esc(s.name)+'" style="min-height:40px;padding:4px 8px"><option value="">Sexe</option><option value="F"'+(s.g==="F"?" selected":"")+'>Fille</option><option value="M"'+(s.g==="M"?" selected":"")+'>Garçon</option></select><button data-del="'+s.id+'" aria-label="Retirer '+esc(s.name)+'">Retirer</button></div>';});
+  c.students.forEach(function(s){h+='<div class="li pm-li"><input type="text" data-n="'+s.id+'" value="'+esc(s.name)+'" aria-label="Nom de l’élève" style="flex:1;min-width:0"><select data-g="'+s.id+'" aria-label="Sexe de '+esc(s.name)+'" style="min-height:40px;padding:4px 8px"><option value="">Sexe</option><option value="F"'+(s.g==="F"?" selected":"")+'>Fille</option><option value="M"'+(s.g==="M"?" selected":"")+'>Garçon</option></select><button data-del="'+s.id+'" aria-label="Retirer '+esc(s.name)+'">Retirer</button><input type="tel" inputmode="tel" class="pm-tel" data-p="'+s.id+'" value="'+esc(s.p||"")+'" placeholder="Téléphone du parent (facultatif)" aria-label="Téléphone du parent de '+esc(s.name)+'"></div>';});
   h+="</div>";
+  h+=archCard(c);
   if(D.classes.length>1)h+='<button class="btn ghost" id="delc">Supprimer cette classe</button>';
   return h;
 }
@@ -25,6 +28,14 @@ function clsStats(c){
   return{rate:rate(o),calls:calls,sp:sp,cn:cn,done:cn.p+cn.a+cn.r>0,n:c.students.length};
 }
 
+/* Icônes des boutons de la classe (traits fins, couleur du thème) */
+function clIco(n){
+  var p={appel:'<path d="M20 6 9 17l-5-5"/>',eleves:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6M18 14.4c1.8.8 3 2.7 3 5.6"/>',
+    notes:'<path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"/><path d="m14 7 3 3"/>',cahier:'<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3"/>',
+    carnet:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/>',suivi:'<path d="M12 3 2.5 20h19z"/><path d="M12 10v4.5M12 17.2v.1"/>',
+    hist:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'}[n]||'';
+  return'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+p+'</svg>';
+}
 function renderClasse(){
   var c=cl(),st=clsStats(c),i;
   var ks=Object.keys(c.records).filter(function(k){return dayRate(c,k)}).filter(inRange).sort().reverse();
@@ -32,7 +43,8 @@ function renderClasse(){
   c.students.forEach(function(s){tot[s.id]={a:0,r:0,j:0,n:0}});
   ks.forEach(function(k){c.students.forEach(function(s){var v=c.records[k][s.id];if(!v)return;var t=tot[s.id];t.n++;N++;if(v==="a"){t.a++;A++;if(gn(c,k,s.id).j===true){t.j++;J++;}}if(v==="r"){t.r++;R++;}});});
   var h='<h1>'+esc(c.name)+'</h1><p class="sub">'+(c.subj?esc(c.subj)+' · ':'')+st.n+' élève'+(st.n>1?'s':'')+(st.n?' · '+(st.done?'appel d’aujourd’hui fait':'appel d’aujourd’hui à faire'):'')+'</p>';
-  h+='<div class="cl-act"><button class="btn" data-go="'+(st.n?'appel':'eleves')+'">'+(!st.n?'Ajouter des élèves':st.done?'Modifier l’appel':'Faire l’appel')+'</button><button class="btn ghost" data-go="eleves">Gérer la classe</button><button class="btn ghost" data-go="notes">Notes</button><button class="btn ghost" data-go="cahier">Cahier de textes</button><button class="btn ghost" data-go="carnet">Carnet</button><button class="btn ghost" data-go="suivi">Élèves à suivre</button><button class="btn ghost" data-go="hist">Bilan détaillé</button></div>';
+  h+='<div class="cl-act"><button class="btn cl-main" data-go="'+(st.n?'appel':'eleves')+'">'+clIco(st.n?'appel':'eleves')+'<span>'+(!st.n?'Ajouter des élèves':st.done?'Modifier l’appel':'Faire l’appel')+'</span></button>'+
+    [["eleves","Gérer la classe"],["notes","Notes"],["cahier","Cahier de textes"],["carnet","Carnet"],["suivi","Élèves à suivre"],["hist","Bilan détaillé"]].map(function(x){return'<button class="cl-tile" data-go="'+x[0]+'">'+clIco(x[0])+'<span>'+x[1]+'</span></button>';}).join("")+'</div>';
   h+=filterUI();
   if(!st.n)return h+'<div class="empty">Cette classe n’a pas encore d’élèves.</div>';
   h+='<div class="cl-t"><div><b style="color:var(--p)">'+fr(rate({n:N,a:A}))+'</b><span>Présence</span></div><div><b>'+ks.length+'</b><span>Appel'+(ks.length>1?'s':'')+'</span></div><div><b>'+st.n+'</b><span>Élève'+(st.n>1?'s':'')+'</span></div></div>';
@@ -73,16 +85,18 @@ function renderHome(){
   h+='<div class="hm-tiles"><div class="hm-tile"><b style="color:var(--p)">'+fr(st.rate)+'</b><span>Présence, 30 jours</span></div><div class="hm-tile"><b>'+st.n+'</b><span>Élève'+(st.n>1?"s":"")+'</span></div><div class="hm-tile"><b style="color:var(--r)">'+st.calls+'</b><span>Appel'+(st.calls>1?"s":"")+' du mois</span></div></div>';
   // classes
   var cc="";
-  D.classes.forEach(function(x){
+  liveCls().forEach(function(x){
     var q=clsStats(x);
     cc+='<button class="cc'+(x.id===c.id?" on":"")+'" data-pick="'+x.id+'" aria-pressed="'+(x.id===c.id)+'"><b>'+esc(x.name)+'</b><small>'+(x.subj?esc(x.subj)+" · ":"")+q.n+" élève"+(q.n>1?"s":"")+'</small><div class="sp" aria-hidden="true">'+q.sp.map(function(d){return d?'<i style="height:'+Math.max(14,Math.round(d.p*100))+'%"></i>':'<i class="e"></i>';}).join("")+'</div><em class="'+(q.done?"ok":"todo")+'">'+(q.done?"Appel fait":"À faire")+'</em></button>';
   });
   cc+='<button class="cc add" data-newclass="1"><b>+</b><small>Nouvelle classe</small></button>';
   h+='<h2 class="hm-h hm-h2">Mes classes</h2><div class="hm-cls">'+cc+'</div>';
+  var ar=D.classes.filter(isArch);
+  if(ar.length)h+='<section class="hm-card"><h2 class="hm-h">Années précédentes</h2>'+ar.map(function(x){return'<button class="hist" data-pick="'+x.id+'"><span>'+esc(x.name)+'</span><span>'+x.students.length+' élève'+(x.students.length>1?'s':'')+'</span></button>';}).join("")+'</section>';
   // élèves à surveiller
   var al=[],ks=[];
   for(i=29;i>=0;i--)ks.push(dback(i));
-  D.classes.forEach(function(x){x.students.forEach(function(s){var tx=alertTxt(x,cnt(x,s.id,ks));if(tx)al.push([x,s,tx]);});});
+  liveCls().forEach(function(x){x.students.forEach(function(s){var tx=alertTxt(x,cnt(x,s.id,ks));if(tx)al.push([x,s,tx]);});});
   h+='<section class="hm-card"><h2 class="hm-h">À surveiller</h2>'+(al.length?al.slice(0,5).map(function(a){return'<button class="hist" data-sf="'+a[0].id+"|"+a[1].id+'"><span>'+esc(a[1].name)+' <small>'+esc(a[0].name)+'</small></span><span>⚠ '+esc(a[2])+'</span></button>';}).join("")+(al.length>5?'<p class="sub" style="margin:0">+ '+(al.length-5)+' autre(s)</p>':""):'<p class="sub" style="margin:0">Rien à signaler sur les 30 derniers jours.</p>')+'</section>';
   return h+'<button class="lnk" data-go="suivi" style="justify-self:center">Élèves à suivre : détail de la classe</button><button class="lnk" data-go="part" style="justify-self:center">Importer ou sauvegarder mes données</button></div>';
 }

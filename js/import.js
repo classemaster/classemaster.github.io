@@ -89,10 +89,11 @@ function rowsToStudents(rows,defG){
   rows=rows.map(function(r){return r.map(function(x){return String(x===undefined?"":x).trim();});}).filter(function(r){return r.join("")!=="";});
   if(!rows.length)return[];
   var hd=rows[0].map(nrm),isH=hd.some(function(x){return/^(nom|noms|prenom|prenoms|eleve|eleves|nom et prenom|nom prenom|nom complet|sexe|genre|n°|n|no|numero|matricule)/.test(x);});
-  var cn=-1,cp=-1,cs=-1,cf=-1;
+  var cn=-1,cp=-1,cs=-1,cf=-1,cc=-1;
   if(isH){
     hd.forEach(function(x,i){
-      if(/^(sexe|genre)/.test(x))cs=i;
+      if(/^ref/.test(x)&&cc<0)cc=i;   /* référence élève fournie par l'administration (voir share.js) ; le matricule n'est jamais pris pour une référence */
+      else if(/^(sexe|genre)/.test(x))cs=i;
       else if(/^prenom/.test(x)&&cp<0)cp=i;
       else if(/^(nom|noms|eleve|eleves|nom et prenom|nom prenom|nom complet)/.test(x)&&cn<0)cn=i;
     });
@@ -101,13 +102,14 @@ function rowsToStudents(rows,defG){
   }
   var out=[];
   rows.forEach(function(r){
-    var name,g=null,parts;
+    var name,g=null,parts,ref="";
     if(isH){
       parts=[];
       if(cn>=0)parts.push(r[cn]);
       if(cp>=0)parts.push(r[cp]);
       name=parts.filter(Boolean).join(" ");
       if(cs>=0)g=sexOf(r[cs]);
+      if(cc>=0)ref=shRefNorm(r[cc]);
     }else{
       parts=[];
       r.forEach(function(x){
@@ -120,28 +122,38 @@ function rowsToStudents(rows,defG){
       name=parts.join(" ");
     }
     name=name.replace(/\s+/g," ").trim();
-    if(name)out.push({name:name,g:g||defG||""});
+    if(ref.length<SH_RMIN)ref="";
+    if(name)out.push({name:name,g:g||defG||"",ref:ref});
   });
   return out;
 }
 /* fichier : true pour un import de fichier (doublons ignorés, confirmation) ; faux pour un texte collé (ajout direct) */
 function addStudents(list,fichier){
-  var c=cl(),have={},add=0,dup=0;
-  c.students.forEach(function(s){have[nrm(s.name)]=1;});
-  var fresh=[];
-  list.forEach(function(x){var k=nrm(x.name);if(fichier&&have[k]){dup++;return;}have[k]=1;fresh.push(x);});
+  var c=cl(),have={},add=0,dup=0,tk={},used={},att=[],fresh=[];
+  c.students.forEach(function(s){have[nrm(s.name)]=1;tk[shNameKey(s.name)]=s;if(s.ref)used[s.ref]=1;});
+  list.forEach(function(x){
+    var ex=x.ref?tk[shNameKey(x.name)]:null;
+    /* élève déjà présent sans référence : on lui rattache la référence au lieu de l'ignorer comme doublon */
+    if(ex&&!ex.ref&&!used[x.ref]){used[x.ref]=1;att.push([ex,x.ref]);return;}
+    var k=nrm(x.name);
+    if(fichier&&have[k]){dup++;return;}
+    have[k]=1;
+    if(x.ref){if(used[x.ref])x.ref="";else used[x.ref]=1;}
+    fresh.push(x);
+  });
   var msg;
-  if(!fresh.length){msg=list.length?"Aucun nouvel élève : les "+dup+" nom(s) trouvé(s) sont déjà dans la liste.":"Aucun nom d’élève trouvé dans ce fichier.";}
+  if(!fresh.length&&!att.length){msg=list.length?"Aucun nouvel élève : les "+dup+" nom(s) trouvé(s) sont déjà dans la liste.":"Aucun nom d’élève trouvé dans ce fichier.";}
   else{
-    var ex=fresh.slice(0,5).map(function(x){return x.name;}).join(", ")+(fresh.length>5?"…":"");
-    if(fichier&&!confirm(fresh.length+" élève"+(fresh.length>1?"s":"")+" à ajouter à « "+c.name+" » :\n"+ex+(dup?"\n("+dup+" déjà dans la liste, ignoré"+(dup>1?"s":"")+")":"")+"\n\nContinuer ?"))return false;
-    fresh.forEach(function(x){c.students.push({id:uid(),name:x.name,g:x.g});add++;});
+    var ex2=fresh.slice(0,5).map(function(x){return x.name;}).join(", ")+(fresh.length>5?"…":"");
+    if(fichier&&!confirm((fresh.length?fresh.length+" élève"+(fresh.length>1?"s":"")+" à ajouter à « "+c.name+" » :\n"+ex2:"")+(att.length?(fresh.length?"\n":"")+att.length+" élève"+(att.length>1?"s":"")+" déjà dans la liste à lier à l’établissement.":"")+(dup?"\n("+dup+" déjà dans la liste, ignoré"+(dup>1?"s":"")+")":"")+"\n\nContinuer ?"))return false;
+    att.forEach(function(p){p[0].ref=p[1];if(!p[0].sh)p[0].sh=shTok();});
+    fresh.forEach(function(x){var o={id:uid(),name:x.name,g:x.g};if(x.ref){o.ref=x.ref;o.sh=shTok();}c.students.push(o);add++;});
     save();
-    msg=add+" élève"+(add>1?"s":"")+" ajouté"+(add>1?"s":"")+(dup?", "+dup+" doublon"+(dup>1?"s":"")+" ignoré"+(dup>1?"s":""):"")+".";
+    msg=(add?add+" élève"+(add>1?"s":"")+" ajouté"+(add>1?"s":""):"")+(att.length?(add?", ":"")+att.length+" élève"+(att.length>1?"s":"")+" lié"+(att.length>1?"s":"")+" à l’établissement":"")+(dup?", "+dup+" doublon"+(dup>1?"s":"")+" ignoré"+(dup>1?"s":""):"")+".";
   }
   render();
   var m=document.getElementById("immsg");if(m)m.textContent=msg;
-  return add>0;
+  return add>0||att.length>0;
 }
 function importStudentsFile(f){
   var m=document.getElementById("immsg"),say=function(t){if(m)m.textContent=t;};

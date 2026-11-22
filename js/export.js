@@ -32,7 +32,7 @@ function exportJSON(all){
   var cls=all?D.classes:[cl()];
   var data=JSON.stringify({app:"appel-matin",version:1,classes:cls});
   shareTxt=data;render();
-  saveFile("appel-"+(all?"toutes-les-classes":cl().name.replace(/[^\w-]+/g,"_"))+".json",data,"application/json",function(m){m+=(/disponible/.test(m)?" Utilisez plutôt « Copier le texte » plus bas sur cette page.":"");["xmsg","xmsg0"].forEach(function(i){var e=document.getElementById(i);if(e)e.textContent=m;});});
+  saveFile("appel-"+(all?"toutes-les-classes":cl().name.replace(/[^\w-]+/g,"_"))+".json",data,"application/json",function(m){if(all&&!/annul|pas disponible/i.test(m)&&typeof bkMark==="function")bkMark();m+=(/disponible/.test(m)?" Utilisez plutôt « Copier le texte » plus bas sur cette page.":"");["xmsg","xmsg0"].forEach(function(i){var e=document.getElementById(i);if(e)e.textContent=m;});});
 }
 function importJSON(file){
   var fr=typeof file==="string"?{readAsText:function(){fr.result=file;fr.onload();}}:new FileReader();
@@ -43,7 +43,7 @@ function importJSON(file){
       if(!o||o.app!=="appel-matin"||!Array.isArray(o.classes))throw 0;
       o.classes.forEach(function(x){
         if(!x||!ok.test(x.id)||!x.name||!Array.isArray(x.students)||!x.students.every(function(s){return s&&ok.test(s.id)&&s.name})||typeof x.records!=="object"){bad++;return;}
-        var n={id:x.id,name:String(x.name),subj:String(x.subj||""),students:x.students.map(function(s){return{id:s.id,name:String(s.name),g:s.g==="F"||s.g==="M"?s.g:""}}),records:x.records||{},notes:x.notes||{},ev:Array.isArray(x.ev)?x.ev:[],ob:Array.isArray(x.ob)?x.ob:[],th:x.th||{a:3,r:3},tt:Array.isArray(x.tt)?x.tt:[],cr:Array.isArray(x.cr)?x.cr:[],ct:Array.isArray(x.ct)?x.ct:[],pg:Array.isArray(x.pg)?x.pg:[],bc:x.bc&&typeof x.bc==="object"&&!Array.isArray(x.bc)?x.bc:{}};
+        var n={id:x.id,name:String(x.name),subj:String(x.subj||""),students:x.students.map(function(s){var o={id:s.id,name:String(s.name),g:s.g==="F"||s.g==="M"?s.g:""};if(s.p&&typeof s.p==="string")o.p=pmClean(s.p);if(typeof s.ref==="string"){var kc=shRefNorm(s.ref);if(kc.length>=SH_RMIN)o.ref=kc;}return o}),records:x.records||{},notes:x.notes||{},ev:Array.isArray(x.ev)?x.ev:[],ob:Array.isArray(x.ob)?x.ob:[],th:x.th||{a:3,r:3},tt:Array.isArray(x.tt)?x.tt:[],cr:Array.isArray(x.cr)?x.cr:[],ct:Array.isArray(x.ct)?x.ct:[],pg:Array.isArray(x.pg)?x.pg:[],bc:x.bc&&typeof x.bc==="object"&&!Array.isArray(x.bc)?x.bc:{},pa:x.pa&&typeof x.pa==="object"&&!Array.isArray(x.pa)?x.pa:{}};
         var i=D.classes.findIndex(function(c){return c.id===n.id});
         if(i<0){D.classes.push(n);add++;nid2.push(n.id);dirty[n.id]=Date.now();}
         else if(confirm("La classe « "+n.name+" » existe déjà. La remplacer par la version du fichier ?")){D.classes[i]=n;rep++;dirty[n.id]=Date.now();}
@@ -58,13 +58,13 @@ function importJSON(file){
 }
 function renderPart(){
   var f=renderPartFull();
-  return'<h1>Sauvegarde et partage</h1><p class="sub">Gardez vos données en sécurité, partagez une classe ou imprimez un bilan.</p>'+(ME?f:f.slice(f.indexOf('<div class="card"><h2>Recevoir des données</h2>')));
+  return'<h1>Sauvegarde et partage</h1><p class="sub">Gardez vos données en sécurité, partagez une classe ou imprimez un bilan.</p>'+(ME?f:f.slice(f.indexOf('<div class="card"><h2>Recevoir des données</h2>')))+(ME?trashCard():"");
 }
 function renderPartFull(){
   return'<h3 class="sec-t">Sauvegarder</h3>'+
   '<div class="card"><h2>Sauvegarde complète</h2><p class="sub" style="margin-top:0">Toutes vos classes, élèves, appels, notes et réglages dans un seul fichier (.json). Gardez-le en lieu sûr.</p><div class="bar stk" style="margin:0"><button class="btn" id="xall">Télécharger toutes mes données</button></div><p class="sub" id="xmsg0"></p></div>'+
   '<div class="card"><h2>Bilan de présence</h2><p class="sub" style="margin-top:0">Taux de fréquentation et tableau par élève, pour la classe « '+esc(cl().name)+' ».</p>'+filterUI()+'<div class="bar two" style="margin:0"><button class="btn" id="rpdf">Document PDF</button><button class="btn ghost" id="rsvg">Image SVG</button></div><p class="sub" id="rmsg"></p></div>'+
-  '<h3 class="sec-t">Partager</h3>'+
+  ficheCard()+'<h3 class="sec-t">Partager</h3>'+
   '<div class="card"><h2>Partager une classe</h2><p class="sub" style="margin-top:0">Envoyez uniquement la classe affichée à un collègue.</p><div class="bar stk" style="margin:0"><button class="btn ghost" id="xone">Partager « '+esc(cl().name)+' »</button></div></div>'+
   (shareTxt?'<div class="card"><h2>Texte à copier</h2><p class="sub" style="margin-top:0">Collez-le dans un e-mail ou un message : votre collègue pourra le coller dans « Recevoir des données ».</p><textarea id="sh" readonly style="min-height:90px">'+esc(shareTxt)+'</textarea><div class="bar stk" style="margin:8px 0 0"><button class="btn" id="cpx">Copier le texte</button></div><p class="sub" id="xmsg"></p></div>':"")+
   '<h3 class="sec-t">Recevoir</h3>'+
@@ -82,7 +82,7 @@ function reportData(){
     if(v==="a"||v==="r"){tot[id][v]++;if(v==="a"&&gn(c,k,id).j===true)tot[id].j++;}
   });});
   var N=0,A=0;c.students.forEach(function(s){N+=tot[s.id].n;A+=tot[s.id].a;});
-  var per={all:"Tout l’historique",w:"7 derniers jours",m:"Ce mois-ci",t:"3 derniers mois",c:"Du "+(flt.from?fmt(flt.from):"…")+" au "+(flt.to?fmt(flt.to):"…")}[flt.mode];
+  var per={all:"Tout l’historique",w:"7 derniers jours",m:"Ce mois-ci",t:"3 derniers mois",T1:"Trimestre 1 (sept. – déc.)",T2:"Trimestre 2 (janv. – mars)",T3:"Trimestre 3 (avr. – juin)",c:"Du "+(flt.from?fmt(flt.from):"…")+" au "+(flt.to?fmt(flt.to):"…")}[flt.mode];
   return{title:"Bilan de présence – "+c.name+(c.subj?" ("+c.subj+")":""),
     sub:per+" · "+ks.length+" appel(s) · édité le "+fmt(dstr(new Date()),true),
     rate:fr(N?Math.round((N-A)/N*1000)/10:null),

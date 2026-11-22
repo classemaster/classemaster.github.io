@@ -4,7 +4,7 @@ function hm(t){var p=String(t).split(":");return(+p[0])*60+(+p[1]||0);}
 function ttSorted(c){return(c.tt||[]).slice().sort(function(a,b){return((a.d+6)%7)-((b.d+6)%7)||hm(a.s)-hm(b.s);});}
 function homeToday(){
   var now=new Date(),dow=now.getDay(),nm=now.getHours()*60+now.getMinutes(),t=today(),L=[],any=false;
-  D.classes.forEach(function(c){(c.tt||[]).forEach(function(x){any=true;if(x.d===dow)L.push({c:c,x:x});});});
+  liveCls().forEach(function(c){(c.tt||[]).forEach(function(x){any=true;if(x.d===dow)L.push({c:c,x:x});});});
   if(!any)return"";
   L.sort(function(a,b){return hm(a.x.s)-hm(b.x.s);});
   var nxt=-1;L.forEach(function(o,i){if(nxt<0&&hm(o.x.e)>nm)nxt=i;});
@@ -38,7 +38,7 @@ document.getElementById("view").addEventListener("click",function(e){
     save();var y=window.scrollY;render();window.scrollTo(0,y);return;
   }
   var d=t.closest("[data-delsl]");
-  if(d&&confirm("Supprimer cette séance ?")){c.tt=(c.tt||[]).filter(function(x){return x.id!==d.dataset.delsl;});save();var y2=window.scrollY;render();window.scrollTo(0,y2);}
+  if(d){var t0=(c.tt||[]).find(function(x){return x.id===d.dataset.delsl;});delItem(c,"tt",d.dataset.delsl,t0?(t0.r||"Séance"):"Séance");var y2=window.scrollY;render();window.scrollTo(0,y2);}
 });
 /* Rafraîchit « Aujourd’hui » chaque minute sur l’accueil (le rappel suit l’heure) */
 setInterval(function(){

@@ -53,5 +53,5 @@ document.getElementById("view").addEventListener("click",function(e){
     return;
   }
   var d=t.closest("[data-crdel]");
-  if(d&&confirm("Supprimer ce message du carnet ?")){c.cr=(c.cr||[]).filter(function(x){return x.id!==d.dataset.crdel;});save();y=window.scrollY;render();window.scrollTo(0,y);}
+  if(d){var q0=(c.cr||[]).find(function(x){return x.id===d.dataset.crdel;});delItem(c,"cr",d.dataset.crdel,q0?q0.t.slice(0,40):"Message");y=window.scrollY;render();window.scrollTo(0,y);}
 });

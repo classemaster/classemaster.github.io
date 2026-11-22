@@ -54,9 +54,9 @@ document.getElementById("view").addEventListener("click",function(e){
     if(lines.length){save();y=window.scrollY;render();window.scrollTo(0,y);}return;
   }
   var pdl=t.closest("[data-pgdel]");
-  if(pdl){var g=pgList(c).filter(function(x){return x.id===pdl.dataset.pgdel})[0];if(g&&confirm("Retirer la leçon « "+g.t+" » du programme ?")){c.pg=pgList(c).filter(function(x){return x.id!==g.id});ctList(c).forEach(function(s){if(s.p===g.id)s.p="";});save();y=window.scrollY;render();window.scrollTo(0,y);}return;}
+  if(pdl){var g=pgList(c).filter(function(x){return x.id===pdl.dataset.pgdel})[0];if(g&&confirm("Retirer la leçon « "+g.t+" » du programme ?")){delItem(c,"pg",g.id,g.t);ctList(c).forEach(function(s){if(s.p===g.id)s.p="";});save();y=window.scrollY;render();window.scrollTo(0,y);}return;}
   var sd=t.closest("[data-cxdel]");
-  if(sd&&confirm("Supprimer cette séance du cahier de textes ?")){c.ct=ctList(c).filter(function(x){return x.id!==sd.dataset.cxdel});save();y=window.scrollY;render();window.scrollTo(0,y);}
+  if(sd){var s0=ctList(c).find(function(x){return x.id===sd.dataset.cxdel;});delItem(c,"ct",sd.dataset.cxdel,s0?fmt(s0.d)+" · "+(s0.t||"").slice(0,30):"Séance");y=window.scrollY;render();window.scrollTo(0,y);}
 });
 document.getElementById("view").addEventListener("change",function(e){
   var t=e.target,c=cl();

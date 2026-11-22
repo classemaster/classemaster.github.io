@@ -12,7 +12,7 @@ initAuth();
 document.getElementById("lgo").addEventListener("click",tryUnlock);
 document.getElementById("lfg").addEventListener("click",function(){
   if(!confirm("Code oublié : le code sera supprimé et les données enregistrées sur cet appareil seront effacées. Si la synchronisation est active, elles seront restaurées depuis votre compte. Continuer ?"))return;
-  try{localStorage.removeItem(PK);localStorage.removeItem(KEY);localStorage.removeItem(KEY+"-dirty");}catch(e){}
+  try{localStorage.removeItem(PK);localStorage.removeItem(KEY);localStorage.removeItem(KEY+"-dirty");localStorage.removeItem(KEY+"-base");localStorage.removeItem(KEY+"-trash");["-shh","-lastbk","-lastsync","-bk0","-bksnz"].forEach(function(x){localStorage.removeItem(KEY+x);});}catch(e){}
   try{location.reload();}catch(e){D=load();document.getElementById("lock").hidden=true;render();}
 });
 document.getElementById("lp").addEventListener("keydown",function(e){if(e.key==="Enter")tryUnlock();});

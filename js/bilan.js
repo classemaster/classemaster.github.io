@@ -24,17 +24,17 @@ function renderFiche(){
     var v=c.records[k][s.id];if(!v)return;
     o.n++;if(v==="p")return;
     o[v]++;var n=gn(c,k,s.id);if(v==="a"&&n.j===true)o.j++;
-    rows+='<div class="li"><span><b>'+esc(fmt(k,true))+'</b><br><span class="sub">'+(v==="a"?"Absent"+(n.j===true?" · justifiée":n.j===false?" · non justifiée":""):"Retard")+(n.m?" · "+esc(n.m):"")+'</span></span><button style="color:var(--accent)" data-open="'+k+'">Voir</button></div>';
+    rows+='<div class="li"><span><b>'+esc(fmt(k,true))+'</b><br><span class="sub">'+(v==="a"?"Absent"+(n.j===true?" · justifiée":n.j===false?" · non justifiée":""):"Retard")+(n.m?" · "+esc(n.m):"")+'</span></span><span class="pm-act"><button style="color:var(--accent)" data-open="'+k+'">Voir</button>'+'<button style="color:var(--accent)" data-pm="'+s.id+'" data-pmd="'+k+'">Prévenir</button>'+'</span></div>';
   });
   var al=alertTxt(c,o);
   return'<button class="btn ghost" data-go="'+fb+'" style="margin-bottom:10px">← '+(fb==="classe"?"Retour à la classe":fb==="notes"?"Retour aux notes":fb==="suivi"?"Retour aux élèves à suivre":fb==="carnet"?"Retour au carnet":"Retour au bilan")+'</button><h1>'+esc(s.name)+'</h1><p class="sub">'+esc(c.name)+(c.subj?" · "+esc(c.subj):"")+(s.g==="F"?" · Fille":s.g==="M"?" · Garçon":"")+'</p>'+filterUI()+
   '<div class="card"><h2>Taux de fréquentation</h2><div class="rate">'+fr(rate(o))+'</div><p class="sub" style="margin:0">'+o.n+" appel(s) · "+o.a+" absence(s) dont "+o.j+" justifiée(s) · "+o.r+" retard(s)</p>"+(al?'<p style="margin:8px 0 0"><span class="al" style="margin:0">⚠ '+al+"</span></p>":"")+"</div>"+
-  '<div class="card"><h2>Absences et retards</h2>'+(rows||'<p class="sub" style="margin:0">Aucune absence ni aucun retard sur cette période.</p>')+"</div>"+ficheNotes(c,s)+ficheDevoirs(c,s)+ficheObs(c,s)+ficheCarnet(c,s);
+  '<div class="card"><h2>Parent</h2><input type="tel" inputmode="tel" data-p="'+s.id+'" value="'+esc(s.p||"")+'" placeholder="Téléphone du parent (facultatif)" aria-label="Téléphone du parent" style="width:100%"><p class="sub" style="margin:8px 0 0">Sert à préparer un message d’absence ou de retard par WhatsApp ou SMS. Sans indicatif, le +242 (Congo) est ajouté.</p></div>'+shCard(s)+'<div class="card"><h2>Absences et retards</h2>'+(rows||'<p class="sub" style="margin:0">Aucune absence ni aucun retard sur cette période.</p>')+"</div>"+ficheNotes(c,s)+ficheDevoirs(c,s)+ficheObs(c,s)+ficheCarnet(c,s)+shCodeCard(s);
 }
 
 function renderHist(){
   var c=cl(),ks=Object.keys(c.records).filter(function(k){return Object.keys(c.records[k]).length}).filter(inRange).sort().reverse();
-  var fh=filterUI();if(!ks.length)return fh+'<div class="empty">Aucun appel enregistré sur cette période.</div>';
+  var fh=filterUI();if(!ks.length)return fh+'<div class="empty">Aucun appel enregistré sur cette période.</div>'+bilanCharts();
   var tot={};c.students.forEach(function(s){tot[s.id]={a:0,r:0,j:0,n:0}});
   ks.forEach(function(k){Object.keys(c.records[k]).forEach(function(id){var v=c.records[k][id];if(tot[id]&&v)tot[id].n++;if(tot[id]&&(v==="a"||v==="r")){tot[id][v]++;if(v==="a"&&gn(c,k,id).j===true)tot[id].j++;}});});
   var al=c.students.filter(function(s){return alertTxt(c,tot[s.id])}).map(function(s){return esc(s.name)+" ("+alertTxt(c,tot[s.id])+")"});
@@ -42,13 +42,14 @@ function renderHist(){
   var gcard=c.students.some(function(s){return s.g})?'<div class="card"><h2>Par sexe</h2><div class="scroll"><table><tr><th>Groupe</th><th class="n">Élèves</th><th class="n">Abs.</th><th class="n">Ret.</th><th class="n">Présence</th></tr>'+gs.map(function(x){return"<tr><td>"+x.l+'</td><td class="n">'+x.o.e+'</td><td class="n">'+x.o.a+'</td><td class="n">'+x.o.r+'</td><td class="n">'+fr(rate(x.o))+"</td></tr>"}).join("")+"</table></div></div>":"";
   var N=0,A=0;c.students.forEach(function(s){N+=tot[s.id].n;A+=tot[s.id].a;});
   var g=N?Math.round((N-A)/N*1000)/10:null;
-  var h=fh+'<div class="card"><h2>Taux de fréquentation</h2><div class="rate">'+fr(g)+'</div><p class="sub" style="margin:0">'+ks.length+" appel(s) sur la période. Un retard compte comme une présence.</p></div>"+gcard+(al.length?'<div class="card"><h2>⚠ Alertes sur cette période</h2>'+al.join("<br>")+"</div>":"")+'<div class="card"><h2>Total par élève</h2><div class="bar"><button class="btn ghost" id="exp">Exporter en CSV</button></div><div class="scroll"><table><tr><th>Élève</th><th class="n">Absences</th><th class="n">Justifiées</th><th class="n">Retards</th><th class="n">Présence</th></tr>';
+  var R=reportData(),pt='<div class="prt-head"><h1>'+esc(R.title)+'</h1><p>'+esc(R.sub)+'</p>'+(ME&&ME.name?'<p>'+esc(ME.name)+(ME.school?' · '+esc(ME.school):'')+'</p>':'')+'</div>';
+  var h=pt+fh+'<div class="bar no-prt"><button class="btn" id="prt">Imprimer ou enregistrer en PDF</button></div><p class="sub no-prt" id="prtm" style="margin:-4px 0 12px">Le PDF contient le taux de présence, les graphiques et le tableau par élève, pour la période choisie ci-dessus.</p>'+bilanCharts()+'<div class="card"><h2>Taux de fréquentation</h2><div class="rate">'+fr(g)+'</div><p class="sub" style="margin:0">'+ks.length+" appel(s) sur la période. Un retard compte comme une présence.</p></div>"+gcard+(al.length?'<div class="card"><h2>⚠ Alertes sur cette période</h2>'+al.join("<br>")+"</div>":"")+cmpCard()+'<div class="card"><h2>Total par élève</h2><div class="bar"><button class="btn ghost" id="exp">Exporter en CSV</button></div><div class="scroll"><table><tr><th>Élève</th><th class="n">Absences</th><th class="n">Justifiées</th><th class="n">Retards</th><th class="n">Présence</th></tr>';
   c.students.slice().sort(function(a,b){return tot[b.id].a-tot[a.id].a||tot[b.id].r-tot[a.id].r}).forEach(function(s){
     h+='<tr><td><button class="lnk" data-fiche="'+s.id+'">'+esc(s.name)+"</button>"+(alertTxt(c,tot[s.id])?'<span class="al">⚠</span>':"")+'</td><td class="n">'+tot[s.id].a+'</td><td class="n">'+tot[s.id].j+'</td><td class="n">'+tot[s.id].r+'</td><td class="n">'+fr(rate(tot[s.id]))+"</td></tr>";});
-  h+="</table></div></div><h2 style=\"font-size:1.05rem\">Appels passés</h2>";
+  h+="</table></div></div><h2 class=\"no-prt\" style=\"font-size:1.05rem\">Appels passés</h2>";
   ks.forEach(function(k){
     var v=Object.keys(c.records[k]).map(function(id){return c.records[k][id]});
     var a=v.filter(function(x){return x==="a"}).length,r=v.filter(function(x){return x==="r"}).length;
-    h+='<button class="hist" data-open="'+k+'"><span>'+esc(fmt(k,true))+"</span><span>"+a+" abs. · "+r+" ret.</span></button>";});
+    h+='<button class="hist no-prt" data-open="'+k+'"><span>'+esc(fmt(k,true))+"</span><span>"+a+" abs. · "+r+" ret.</span></button>";});
   return h;
 }

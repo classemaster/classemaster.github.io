@@ -21,5 +21,5 @@ document.getElementById("view").addEventListener("click",function(e){
     save();var y=window.scrollY;render();window.scrollTo(0,y);return;
   }
   var d=t.closest("[data-obdel]");
-  if(d&&confirm("Supprimer cette observation ?")){c.ob=(c.ob||[]).filter(function(o){return o.id!==d.dataset.obdel;});save();var y2=window.scrollY;render();window.scrollTo(0,y2);}
+  if(d){var o0=(c.ob||[]).find(function(o){return o.id===d.dataset.obdel;});delItem(c,"ob",d.dataset.obdel,o0?o0.t.slice(0,40):"Observation");var y2=window.scrollY;render();window.scrollTo(0,y2);}
 });
