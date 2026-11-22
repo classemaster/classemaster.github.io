@@ -9,12 +9,12 @@ function ficheNotes(c,s){
   var a=sAvg(c,s.id);
   var tr="";
   if(E.length){
-    tr='<div class="scroll"><table><tr><th>Période</th><th class="n">Moyenne</th><th class="n">Rang</th></tr>'+[1,2,3,"A"].map(function(p){
-      var rm=rankMap(c,p)[s.id];
-      return'<tr><td>'+(p==="A"?"Annuelle":"Trimestre "+p)+'</td><td class="n">'+nf(rm.a)+'</td><td class="n">'+rkTxt(rm)+'</td></tr>';
+    tr='<div class="scroll"><table><tr><th>Période</th><th class="n">Moyenne</th><th class="n">Classe</th><th class="n">Écart</th><th class="n">Rang</th></tr>'+[1,2,3,"A"].map(function(p){
+      var all=rankMap(c,p),rm=all[s.id],ca=clsAvgStat(all).avg;
+      return'<tr><td>'+(p==="A"?"Annuelle":"Trimestre "+p)+'</td><td class="n">'+nf(rm.a)+'</td><td class="n">'+nf(ca)+'</td><td class="n">'+(rm.a===null||ca===null?"–":stPill(rm.a-ca))+'</td><td class="n">'+rkTxt(rm)+'</td></tr>';
     }).join('')+'</table></div>';
   }
-  return'<div class="card"><h2>Notes</h2>'+(E.length?'<div class="rate">'+nf(a)+' <span style="font-size:1rem">/ 20</span></div>'+tr+E.map(function(e){return'<div class="li"><span><b>'+esc(e.t)+'</b><br><span class="sub">'+esc(fmt(e.d))+' · T'+trOf(e)+'</span></span><span>'+nf(e.s[s.id])+' / '+nf(e.m)+'</span></div>';}).join(''):'<p class="sub" style="margin:0">Aucune note pour cet élève.</p>')+'</div>'+(E.length?ficheProg(c,s)+ficheBulletin(c,s):'');
+  return'<div class="card"><h2>Notes</h2>'+(E.length?'<div class="rate">'+nf(a)+' <span style="font-size:1rem">/ 20</span></div>'+tr+E.map(function(e){return'<div class="li"><span><b>'+esc(e.t)+'</b><br><span class="sub">'+esc(fmt(e.d))+' · T'+trOf(e)+'</span></span><span>'+nf(e.s[s.id])+' / '+nf(e.m)+'</span></div>';}).join(''):'<p class="sub" style="margin:0">Aucune note pour cet élève.</p>')+'</div>'+(E.length?ficheProg(c,s)+hookPipe("fiche","",{c:c,s:s})+ficheBulletin(c,s):'');
 }
 function renderNotes(){return hookPipe("notes",notesCore());}   /* compléments par hookOn("notes") */
 function notesCore(){
