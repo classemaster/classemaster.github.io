@@ -206,7 +206,8 @@ document.getElementById("view").addEventListener("click",function(e){
     catch(err){t.textContent="Sélectionnez le texte ci-dessus";}
     return;
   }
-  if(t.dataset.go){view=t.dataset.go;render();return;}
+  var go=t.closest&&t.closest("[data-go]");   /* toucher l’icône ou le texte du bouton compte aussi */
+  if(go){view=go.dataset.go;render();return;}
   var ho=t.closest("[data-open]");
   if(ho){date=ho.dataset.open;view="appel";render();window.scrollTo(0,0);return;}
   if(t.id==="sort"){c.students.sort(function(a,b){return a.name.localeCompare(b.name,"fr",{sensitivity:"base"})});save();render();return;}
@@ -214,8 +215,9 @@ document.getElementById("view").addEventListener("click",function(e){
     var list=rowsToStudents(textRows(document.getElementById("ta").value),document.getElementById("dg").value);
     if(list.length)addStudents(list);return;
   }
-  if(t.dataset.del){
-    var s=c.students.find(function(x){return x.id===t.dataset.del});
+  var dl=t.closest&&t.closest("[data-del]");
+  if(dl){
+    var s=c.students.find(function(x){return x.id===dl.dataset.del});
     if(s){delItem(c,"students",s.id,s.name);render();}return;
   }
   if(t.id==="delc"){
