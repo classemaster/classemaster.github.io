@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://wnlsxtmekyvtizdwxxuc.supabase.co wss://wnlsxtmekyvtizdwxxuc.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Classe Master : appel, absences et notes pour enseignants</title>
 <meta name="description" content="Classe Master : l’application gratuite pour enseignants. Faites l’appel en quelques secondes, suivez les absences et retards, saisissez les notes et partagez le bilan de vos classes.">
@@ -32,7 +33,12 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/theme.css">
 <link rel="stylesheet" href="css/features.css">
+<link rel="stylesheet" href="css/charts.css">
+<link rel="stylesheet" href="css/graphiques.css">
+<link rel="stylesheet" href="css/print.css">
+<link rel="stylesheet" href="css/undo.css">
 <meta name="theme-color" content="#1E3F8A">
+<script src="js/theme.js"></script>
 </head>
 <body>
 <main>
@@ -55,6 +61,12 @@
 <div id="lock" class="lock" hidden><div class="card"><h1 style="text-transform:none">Classe Master</h1><p class="sub">Entrez votre code pour continuer.</p><input id="lp" class="pin" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="8" placeholder="4 à 8 chiffres" aria-label="Code"><p class="sub" id="lm"></p><button class="btn" id="lgo" style="width:100%">Déverrouiller</button><button class="lnk" id="lfg" style="margin-top:10px">Code oublié ?</button></div></div>
 
 <script src="js/vendor/supabase.js" defer></script>
+<script src="js/graphiques/core.js" defer></script>
+<script src="js/graphiques/donut-chart.js" defer></script>
+<script src="js/graphiques/charts.js" defer></script>
+<script src="js/graphiques/charts-extra.js" defer></script>
+<script src="js/graphiques/charts-more.js" defer></script>
+<script src="js/graphiques.js" defer></script>
 <script src="js/state.js" defer></script>
 <script src="js/supabase.js" defer></script>
 <script src="js/utils.js" defer></script>
@@ -68,17 +80,28 @@
 <script src="js/moyennes.js" defer></script>
 <script src="js/progression.js" defer></script>
 <script src="js/bulletins.js" defer></script>
+<script src="js/fiche.js" defer></script>
 <script src="js/carnet.js" defer></script>
 <script src="js/cahier.js" defer></script>
 <script src="js/import.js" defer></script>
 <script src="js/devoirs.js" defer></script>
 <script src="js/suivi.js" defer></script>
 <script src="js/recherche.js" defer></script>
+<script src="js/merge.js" defer></script>
+<script src="js/undo.js" defer></script>
 <script src="js/sync.js" defer></script>
 <script src="js/horaires.js" defer></script>
 <script src="js/observations.js" defer></script>
+<script src="js/parents.js" defer></script>
+<script src="js/share.js" defer></script>
+<script src="js/saisie.js" defer></script>
+<script src="js/compare.js" defer></script>
+<script src="js/archive.js" defer></script>
 <script src="js/events.js" defer></script>
+<script src="js/prevention.js" defer></script>
+<script src="js/annee.js" defer></script>
 <script src="js/main.js" defer></script>
+<script src="js/maj.js" defer></script>
 <script>if("serviceWorker" in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>
 </body>
 </html>

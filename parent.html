@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://wnlsxtmekyvtizdwxxuc.supabase.co wss://wnlsxtmekyvtizdwxxuc.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#1E3F8A">
+<title>Suivi de l’élève · Classe Master</title>
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<style>
+:root{--bg:#f2f5f9;--surface:#fff;--ink:#16202e;--mute:#5d6b7e;--line:#d9e0ea;--p:#1f7a4d;--pbg:#e0f3e8;--a:#b42b3a;--abg:#fbe4e7;--r:#9a6400;--rbg:#fdf0d0;--accent:#1E3F8A;--soft:#e6ecf8;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0c1424;--surface:#192232;--ink:#e8edf5;--mute:#9aa8bc;--line:#2b3850;--p:#5fd08e;--pbg:#14382a;--a:#ff8591;--abg:#43202a;--r:#f2b84b;--rbg:#40330f;--accent:#8fb0f5;--soft:#22304a;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Figtree","Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px 16px 40px}
+h1{font-size:1.5rem;margin:8px 0 2px}h2{font-size:1.05rem;margin:0 0 8px}
+.sub{color:var(--mute);font-size:.9rem;margin:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+.k{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.k div{background:var(--soft);border-radius:12px;padding:10px 6px;text-align:center}
+.k b{display:block;font-size:1.4rem}.k span{font-size:.75rem;color:var(--mute)}
+.k .ok b{color:var(--p)}.k .no b{color:var(--a)}.k .re b{color:var(--r)}
+.vm{display:block;width:100%;margin-top:8px;font:inherit;font-size:.9rem;font-weight:700;color:var(--accent);background:var(--soft);border:0;border-radius:10px;padding:10px;min-height:42px;cursor:pointer}
+.row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);align-items:center}
+.row:first-of-type{border-top:0}
+.tag{border-radius:999px;padding:1px 9px;font-size:.8rem;font-weight:700;white-space:nowrap}
+.t-a{background:var(--abg);color:var(--a)}.t-j{background:var(--pbg);color:var(--p)}.t-r{background:var(--rbg);color:var(--r)}
+.bar{height:8px;border-radius:99px;background:var(--soft);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.bar i.l{background:var(--a)}
+.note{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.err{text-align:center;padding:40px 10px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;margin:10px 0 0;scrollbar-width:thin}
+.tabs button{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:.92rem;cursor:pointer;min-height:40px}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:700}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sj{display:flex;justify-content:space-between;gap:10px;align-items:center;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;padding:10px 0;cursor:pointer}
+.sj:first-of-type{border-top:0}.sj small{display:block;color:var(--mute)}
+.sj b{white-space:nowrap}
+[hidden]{display:none!important}
+footer{color:var(--mute);font-size:.8rem;text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+<main id="m"><p class="sub" style="text-align:center;margin-top:40px">Chargement…</p></main>
+<script src="js/supabase.js"></script>
+<script>
+(function(){
+  var m=document.getElementById("m");
+  function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+  function nf(x){return x===null||x===undefined||isNaN(x)?"–":String(Math.round(x*100)/100).replace(".",",");}
+  function fd(k){var p=String(k).split("-");if(p.length<3)return esc(k);return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"long",year:"numeric"});}
+  function fu(u){return u?new Date(u).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"}):"–";}
+  function fail(t,s){m.innerHTML='<div class="err"><h1>'+esc(t)+'</h1><p class="sub">'+esc(s)+'</p></div>';}
+  function rpc(fn,arg){
+    return fetch(SUPABASE_URL+"/rest/v1/rpc/"+fn,{method:"POST",headers:{"apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify(arg)})
+    .then(function(r){if(!r.ok)throw new Error("http");return r.json();});
+  }
+  /* Présence, notes, devoirs d'une matière (sans titre) */
+  function body(d){
+    var p=d.pres||{},h='';
+    h+='<div class="card"><h2>Présence</h2><div class="k"><div class="ok"><b>'+(p.p===null||p.p===undefined?"–":nf(p.p)+" %")+'</b><span>présence</span></div><div class="no"><b>'+(p.a||0)+'</b><span>absence'+((p.a||0)>1?"s":"")+(p.j?" ("+p.j+" justifiée"+(p.j>1?"s":"")+")":"")+'</span></div><div class="re"><b>'+(p.r||0)+'</b><span>retard'+((p.r||0)>1?"s":"")+'</span></div></div>';
+    if((d.abs||[]).length){
+      var ar=function(x){return'<div class="row"><span>'+fd(x.d)+(x.m?'<br><span class="sub">'+esc(x.m)+'</span>':"")+'</span><span class="tag '+(x.v==="r"?"t-r":x.j?"t-j":"t-a")+'">'+(x.v==="r"?"Retard":x.j?"Absence justifiée":"Absence")+'</span></div>';};
+      h+='<div style="margin-top:10px">'+d.abs.slice(0,SHOW_ABS).map(ar).join("")+'</div>';
+      if(d.abs.length>SHOW_ABS)h+='<div hidden>'+d.abs.slice(SHOW_ABS).map(ar).join("")+'</div>'+more(d.abs.length-SHOW_ABS);
+    }
+    else h+='<p class="sub" style="margin-top:10px">Aucune absence ni retard enregistré.</p>';
+    h+='</div>';
+    if((d.notes||[]).length||d.avg!==null&&d.avg!==undefined){
+      h+='<div class="card"><h2>Notes</h2>';
+      if(d.avg!==null&&d.avg!==undefined)h+='<p class="note"><span>Moyenne</span><b>'+nf(d.avg)+' / 20</b></p><p class="sub" style="margin:0 0 8px">Moyenne de la classe : '+nf(d.cavg)+' / 20</p>';
+      var nr=function(x){var t=x.m>0?x.n/x.m*100:0;return'<div class="row" style="display:block"><div class="note"><span>'+esc(x.t)+'<br><span class="sub">'+fd(x.d)+'</span></span><b>'+nf(x.n)+' / '+nf(x.m)+'</b></div><div class="bar"><i class="'+(t<50?"l":"")+'" style="width:'+Math.max(2,Math.min(100,t))+'%"></i></div>'+(x.c!==null&&x.c!==undefined?'<span class="sub">Moyenne de la classe : '+nf(x.c)+' / '+nf(x.m)+'</span>':"")+'</div>';};
+      var nl=d.notes||[];
+      h+=nl.slice(0,SHOW_NOTES).map(nr).join("");
+      if(nl.length>SHOW_NOTES)h+='<div hidden>'+nl.slice(SHOW_NOTES).map(nr).join("")+'</div>'+more(nl.length-SHOW_NOTES);
+      h+='</div>';
+    }
+    var w=d.hw||{},tot=(w.r||0)+(w.l||0)+(w.n||0);
+    if(tot)h+='<div class="card"><h2>Devoirs</h2><div class="k"><div class="ok"><b>'+(w.r||0)+'</b><span>rendus</span></div><div class="re"><b>'+(w.l||0)+'</b><span>en retard</span></div><div class="no"><b>'+(w.n||0)+'</b><span>non rendus</span></div></div></div>';
+    return h;
+  }
+  /* Liste repliable : les premiers éléments sont visibles, le reste s'ouvre avec « Voir tout l'historique » */
+  var SHOW_ABS=8,SHOW_NOTES=6;
+  function more(n,label){return n>0?'<button type="button" class="vm" data-more="1" data-n="'+n+'" data-l="'+esc(label)+'">Voir tout l’historique ('+n+' de plus)</button>':"";}
+  document.addEventListener("click",function(e){
+    var b=e.target.closest&&e.target.closest("[data-more]");if(!b)return;
+    var box=b.previousElementSibling;if(!box)return;
+    var open=box.hidden;box.hidden=!open;
+    b.textContent=open?"Réduire":"Voir tout l’historique ("+b.dataset.n+" de plus)";
+    b.setAttribute("aria-expanded",open?"true":"false");
+  });
+  function foot(u){return'<footer>Mis à jour le '+fu(u)+' · Classe Master<br>Lecture seule, réservé à la famille de l’élève.</footer>';}
+
+  var q=new URLSearchParams(location.search),tok=q.get("t"),code=(q.get("c")||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+
+  /* ---- Lien famille : toutes les matières de l'élève (?c=CODE) ---- */
+  if(code||q.has("c")){
+    if(code.length<10||code.length>40)return fail("Lien invalide","Demandez un nouveau lien à l’établissement ou à l’enseignant.");
+    rpc("get_family_shares",{p_code:code}).then(function(L){
+      if(!Array.isArray(L)||!L.length)return fail("Lien introuvable ou désactivé","Demandez un nouveau lien à l’établissement ou à l’enseignant.");
+      /* nom affiché : le plus fréquent, à égalité le plus long */
+      var cnt={};L.forEach(function(d){if(d.name)cnt[d.name]=(cnt[d.name]||0)+1;});
+      var name=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a]||b.length-a.length;})[0]||"Élève";
+      /* libellé des onglets : matière, puis enseignant si deux matières portent le même nom */
+      var lab=L.map(function(d){return d.subj||d.cls||"Matière";}),dupl={};
+      lab.forEach(function(x){dupl[x]=(dupl[x]||0)+1;});
+      lab=lab.map(function(x,i){return dupl[x]>1&&L[i].teacher?x+" ("+L[i].teacher+")":x;});
+      var N=0,A=0,R=0,av=[],last="";
+      L.forEach(function(d){var p=d.pres||{};N+=p.n||0;A+=p.a||0;R+=p.r||0;if(d.avg!==null&&d.avg!==undefined)av.push(d.avg);if(d.updated_at&&d.updated_at>last)last=d.updated_at;});
+      var mg=av.length?av.reduce(function(a,b){return a+b;},0)/av.length:null;
+      var ov='<div class="card"><h2>Vue d’ensemble</h2><div class="k"><div><b>'+nf(mg)+'</b><span>moyenne des matières /20</span></div><div class="ok"><b>'+(N?nf((N-A)/N*100)+" %":"–")+'</b><span>présence</span></div><div class="no"><b>'+A+'</b><span>absence'+(A>1?"s":"")+' · '+R+' retard'+(R>1?"s":"")+'</span></div></div>'+
+        '<p class="sub" style="margin:8px 0 6px">Moyenne simple des matières, sans coefficients.</p>';
+      L.forEach(function(d,i){var p=d.pres||{};ov+='<button type="button" class="sj" data-tab="'+(i+1)+'"><span>'+esc(lab[i])+'<small>'+esc(d.teacher||"")+(d.cavg!==null&&d.cavg!==undefined?(d.teacher?" · ":"")+"classe : "+nf(d.cavg):"")+' · '+(p.a||0)+' abs. · '+(p.r||0)+' ret.</small></span><b>'+(d.avg===null||d.avg===undefined?"–":nf(d.avg)+" / 20")+'</b></button>';});
+      ov+='</div>';
+      var h='<h1>'+esc(name)+'</h1><p class="sub">'+L.length+' matière'+(L.length>1?"s":"")+(L[0].school?" · "+esc(L[0].school):"")+'</p>';
+      h+='<div class="tabs" role="tablist" aria-label="Matières"><button type="button" role="tab" id="tb0" aria-selected="true" aria-controls="pn0" data-tab="0">Ensemble</button>'+lab.map(function(x,i){return'<button type="button" role="tab" id="tb'+(i+1)+'" aria-selected="false" aria-controls="pn'+(i+1)+'" data-tab="'+(i+1)+'">'+esc(x)+'</button>';}).join("")+'</div>';
+      h+='<section role="tabpanel" id="pn0" aria-labelledby="tb0">'+ov+'</section>';
+      L.forEach(function(d,i){h+='<section role="tabpanel" id="pn'+(i+1)+'" aria-labelledby="tb'+(i+1)+'" hidden><h2 style="margin:14px 0 2px;font-size:1.2rem">'+esc(lab[i])+'</h2><p class="sub">'+esc(d.name||"")+(d.cls?" · "+esc(d.cls):"")+(d.teacher?" · "+esc(d.teacher):"")+'</p>'+body(d)+'<p class="sub" style="text-align:center">Mis à jour le '+fu(d.updated_at)+'</p></section>';});
+      h+=foot(last);
+      m.innerHTML=h;document.title="Suivi de "+name+" · Classe Master";
+      function show(i){
+        for(var j=0;j<=L.length;j++){
+          var on=j===i,t=document.getElementById("tb"+j),pn=document.getElementById("pn"+j);
+          t.setAttribute("aria-selected",on?"true":"false");pn.hidden=!on;
+        }
+        var cur=document.getElementById("tb"+i);if(cur&&cur.scrollIntoView)cur.scrollIntoView({block:"nearest",inline:"center"});
+        window.scrollTo(0,0);
+      }
+      m.addEventListener("click",function(e){var b=e.target.closest("[data-tab]");if(b)show(+b.dataset.tab);});
+    }).catch(function(){fail("Impossible de charger le suivi","Vérifiez votre connexion internet puis réessayez.");});
+    return;
+  }
+
+  /* ---- Lien d'une seule matière (?t=jeton) : inchangé ---- */
+  if(!tok||tok.length<24)return fail("Lien invalide","Demandez un nouveau lien à l’enseignant.");
+  rpc("get_parent_share",{p_token:tok}).then(function(d){
+    if(!d||!d.name)return fail("Lien introuvable ou désactivé","Demandez un nouveau lien à l’enseignant.");
+    var h='<h1>'+esc(d.name)+'</h1><p class="sub">'+esc(d.cls)+(d.subj?" · "+esc(d.subj):"")+(d.teacher?" · "+esc(d.teacher):"")+(d.school?" · "+esc(d.school):"")+'</p>'+body(d)+foot(d.updated_at);
+    m.innerHTML=h;document.title="Suivi de "+d.name+" · Classe Master";
+  }).catch(function(){fail("Impossible de charger le suivi","Vérifiez votre connexion internet puis réessayez.");});
+})();
+</script>
+</body>
+</html>
