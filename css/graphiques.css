@@ -20,7 +20,7 @@
 .gr-kpi-v{display:flex;align-items:baseline;gap:5px;margin-top:4px;font-size:1.7rem;font-weight:700;line-height:1.1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .gr-kpi-v small{font-size:.8rem;font-weight:600;letter-spacing:0;color:var(--mute)}
 .gr-kpi-f{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:8px}
-.gr-kpi-d{display:inline-block;white-space:nowrap;padding:2px 9px;border-radius:999px;font-size:.74rem;font-weight:700;background:var(--pbg);color:var(--p)}
+.gr-kpi-d{display:inline-block;white-space:nowrap;padding:2px 9px;border-radius:999px;font-size:.78rem;font-weight:700;background:var(--pbg);color:var(--p)}
 .gr-kpi-d.neg{background:var(--abg);color:var(--a)}
 .gr-kpi-s{width:100%;max-width:120px}
 .gr-card{min-width:0;overflow:hidden}

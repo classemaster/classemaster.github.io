@@ -1,0 +1,65 @@
+/* Classe Master v62 — « Carnet d'appel »
+   Encre marine, les stylos du professeur (rouge de correction, surligneur jaune, craie verte) et un papier froid.
+   Fichier partagé par l'application, la page Administration et l'espace parents : couleurs, titres, cartes, boutons, champs. */
+:root{
+  --bg:#F3F5FA;--surface:#FFFFFF;--ink:#0F1E45;--mute:#56637F;--line:#E0E5EF;
+  --accent:#1C3F9E;--soft:#E8EDFA;--on-accent:#FFFFFF;
+  --p:#14794E;--pbg:#DDF3E8;--on-p:#FFFFFF;           /* craie verte : présent */
+  --a:#C62A41;--abg:#FCE4E8;--on-a:#FFFFFF;           /* stylo rouge : absent */
+  --r:#7A5800;--rbg:#FFF1B8;                          /* surligneur : retard */
+  --hi:#FFD23F;--on-hi:#2B2100;
+  --hero:#14275C;
+  --shadow:0 1px 2px rgba(15,30,69,.05),0 10px 26px -14px rgba(15,30,69,.28);
+  --serif:"Fraunces","Iowan Old Style","Charter","Georgia","Noto Serif",serif;
+  --rs:12px;--rm:16px;--rl:24px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0A1020;--surface:#121A33;--ink:#EAF0FF;--mute:#9AA8C7;--line:#222D4A;
+  --accent:#9DB6FF;--soft:#1A2548;--on-accent:#0A1020;
+  --p:#5BD39A;--pbg:#12392B;--on-p:#06281B;
+  --a:#FF8A98;--abg:#3F1D27;--on-a:#2A0A10;
+  --r:#FFD76A;--rbg:#3D3210;
+  --hi:#FFD23F;--on-hi:#2B2100;--hero:#101B40;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 26px -14px rgba(0,0,0,.6);
+}}
+:root[data-theme="dark"]{
+  --bg:#0A1020;--surface:#121A33;--ink:#EAF0FF;--mute:#9AA8C7;--line:#222D4A;
+  --accent:#9DB6FF;--soft:#1A2548;--on-accent:#0A1020;
+  --p:#5BD39A;--pbg:#12392B;--on-p:#06281B;
+  --a:#FF8A98;--abg:#3F1D27;--on-a:#2A0A10;
+  --r:#FFD76A;--rbg:#3D3210;
+  --hi:#FFD23F;--on-hi:#2B2100;--hero:#101B40;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 26px -14px rgba(0,0,0,.6);
+}
+
+html{-webkit-font-smoothing:antialiased;text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink)}
+
+/* Titres : un serif chaleureux (carnet), le reste en sans-serif lisible */
+h1{font-family:var(--serif);font-weight:700;letter-spacing:-.015em;line-height:1.15;text-transform:none}
+h1::first-letter{text-transform:uppercase}
+h2{letter-spacing:-.005em}
+
+/* Cartes : filet fin, sans ombre lourde */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--rm);box-shadow:none}
+
+/* Boutons */
+.btn{background:var(--accent);color:var(--on-accent);border:0;border-radius:14px;min-height:46px;padding:11px 20px;font-weight:700;box-shadow:none;transition:transform .12s ease,background .12s ease,opacity .12s ease}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.55}
+.btn.ghost{background:var(--soft);color:var(--accent);border:0}
+
+/* Champs */
+select,input[type=date],input[type=text],input[type=number],input[type=password],input[type=search],input[type=email],textarea{
+  background:var(--surface);color:var(--ink);border:1.5px solid var(--line);border-radius:14px;transition:border-color .12s ease,box-shadow .12s ease}
+select:focus,input:focus,textarea:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+select{-webkit-appearance:none;appearance:none;padding-right:40px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2356637F' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat:no-repeat;background-position:right 14px center}
+:root[data-theme="dark"] select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239AA8C7' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>")}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239AA8C7' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>")}}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+input[type=checkbox],input[type=radio]{accent-color:var(--accent)}
+/* En-têtes à boutons (page Administration) : boutons compacts, retour à la ligne propre */
+.top{flex-wrap:wrap}
+.top .btn{min-height:38px;padding:8px 14px;font-size:.88rem}

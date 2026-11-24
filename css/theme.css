@@ -1,9 +1,9 @@
 /* Thème : marine profond, neutres bleutés, cartes arrondies, ombres douces.
    Chargé après style.css : il surcharge couleurs, rayons et ombres. */
 :root{
-  --bg:#F4F6FA;--surface:#FFFFFF;--ink:#12213B;--mute:#66758C;--line:#E4E9F2;
+  --bg:#F4F6FA;--surface:#FFFFFF;--ink:#12213B;--mute:#586880;--line:#E4E9F2;
   --accent:#1E3F8A;--soft:#E8EEFB;
-  --p:#177A55;--pbg:#E1F4EB;--a:#C8374A;--abg:#FCE6E9;--r:#B26A00;--rbg:#FDF1D8;
+  --p:#146B4A;--pbg:#E1F4EB;--a:#B22F42;--abg:#FCE6E9;--r:#8F5500;--rbg:#FDF1D8;
   --shadow:0 6px 22px rgba(18,33,59,.07),0 1px 3px rgba(18,33,59,.05);
   --hero:linear-gradient(135deg,#1E3F8A 0%,#3563C9 100%);
 }
@@ -48,10 +48,13 @@ select,input[type=date],input[type=text],input[type=number],input[type=password]
 
 /* Navigation du bas */
 nav{border-radius:999px;border:1px solid var(--line);box-shadow:0 12px 30px rgba(18,33,59,.16)}
-nav button[aria-selected=true]{background:var(--soft);color:var(--accent)}
+nav button[aria-current=page]{background:var(--soft);color:var(--accent)}
 
 /* Tableaux */
-th{color:var(--mute);font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+th{color:var(--mute);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 td,th{border-bottom-color:var(--line)}
 .al{border:0}
 .hist small{color:var(--mute)}
+
+/* Accessibilité : respecte le réglage « réduire les animations » de l’appareil */
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
