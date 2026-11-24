@@ -34,7 +34,7 @@ function renderFiche(){
 
 function renderHist(){
   var c=cl(),ks=Object.keys(c.records).filter(function(k){return Object.keys(c.records[k]).length}).filter(inRange).sort().reverse();
-  var fh=filterUI();if(!ks.length)return fh+'<div class="empty">Aucun appel enregistré sur cette période.</div>'+bilanCharts();
+  var fh=filterUI();if(!ks.length)return fh+'<div class="empty">Aucun appel enregistré sur cette période.<br><button class="btn" data-go="appel">Faire l’appel</button></div>'+bilanCharts();
   var tot={};c.students.forEach(function(s){tot[s.id]={a:0,r:0,j:0,n:0}});
   ks.forEach(function(k){Object.keys(c.records[k]).forEach(function(id){var v=c.records[k][id];if(tot[id]&&v)tot[id].n++;if(tot[id]&&(v==="a"||v==="r")){tot[id][v]++;if(v==="a"&&gn(c,k,id).j===true)tot[id].j++;}});});
   var al=c.students.filter(function(s){return alertTxt(c,tot[s.id])}).map(function(s){return esc(s.name)+" ("+alertTxt(c,tot[s.id])+")"});

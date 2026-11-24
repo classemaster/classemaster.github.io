@@ -8,7 +8,7 @@ function load(){
 function local(){if(!KEY)return;try{var d=D;kvSet(KEY,function(){return JSON.stringify(d);});if(!IDB.ok&&typeof STO_KO!=="undefined"&&STO_KO)stoOk();}catch(e){if(typeof stoFail==="function")stoFail(e);}}
 function save(){local();if(ME){dirty[D.cur]=Date.now();persistDirty();if(col){clearTimeout(timer);timer=setTimeout(pushNow,600);}}hookRun("saved");}
 function cl(){return D.classes.find(function(c){return c.id===D.cur})||D.classes[0];}
-function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]});}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]});}
 function fmt(k,long){var p=k.split("-");var d=new Date(+p[0],+p[1]-1,+p[2]);return d.toLocaleDateString("fr-FR",long?{weekday:"long",day:"numeric",month:"long",year:"numeric"}:{day:"numeric",month:"short"});}
 function nrm(x){return String(x).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();}
 function hit(nm){var q=nrm(qs);return!q||q.split(/\s+/).every(function(w){return nrm(nm).indexOf(w)>=0;});}
@@ -51,3 +51,17 @@ function dayRate(c,k){var r=c.records[k]||{},n=0,a=0;c.students.forEach(function
 /* Années archivées : une archive est une classe à part dont th.ar porte le nom de l'année (ex. 2025-2026) */
 function isArch(c){return!!(c&&c.th&&c.th.ar);}
 function liveCls(){return D.classes.filter(function(c){return!isArch(c);});}
+
+/* Messages d’erreur en français clair : traduit les erreurs Supabase, réseau et navigateur (jamais de texte anglais brut à l’écran) */
+function frErr(e){
+  var m=String((e&&e.message)||e||"").toLowerCase(),c=String((e&&e.code)||""),st=e&&e.status;
+  if((typeof navigator!=="undefined"&&navigator.onLine===false)||st===0||/failed to fetch|networkerror|load failed|network request/.test(m))return"pas de connexion internet";
+  if(st===401||c==="PGRST301"||/jwt|not authenticated|invalid token/.test(m))return"votre session a expiré, reconnectez-vous";
+  if(c==="42501"||/row-level security|permission denied|violates/.test(m))return"action non autorisée pour votre compte";
+  if(st===429||/rate limit|too many/.test(m))return"trop de tentatives, patientez un moment";
+  if(c==="23505"||/duplicate key/.test(m))return"cet élément existe déjà";
+  if(c==="PGRST202"||c==="42883"||c==="42P01"||/does not exist|could not find the|schema cache/.test(m))return"élément absent côté serveur (installation incomplète)";
+  if(st===408||st===504||/timeout|timed out/.test(m))return"le serveur met trop de temps à répondre";
+  if(st>=500)return"le service est momentanément indisponible";
+  return"erreur inattendue";
+}

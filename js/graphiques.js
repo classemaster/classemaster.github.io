@@ -254,6 +254,14 @@ var GR_B={
     var it=[];
     liveCls().forEach(function(x){var s=pgStat(x);if(s.total)it.push({label:x.name,value:s.n,goal:s.total,color:P[it.length%7]});});
     return{label:"Avancement du programme",unit:"leçons",items:it};
+  },
+  pgm:function(c,P){
+    var B=cxBilan(c);
+    if(!B.length)return{empty:"Donnez un mois à vos leçons (Cahier de textes, section Programme) pour voir ici les mois en avance et les mois en retard."};
+    var now=cxIdxNow(),cur=-1;
+    B.forEach(function(x,k){if(x.i===now)cur=k;});
+    return{unit:"leçons",label:"Leçons du programme, mois par mois",labels:B.map(function(x){return CX_ABR[x.m];}),full:B.map(function(x){return CX_NOM[x.m];}),current:cur>=0?cur:undefined,
+      series:[{name:"Faites",color:P[0],values:B.map(function(x){return x.done;})},{name:"Restantes",color:P[3],values:B.map(function(x){return x.left;})}]};
   }
 };
 
@@ -264,6 +272,16 @@ function grGoalTxt(d,l){
   return" Objectif de "+nf(d.goal.value)+" : "+(l>=d.goal.value?"atteint.":"encore "+nf(Math.round((d.goal.value-l)*10)/10)+" pt à gagner.");
 }
 var GR_R={
+  pgm:function(c,d){
+    var B=cxBilan(c),late=B.filter(function(x){return x.st==="past"&&x.left>0;}),ahead=B.filter(function(x){return x.st==="next"&&x.done>0;}),now=B.filter(function(x){return x.st==="now";})[0],o=[];
+    var pl=function(n,w){return n+" "+w+(n>1?"s":"");};
+    if(late.length)o.push(grB("En retard : "),late.map(function(x){return CX_NOM[x.m]+" ("+pl(x.left,"leçon")+" non faite"+(x.left>1?"s":"")+")";}).join(", ")+". ");
+    else if(B.some(function(x){return x.st==="past";}))o.push(grB("Aucun retard : "),"les mois passés sont terminés. ");
+    if(now)o.push(grB(CX_NOM[now.m]+" (en cours) : "),now.done+" sur "+now.total+" faites. ");
+    if(ahead.length)o.push(grB("En avance : "),ahead.map(function(x){return CX_NOM[x.m]+" ("+pl(x.done,"leçon")+" déjà faite"+(x.done>1?"s":"")+")";}).join(", ")+". ");
+    if(B.sans)o.push(pl(B.sans,"leçon")+" sans mois non comptée"+(B.sans>1?"s":"")+".");
+    return o.length?o:null;
+  },
   line:function(c,d){
     var s=d.series[0];if(!s||!s.values.length)return null;
     var v=s.values,n=v.length,l=v[n-1];if(l===null||l===undefined)return null;
@@ -337,7 +355,7 @@ function grAddTools(host,inst){
     var b=document.createElement("button");
     b.type="button";b.textContent=f[1];b.title=t[f[2]]||"";
     b.setAttribute("aria-label",(t[f[2]]||f[1])+" : "+(h?h.textContent:""));
-    b.addEventListener("click",function(){try{var r=inst.export(f[0],h?h.textContent:"");if(r&&r.catch)r.catch(function(){});}catch(e){}});
+    b.addEventListener("click",function(){var bad=function(){if(typeof toast==="function")toast("Export impossible pour ce graphique. Réessayez, ou rechargez la page.");};try{var r=inst.export(f[0],h?h.textContent:"");if(r&&r.catch)r.catch(bad);}catch(e){bad();}});
     bar.appendChild(b);
   });
   card.insertBefore(bar,card.firstChild);
@@ -358,7 +376,8 @@ var GR_CARDS=[
   ["waterfall","Présences de la période","Des présences attendues aux présences réelles · période du Bilan","WaterfallChart"],
   ["hist","Distribution des moyennes","Nombre d’élèves par tranche de 2 points","HistogramChart"],
   ["box","Moyennes par classe","Médiane, quartiles et valeurs atypiques","BoxPlotChart"],
-  ["prog","Avancement du programme","Leçons faites par classe","ProgressChart"]
+  ["prog","Avancement du programme","Leçons faites par classe","ProgressChart"],
+  ["pgm","Programme mois par mois","Leçons faites et restantes · avance et retard","BarChart"]
 ];
 
 /* ---------- Affichage ---------- */
@@ -385,7 +404,7 @@ function bilanChartsInner(){
   if(GR.per&&s.ms.indexOf(GR.per)<0)GR.per=null;
   var K=grKpis(c,s);
   GR.k=K;GR.ms=s.ms;
-  var h='<p class="sub gr-note">Classe « '+esc(c.name)+' » : calculés à partir de vos appels, notes, devoirs et programme. Touchez une barre, une part, un jour ou une boîte pour voir les élèves concernés.</p>';
+  var h='<p class="sub gr-note">Classe « '+esc(c.name)+' »</p>'+helpTip("Comment lire ces graphiques ?","Calculés à partir de vos appels, notes, devoirs et programme. Touchez une barre, une part, un jour ou une boîte pour voir les élèves concernés.");
   if(s.ms.length>1)h+=grPeriodChips(s.ms);
   h+='<div class="gr-kpis">'+K.map(function(k,i){
     var dl=k.dd===null?(k.v==="–"?"":'<span class="gr-kpi-d none">Pas encore de comparaison</span>'):'<span class="gr-kpi-d'+(k.dd.d<0?" neg":"")+'">'+(k.dd.d<0?"▼ ":k.dd.d>0?"▲ ":"= ")+esc(k.f(k.dd.d))+" vs "+esc(grMLong(s.ms[k.dd.from]))+'</span>';

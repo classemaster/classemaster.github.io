@@ -71,7 +71,7 @@ function idbInit(){
         IDB.db=db;IDB.c=all;
         return idbMigrate(db).then(function(){
           if(done)return;
-          IDB.ok=true;clearTimeout(tm);fin();
+          IDB.ok=true;clearTimeout(tm);idbRestorePending();fin();
           if(typeof STO_QUOTA!=="undefined")STO_QUOTA=50000000;   /* valeur prudente en attendant l’estimation du navigateur */
           db.onversionchange=function(){try{db.close();}catch(e){}IDB.ok=false;};
           try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});}catch(e){}
@@ -135,7 +135,7 @@ function idbFlush(){
     catch(e){back(e);return;}
     var st=tx.objectStore("kv");
     items.forEach(function(x){if(x[1]===null)st.delete(x[0]);else st.put(x[1],x[0]);});
-    tx.oncomplete=function(){IDB.fail=0;if(typeof STO_KO!=="undefined"&&STO_KO&&typeof stoOk==="function")stoOk();res();};
+    tx.oncomplete=function(){IDB.fail=0;if(!Object.keys(IDB.q).length){try{localStorage.removeItem(IDB_PEND);}catch(e){}}if(typeof STO_KO!=="undefined"&&STO_KO&&typeof stoOk==="function")stoOk();res();};
     tx.onerror=tx.onabort=function(){back(tx.error);};
     function back(e){
       items.forEach(function(x){if(IDB.q[x[0]]===undefined)IDB.q[x[0]]=x[1];});   /* on garde pour réessayer, sauf si une version plus récente est déjà en attente */
@@ -148,8 +148,37 @@ function idbFlush(){
   IDB.busy=p;p.then(function(){if(IDB.busy===p)IDB.busy=false;});
   return p;
 }
-window.addEventListener("pagehide",function(){idbFlush();});
-document.addEventListener("visibilitychange",function(){if(document.hidden)idbFlush();});
+/* Copie de secours : à la fermeture de la page, une écriture IndexedDB peut être interrompue par le navigateur.
+   Ce qui est encore en attente est donc aussi recopié, de façon synchrone, dans localStorage ; au prochain démarrage
+   cette copie est rejouée, puis effacée dès que IndexedDB a bien enregistré. */
+var IDB_PEND="cm-idb-pending";
+function idbEmergency(){
+  if(!IDB.ok)return;
+  var ks=Object.keys(IDB.q);if(!ks.length)return;
+  var o={};
+  ks.forEach(function(k){
+    var v=IDB.q[k];
+    if(typeof v==="function"){try{v=v();}catch(e){return;}IDB.c[k]=v;}
+    o[k]=v;
+  });
+  try{localStorage.setItem(IDB_PEND,JSON.stringify(o));}catch(e){}   /* trop volumineux : on garde seulement l'écriture IndexedDB */
+}
+function idbRestorePending(){
+  var o=null;
+  try{o=JSON.parse(localStorage.getItem(IDB_PEND)||"null");}catch(e){}
+  if(!o||typeof o!=="object"||Array.isArray(o))return false;
+  var n=0;
+  Object.keys(o).forEach(function(k){
+    var v=o[k];
+    if(v===null){delete IDB.c[k];IDB.q[k]=null;n++;}
+    else if(typeof v==="string"){IDB.c[k]=v;IDB.q[k]=v;n++;}
+  });
+  if(n)idbPlan(50);
+  else try{localStorage.removeItem(IDB_PEND);}catch(e){}
+  return n>0;
+}
+window.addEventListener("pagehide",function(){idbEmergency();idbFlush();});
+document.addEventListener("visibilitychange",function(){if(document.hidden){idbEmergency();idbFlush();}});
 
 /* Efface toutes les données d’un compte sur l’appareil */
 function kvWipe(key){

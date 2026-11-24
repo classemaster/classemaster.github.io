@@ -31,4 +31,5 @@ function drawSearch(){
   sec("Appels",ds,function(x){var v=Object.keys(x[0].records[x[1]]).map(function(i){return x[0].records[x[1]][i]});return'<button class="hist" data-sd="'+x[0].id+"|"+x[1]+'"><span>'+esc(fmt(x[1],true))+" · "+esc(x[0].name)+"</span><span>"+v.filter(function(z){return z==="a"}).length+" abs. · "+v.filter(function(z){return z==="r"}).length+" ret.</span></button>";});
   sec("Motifs",ms,function(x){return'<button class="hist" data-sd="'+x[0].id+"|"+x[1]+'"><span>'+esc(x[2].name)+" · "+esc(fmt(x[1]))+"</span><span>"+esc(x[3])+"</span></button>";});
   el.innerHTML=h||'<div class="empty">Aucun résultat pour « '+esc(gqs.trim())+" ».</div>";
+  if(typeof foldPart==="function")foldPart(el);
 }

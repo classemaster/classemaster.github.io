@@ -16,7 +16,7 @@ function homeToday(){
     var done=!!dayRate(o.c,t),over=hm(o.x.e)<=nm,cur=i===nxt?(hm(o.x.s)<=nm?" · En cours":" · Prochaine"):"";
     return'<button class="hist" data-sd="'+o.c.id+'|'+t+'"><span><b>'+esc(o.x.s)+'–'+esc(o.x.e)+'</b> '+esc(o.c.name)+(o.x.r?' <small>'+esc(o.x.r)+'</small>':'')+'</span><span>'+(done?'✓ Appel fait':over?'Non fait':'À faire')+(over?'':cur)+'</span></button>';
   }).join('');
-  return'<section class="hm-card"><h2 class="hm-h">Aujourd’hui</h2>'+ban+(rows||'<p class="sub" style="margin:0">Aucune séance prévue aujourd’hui.</p>')+'</section>';
+  return'<section class="hm-card"><h2 class="hm-h">Aujourd’hui</h2>'+(typeof rappelBanner==="function"?rappelBanner():"")+ban+(rows||'<p class="sub" style="margin:0">Aucune séance prévue aujourd’hui.</p>')+'</section>';
 }
 function classeHoraires(c){
   var L=ttSorted(c);

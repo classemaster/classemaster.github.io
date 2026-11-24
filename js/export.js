@@ -10,24 +10,8 @@ function exportCSV(){
   saveFile(name,data,"text/csv");
 }
 
-function saveFile(name,data,type,cb){
-  cb=cb||function(){};
-  if(dl){dl.save({filename:name,data:data}).then(function(){cb("Fichier proposé : acceptez le téléchargement dans la fenêtre qui s’affiche.");},function(e){cb(e&&e.code==="declined"?"Téléchargement annulé.":"Le téléchargement n’est pas disponible ici.");});return;}
-  if(window.claude){cb("Le téléchargement n’est pas disponible ici.");return;}
-  var blob=new Blob([data],{type:type});
-  try{
-    var f=new File([blob],name,{type:type});
-    if(navigator.canShare&&navigator.share&&navigator.canShare({files:[f]})){
-      navigator.share({files:[f],title:name}).then(function(){cb("Fichier partagé ou enregistré.");},function(e){if(e&&e.name==="AbortError")cb("Partage annulé.");else classicDownload(blob,name,cb);});
-      return;
-    }
-  }catch(e){}
-  classicDownload(blob,name,cb);
-}
-function classicDownload(blob,name,cb){
-  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();
-  cb("Téléchargement lancé. Si le fichier n’apparaît pas dans vos téléchargements, utilisez « Copier le texte » plus bas sur cette page.");
-}
+/* Téléchargement : voir js/telecharger.js (plusieurs stratégies + bandeau de secours) */
+function saveFile(name,data,type,cb){cmSave(name,data,type,cb);}
 function exportJSON(all){
   var cls=all?D.classes:[cl()];
   var data=JSON.stringify({app:"appel-matin",version:1,classes:cls});

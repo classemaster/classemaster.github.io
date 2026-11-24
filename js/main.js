@@ -7,7 +7,7 @@ D=load();
 view=RECOVERY?"reset":ME?"home":(ACC.users.length?"login":"signup");
 date=today();
 mo=dstr(new Date()).slice(0,7);
-if(window.claude&&claude.use)claude.use("downloads").then(function(x){dl=x;},function(){});
+cmDlInit();
 if(ME)initSync();
 initAuth();
 document.getElementById("lgo").addEventListener("click",tryUnlock);

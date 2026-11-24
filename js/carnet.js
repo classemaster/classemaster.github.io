@@ -49,7 +49,7 @@ document.getElementById("view").addEventListener("click",function(e){
   if(cp){
     var q=(c.cr||[]).filter(function(x){return x.id===cp.dataset.crcp})[0];if(!q)return;
     var txt=crText(c,q);
-    try{navigator.clipboard.writeText(txt).then(function(){cp.textContent="Copié";},function(){cp.textContent="Copie impossible";});}catch(err){cp.textContent="Copie impossible";}
+    cmCopy(txt,function(g){cp.textContent=g?"Copié":"Copie impossible";});
     return;
   }
   var d=t.closest("[data-crdel]");

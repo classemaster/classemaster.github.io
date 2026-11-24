@@ -23,13 +23,15 @@ function renderAppel(){
   if(!c.students.length){return'<div class="empty">Cette classe n’a pas encore d’élèves.<br><br><button class="btn" data-go="eleves">Ajouter des élèves</button></div>';}
   c.students.forEach(function(s){var v=r[s.id];n[v||"x"]++;});
   var h='<h1>'+esc(fmt(date,true))+'</h1><p class="sub">'+esc(c.name)+(c.subj?" · "+esc(c.subj):"")+" · "+c.students.length+" élèves</p>";
-  h+='<div class="count"><div class="cp"><b>'+n.p+'</b>présents</div><div class="ca"><b>'+n.a+'</b>absents</div><div class="cr"><b>'+n.r+'</b>retards</div><div class="cn"><b>'+n.x+'</b>à faire</div></div>';
+  var tot=c.students.length,dn=n.p+n.a+n.r;
+  h+='<div class="count ap-count"><div class="cp"><b>'+n.p+'</b>présents</div><div class="ca"><b>'+n.a+'</b>absents</div><div class="cr"><b>'+n.r+'</b>retards</div><div class="cn"><b>'+n.x+'</b>à faire</div>'+
+    '<span class="ap-prog" style="--pg:'+Math.round(dn/tot*100)+'%" role="progressbar" aria-valuemin="0" aria-valuemax="'+tot+'" aria-valuenow="'+dn+'" aria-label="Appel fait pour '+dn+' élève'+(dn>1?'s':'')+' sur '+tot+'"></span></div>';
   h+='<div class="bar"><button class="btn" id="allp">Tous présents</button><button class="btn ghost" id="rst">Effacer</button></div>';
   h+=pmBatchButton(c,date);
   if(c.students.length>5)h+='<div class="qb"><input type="search" id="q" placeholder="Rechercher un élève…" aria-label="Rechercher un élève" autocomplete="off" value="'+esc(qs)+'"><button class="btn ghost" id="qx"'+(qs?"":" hidden")+' aria-label="Effacer la recherche">✕</button></div><p class="sub" id="qm" role="status"></p>';
   c.students.forEach(function(s){
     var v=r[s.id]||"";
-    h+='<div class="row '+v+'" data-nm="'+esc(nrm(s.name))+'"'+(hit(s.name)?"":" hidden")+'><div class="nm">'+esc(s.name)+badge(c,s.id)+'</div><div class="seg" data-s="'+s.id+'">'+
+    h+='<div class="row '+v+'" data-nm="'+esc(nrm(s.name))+'"'+(hit(s.name)?"":" hidden")+'><div class="nm"><span class="ini" aria-hidden="true">'+ini(s.name)+'</span><span class="nt">'+esc(s.name)+badge(c,s.id)+'</span></div><div class="seg" data-s="'+s.id+'">'+
     ["p:Présent","a:Absent","r:Retard"].map(function(x){var q=x.split(":");return'<button class="'+q[0]+'" data-v="'+q[0]+'" aria-pressed="'+(v===q[0])+'">'+q[1]+"</button>"}).join("")+"</div>"+noteUI(c,s.id,v)+"</div>";
   });
   h+='<div class="card"><h2>Message pour la vie scolaire</h2><div class="sum" id="sum">'+esc(summary(c,date))+'</div><button class="btn ghost" id="cp">Copier le message</button></div>';

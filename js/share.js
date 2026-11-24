@@ -7,7 +7,7 @@ function shTok(){
 function shUrl(t){return new URL("parent.html?t="+encodeURIComponent(t),location.href).href;}
 function shOn(){return!!(sb&&col);}
 
-/* ---- Liaison avec le dossier de l'établissement (page admin.html) ----
+/* ---- Liaison avec le dossier de l'établissement (page etablissement.html) ----
    L'administrateur crée chaque élève et son code secret. L'enseignant ne reçoit qu'une référence aléatoire non secrète (« Réf ») :
    elle sert à rattacher son résumé au dossier de l'élève, mais ne permet de rien lire. Le code ne quitte jamais la page administrateur. */
 var SH_RMIN=10;
@@ -151,7 +151,7 @@ document.getElementById("view").addEventListener("click",function(e){
     if(!shOn()){say("Connexion impossible pour le moment : vérifiez internet puis réessayez.");return;}
     say("Chargement…");
     sb.rpc("get_family_code",{p_ref:s.ref}).then(function(r){
-      if(r.error){say("Échec : "+r.error.message+(/get_family_code|function/i.test(r.error.message||"")?" — exécutez d’abord supabase/code-enseignant.sql dans Supabase.":""));return;}
+      if(r.error){say("Échec : "+frErr(r.error)+(/get_family_code|function/i.test(r.error.message||"")?" — exécutez d’abord supabase/code-enseignant.sql dans Supabase.":""));return;}
       if(!r.data){say("Code indisponible : l’administrateur ne vous a pas encore affecté cet élève. Demandez-lui de vous l’affecter (page administrateur, « Enseignants »).");return;}
       var code=String(r.data);
       out.innerHTML='<div style="margin:0 0 10px"><span class="cd" style="font:700 1.15rem/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em;background:var(--soft,#e6ecf8);border-radius:8px;padding:6px 10px;display:inline-block">'+esc(shFmtCode(code))+'</span></div>'+
@@ -162,14 +162,14 @@ document.getElementById("view").addEventListener("click",function(e){
     if(out)out.innerHTML="";var sb2=document.querySelector('[data-shc="show"]');if(sb2)sb2.hidden=false;say("");
   }else if(act==="cp"){
     var u=shFamUrl(b.dataset.code);
-    try{navigator.clipboard.writeText(u).then(function(){say("Lien copié.");},function(){say("Copie impossible : "+u);});}catch(er){say(u);}
+    cmCopy(u,function(ok){if(ok)say("Lien copié.");else if(navigator.share)navigator.share({title:"Code famille",text:u,url:u}).then(function(){say("Lien partagé.");},function(){say("Copie impossible. Maintenez le doigt sur le lien pour le copier : "+u);});else say("Copie impossible. Maintenez le doigt sur le lien pour le copier : "+u);});
   }else if(act==="wa"){
     var tel=pmIntl(s.p||""),code=b.dataset.code;
     var txt="Bonjour, voici le code pour suivre les présences et les notes de "+s.name+" : "+shFmtCode(code)+"\nLien : "+shFamUrl(code);
     window.open("https://wa.me/"+(tel||"")+"?text="+encodeURIComponent(txt),"_blank","noopener");
   }
 });
-function shErr(e){var m=(e&&e.message)||"erreur";return"Échec : "+(/row-level security|violates/i.test(m)&&/./.test(m)?"cet élève ne vous est pas affecté. Demandez à l’administrateur de vous l’affecter.":m);}
+function shErr(e){var m=(e&&e.message)||"erreur";return"Échec : "+(/row-level security|violates/i.test(m)&&/./.test(m)?"cet élève ne vous est pas affecté. Demandez à l’administrateur de vous l’affecter.":frErr(e));}
 function shMsg(t){var e=document.getElementById("sh-msg");if(e)e.textContent=t;}
 document.getElementById("view").addEventListener("click",function(e){
   var b=e.target.closest("[data-sh]");if(!b)return;
@@ -188,12 +188,12 @@ document.getElementById("view").addEventListener("click",function(e){
   }else if(act==="off"){
     if(!confirm(s.ref?"Retirer la liaison ? Cette matière disparaîtra du lien famille de l’établissement.":"Désactiver ce lien ? Le parent ne pourra plus l’ouvrir."))return;
     sb.from("parent_shares").delete().eq("token",s.sh).then(function(r){
-      if(r.error){shMsg("Échec : "+r.error.message);return;}
+      if(r.error){shMsg("Échec : "+frErr(r.error));return;}
       shHLoad();delete shH[s.sh];shHSave();delete s.sh;delete s.ref;save();render();
     },function(){shMsg("Échec : pas d’internet.");});
   }else if(act==="cp"){
     var u=shUrl(s.sh),ok=function(){shMsg("Lien copié.");};
-    try{navigator.clipboard.writeText(u).then(ok,function(){var i=document.getElementById("sh-url");i.select();document.execCommand("copy");ok();});}catch(er){var i2=document.getElementById("sh-url");i2.select();}
+    cmCopy(u,function(g){if(g)ok();else{var i=document.getElementById("sh-url");if(i)i.select();shMsg("Copie impossible : sélectionnez le lien et copiez-le.");}});
   }else if(act==="wa"){
     var tel=pmIntl(s.p||"");
     var txt="Bonjour, voici le lien pour suivre les présences et les notes de "+s.name+" : "+shUrl(s.sh);
@@ -216,7 +216,7 @@ document.getElementById("view").addEventListener("click",function(e){
   (function page(from){
     /* seules les colonnes nom, classe et référence sont demandées : jamais le code */
     sb.from("registry_students").select("name,class_label,ref").range(from,from+999).then(function(r){
-      if(r.error){shRfMsg("Échec : "+r.error.message+(/registry_students|relation|schema/i.test(r.error.message||"")?" — exécutez d’abord supabase/partage-admin.sql dans Supabase.":""));return;}
+      if(r.error){shRfMsg("Échec : "+frErr(r.error)+(/registry_students|relation|schema/i.test(r.error.message||"")?" — exécutez d’abord supabase/partage-admin.sql dans Supabase.":""));return;}
       reg=reg.concat(r.data||[]);
       if((r.data||[]).length===1000){page(from+1000);return;}
       var ok=0,no=0;

@@ -2,6 +2,8 @@
 document.getElementById("view").addEventListener("input",function(e){if(e.target.id==="q"){qs=e.target.value;applyQ();}else if(e.target.id==="gq"){gqs=e.target.value;drawSearch();}});
 document.getElementById("view").addEventListener("click",function(e){
   var t=e.target,c=cl();
+  if(typeof etabClick==="function"&&etabClick(t))return;
+  if(typeof rentreeClick==="function"&&rentreeClick(t))return;
   if(t.id==="newev"){
     var ti=prompt("Titre de l’évaluation (ex. Devoir 1)");if(!ti||!ti.trim())return;
     var mx=parseFloat((prompt("Note sur combien ?","20")||"").replace(",","."));if(!(mx>0))mx=20;
@@ -31,7 +33,7 @@ document.getElementById("view").addEventListener("input",function(e){
 document.getElementById("cls").addEventListener("change",function(e){qs="";
   if(e.target.value==="__new"){
     var nm=prompt("Nom de la nouvelle classe (ex. 4e B)");
-    if(nm&&nm.trim()){var id=uid();D.classes.push({id:id,name:nm.trim(),students:[],records:{}});D.cur=id;view="eleves";save();}
+    if(nm&&nm.trim()){var id=uid();D.classes.push({id:id,name:nm.trim(),students:[],records:{},et:etabId()});D.cur=id;view="eleves";save();}
   }else{D.cur=e.target.value;}
   render();
 });
@@ -42,7 +44,7 @@ document.getElementById("view").addEventListener("click",function(e){
   var t=e.target,c=cl();
   var pk=t.closest("[data-pick]");
   if(pk){var sl0=document.querySelector(".hm-cls"),x0=sl0?sl0.scrollLeft:0;D.cur=pk.dataset.pick;view="classe";local();render();window.scrollTo(0,0);return;}
-  if(t.closest("[data-newclass]")){var nn=prompt("Nom de la nouvelle classe (ex. 4e B)");if(nn&&nn.trim()){var nid=uid();D.classes.push({id:nid,name:nn.trim(),students:[],records:{}});D.cur=nid;save();render();}return;}
+  if(t.closest("[data-newclass]")){var nn=prompt("Nom de la nouvelle classe (ex. 4e B)");if(nn&&nn.trim()){var nid=uid();D.classes.push({id:nid,name:nn.trim(),students:[],records:{},et:etabId()});D.cur=nid;save();render();}return;}
   if(t.closest("[data-guest]")){if(!GUEST){D=blank();KEY="";}GUEST=true;ME=null;view="home";date=today();qs="";render();window.scrollTo(0,0);return;}
   var ey=t.closest("[data-eye]");
   if(ey){var pi=document.getElementById(ey.dataset.eye);if(pi){var sh=pi.type==="password";pi.type=sh?"text":"password";ey.setAttribute("aria-pressed",String(sh));ey.setAttribute("aria-label",sh?"Masquer le mot de passe":"Afficher le mot de passe");}return;}
@@ -68,8 +70,8 @@ document.getElementById("view").addEventListener("click",function(e){
     if(Date.now()<until){amsg(le,"Trop d’essais. Patientez quelques secondes.");return;}
     if(!li||!lw){amsg(le,"Entrez votre e-mail et votre mot de passe.");return;}
     t.disabled=true;amsg(le,"");
-    if(!sb||!navigator.onLine){offlineLogin(li,lw,le,t);return;}
-    sb.auth.signInWithPassword({email:li,password:lw}).then(function(r){
+    if(!sb){offlineLogin(li,lw,le,t);return;}
+    withTimeout(sb.auth.signInWithPassword({email:li,password:lw}),8000).then(function(r){
       if(r.error){
         if(netErr(r.error)){offlineLogin(li,lw,le,t);return;}
         t.disabled=false;
@@ -96,10 +98,11 @@ document.getElementById("view").addEventListener("click",function(e){
     if(!fn||!ln){amsg(er,"Entrez votre prénom et votre nom.");return;}
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(si)){amsg(er,"Entrez une adresse e-mail valide.");return;}
     if(p1.length<8){amsg(er,"Le mot de passe doit contenir au moins 8 caractères.");return;}
+    intentSet(null);   /* le type de compte (enseignant / chef d’établissement) se choisit APRÈS la création du compte */
     amsg(er,"");t.disabled=true;
-    if(!sb||!navigator.onLine){offlineSignup(nm,si,p1,er,t);return;}
+    if(!sb){offlineSignup(nm,si,p1,er,t);return;}
     freshNext=true;
-    sb.auth.signUp({email:si,password:p1,options:{data:{name:nm,school:""},emailRedirectTo:redirectUrl()}}).then(function(r){
+    withTimeout(sb.auth.signUp({email:si,password:p1,options:{data:{name:nm,school:""}}}),8000).then(function(r){
       if(r.error&&netErr(r.error)){offlineSignup(nm,si,p1,er,t);return;}
       t.disabled=false;
       if(r.error){freshNext=false;amsg(er,authErr(r.error));return;}
@@ -107,7 +110,7 @@ document.getElementById("view").addEventListener("click",function(e){
       if(nu&&nu.identities&&!nu.identities.length){freshNext=false;amsg(er,"Un compte existe déjà avec cet e-mail. Connectez-vous.");return;}
       if(r.data.session){var su=userFrom(nu);setCred(su,p1);enter(su,true);return;}
       freshNext=false;
-      showDialog("Compte créé","Un e-mail de confirmation vient de vous être envoyé. Ouvrez-le pour activer votre compte, puis connectez-vous.","J’ai compris",function(){view="login";render();window.scrollTo(0,0);});
+      amsg(er,"Le compte n’a pas pu être ouvert. Réessayez dans un instant.");
     },function(){offlineSignup(nm,si,p1,er,t);});
     return;
   }
@@ -148,7 +151,8 @@ document.getElementById("view").addEventListener("click",function(e){
     return;
   }
   if(t.id==="lout"){doLogout();return;}
-  if(t.id==="adminbtn"){location.href="admin.html";return;}
+  if(t.id==="adminbtn"){location.href="etablissement.html";return;}
+  if(t.id==="contactbtn"){location.href="contact.html";return;}
   if(t.id==="adel"){
     if(!confirm("Supprimer définitivement votre compte ainsi que toutes les classes, élèves et appels enregistrés, en ligne et sur cet appareil ? Pensez à faire une sauvegarde avant."))return;
     if(ME.pending){var pg=ME;stopSync();removeUser(pg);view=ACC.users.length?"login":"signup";render();window.scrollTo(0,0);return;}
@@ -156,7 +160,7 @@ document.getElementById("view").addEventListener("click",function(e){
     t.disabled=true;
     sb.rpc("delete_my_account").then(function(r){
       t.disabled=false;
-      if(r.error){alert("Suppression impossible pour le moment. Vérifiez votre connexion internet puis réessayez.");return;}
+      if(r.error){alert(/last admin/i.test(r.error.message||"")?"Vous êtes le seul administrateur de votre établissement, qui compte d’autres enseignants. Nommez d’abord un autre administrateur (Compte › Établissement), puis supprimez votre compte.":"Suppression impossible pour le moment. Vérifiez votre connexion internet puis réessayez.");return;}
       var gone=ME;stopSync();sb.auth.signOut({scope:"local"}).then(function(){},function(){});
       removeUser(gone);view=ACC.users.length?"login":"signup";render();window.scrollTo(0,0);
     },function(){t.disabled=false;alert("Suppression impossible pour le moment. Vérifiez votre connexion internet puis réessayez.");});
@@ -186,7 +190,7 @@ document.getElementById("view").addEventListener("click",function(e){
   if(t.id==="prt"){bilanPrint();return;}
   if(t.id==="rpdf"||t.id==="rsvg"){
     var R=reportData(),nm="bilan-"+cl().name.replace(/[^\w-]+/g,"_"),mf=function(m){var e=document.getElementById("rmsg");if(e)e.textContent=m;};
-    if(t.id==="rpdf")saveFile(nm+".pdf",reportPDF(R),"application/pdf",mf);else saveFile(nm+".svg",reportSVG(R),"image/svg+xml",mf);
+    if(t.id==="rpdf")saveFile(nm+".pdf",function(){return reportPDF(R);},"application/pdf",mf);else saveFile(nm+".svg",function(){return reportSVG(R);},"image/svg+xml",mf);
     return;
   }
   if(t.id==="xone"){exportJSON(false);return;}
@@ -194,7 +198,7 @@ document.getElementById("view").addEventListener("click",function(e){
   if(t.id==="cpx"){
     var xm=document.getElementById("xmsg"),ta=document.getElementById("sh");
     var fb=function(){ta.select();try{document.execCommand("copy");xm.textContent="Texte copié.";}catch(e){xm.textContent="Sélectionnez le texte et copiez-le manuellement.";}};
-    try{navigator.clipboard.writeText(shareTxt).then(function(){xm.textContent="Texte copié.";},fb);}catch(e){fb();}
+    cmCopy(shareTxt,function(g){if(g)xm.textContent="Texte copié.";else fb();});
     return;
   }
   if(t.id==="ipt"){var pv=document.getElementById("pst").value.trim();if(pv)importJSON(pv);return;}
@@ -202,8 +206,7 @@ document.getElementById("view").addEventListener("click",function(e){
   if(t.id==="rst"){if(confirm("Effacer l’appel de ce jour ?")){delAppel(c,date);render();}return;}
   if(t.id==="cp"){
     var txt=summary(c,date);
-    try{navigator.clipboard.writeText(txt).then(function(){t.textContent="Message copié";},function(){t.textContent="Sélectionnez le texte ci-dessus";});}
-    catch(err){t.textContent="Sélectionnez le texte ci-dessus";}
+    cmCopy(txt,function(g){t.textContent=g?"Message copié":"Sélectionnez le texte ci-dessus";});
     return;
   }
   var go=t.closest&&t.closest("[data-go]");   /* toucher l’icône ou le texte du bouton compte aussi */

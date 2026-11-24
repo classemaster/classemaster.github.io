@@ -3,12 +3,21 @@ var sending={},pushed={},sgen=0,chan=null,hid=0;
 /* Fusion entre appareils : rv = version en ligne connue de chaque classe, bases = dernière version commune, cf = conflits récents */
 var rv={},bases={},cf={},baseT=null;
 
-function setSync(t){document.getElementById("sync").textContent=(who?"Connecté : "+who+" · ":"")+t;hookRun("sync",t);}
+/* Barre d'état : ligne pleine = connecté et synchronisé ; ligne qui avance = connexion / envoi en cours ; ligne vide = hors connexion ou appareil seul. Le texte reste en infobulle et pour les lecteurs d'écran. */
+function setSync(t){
+  var e=document.getElementById("sync"),lab=(who?"Connecté : "+who+" · ":"")+t,
+      ok=!!who&&/^Synchronisé/.test(t),busy=!!who&&!ok&&/^(Connexion en cours|Synchronisation…)/.test(t),
+      m=/(\d+) classes sur (\d+)/.exec(t),pc=ok?100:busy?(m&&+m[2]?Math.max(8,Math.round(100*m[1]/m[2])):0):0;
+  e.className="sync "+(ok?"on":busy?"busy"+(pc?" det":""):"off");
+  e.innerHTML="<i></i>";e.firstChild.style.width=pc?pc+"%":"";
+  e.setAttribute("role","img");e.setAttribute("aria-label",lab);e.title=lab;
+  hookRun("sync",t);
+}
 var SYNC_KO="Synchronisation impossible : vos données restent sur cet appareil",pullT=null;
 /* Détail technique de l’échec, affiché à la suite du message pour savoir quoi corriger */
 function syncKo(e){
   var d="";
-  if(e){d=String(e.code||e.status||"");var m=String(e.message||"");if(m)d+=(d?" · ":"")+m;}
+  if(e){d=frErr(e);var cd=String(e.code||e.status||"");if(cd)d+=" · code "+cd;}
   if(!navigator.onLine)d="pas d’internet";
   setSync(SYNC_KO+(d?" ("+d.slice(0,140)+")":""));
 }
@@ -21,7 +30,7 @@ function loadDirty(){var k=dkey();if(!k)return;try{var a=JSON.parse(kvGet(k)||"[
 
 function hasCls(c){return!!((c.students&&c.students.length)||Object.keys(c.records||{}).length);}
 /* Cahier de textes, programme, carnet et appréciations : rangés dans la colonne « th » (clé « x »), sans changer la base */
-var XK=["cr","ct","pg","bc","tt","pa"];
+var XK=["cr","ct","pg","bc","tt","pa","et"];
 function xPack(c){var x={};XK.forEach(function(k){var v=c[k];if(v&&(Array.isArray(v)?v.length:Object.keys(v).length))x[k]=v;});return x;}
 function thRow(c){var o={},b=c.th||{a:3,r:3},k;for(k in b)o[k]=b[k];var x=xPack(c);if(Object.keys(x).length)o.x=x;return o;}
 function xUnpack(n){
@@ -78,7 +87,12 @@ function adopt(v){
 /* L’envoi a été refusé parce que la version en ligne a changé : on récupère, on fusionne, puis on renvoie */
 function conflict(id){
   cf[id]=(cf[id]||0)+1;
-  clearTimeout(pullT);pull(false);
+  clearTimeout(pullT);
+  /* On ne force jamais l’envoi : la version de l’autre appareil n’est donc jamais écrasée.
+     Après quelques refus, on patiente de plus en plus longtemps avant de refusionner. */
+  if(cf[id]>=6)setSync("Synchronisation en attente : une autre modification est en cours sur un autre appareil");
+  var wait=cf[id]<3?0:Math.min((cf[id]-2)*3000,30000);
+  if(wait)pullT=setTimeout(function(){pull(false);},wait);else pull(false);
 }
 
 function pushNow(){
@@ -90,12 +104,11 @@ function pushNow(){
     sending[id]=ts;
     if(c){
       snap=canon(c);row=toRow(c,mine.uid,ts);
-      if(rv[id]&&(cf[id]||0)<3){
+      if(rv[id]){
         /* envoi conditionnel : refusé si un autre appareil a envoyé une version entre-temps */
         var u=Object.assign({},row);delete u.user_id;delete u.id;
         p=sb.from("classes").update(u).eq("user_id",mine.uid).eq("id",id).eq("updated_at",rv[id]).select("updated_at");
-      }else if(rv[id])p=sb.from("classes").upsert(row,{onConflict:"user_id,id"}).select("updated_at");   /* conflits répétés : on force */
-      else p=sb.from("classes").insert(row).select("updated_at");
+      }else p=sb.from("classes").insert(row).select("updated_at");
     }else p=sb.from("classes").delete().eq("id",id);
     p.then(function(r){
       delete sending[id];
@@ -104,7 +117,7 @@ function pushNow(){
         if(c&&r.error.code==="23505"){delete rv[id];conflict(id);return;}   /* la classe existe déjà en ligne */
         syncKo(r.error);clearTimeout(timer);timer=setTimeout(pushNow,15000);return;
       }
-      if(c&&rv[id]&&(cf[id]||0)<3&&(!r.data||!r.data.length)){conflict(id);return;}   /* version en ligne différente */
+      if(c&&rv[id]&&(!r.data||!r.data.length)){conflict(id);return;}   /* version en ligne différente */
       cf[id]=0;
       if(c){rv[id]=(r.data&&r.data[0]&&r.data[0].updated_at)||new Date(ts).toISOString();bases[id]=snap;}
       else{delete rv[id];delete bases[id];}

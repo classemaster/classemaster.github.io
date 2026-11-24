@@ -97,23 +97,23 @@ function renderSignup(){
   '<p class="afoot">Déjà un compte ? <button class="alink" data-go="login">Connectez-vous ici</button></p>'+legacyNote()+guestLink());
 }
 function renderCompte(){
-  if(!ME)return'<h1 style="text-transform:none">Mon compte</h1>'+themeCard()+'<div class="card"><h2>Mode invité</h2><p class="sub" style="margin-top:0">Vous utilisez l’application sans compte : vos données ne sont pas enregistrées et disparaissent à la fermeture de la page. Connectez-vous ou créez un compte pour les sauvegarder ; ce que vous avez saisi pourra être ajouté à votre compte.</p><div class="bar" style="margin:0"><button class="btn" data-go="login">Se connecter</button><button class="btn ghost" data-go="signup">Créer un compte</button></div></div><div class="card"><h2>Importer des données</h2><p class="sub" style="margin-top:0">Chargez une sauvegarde reçue d’un collègue ou une ancienne sauvegarde. En mode invité, elle reste en mémoire jusqu’à la fermeture de la page : connectez-vous ensuite pour la conserver.</p><button class="btn ghost" data-go="part">Importer des données</button></div>';
+  if(!ME)return'<h1 style="text-transform:none">Mon compte</h1>'+themeCard()+(typeof rappelsCard==="function"?rappelsCard():"")+'<div class="card"><h2>Mode invité</h2><p class="sub" style="margin-top:0">Vous utilisez l’application sans compte : vos données ne sont pas enregistrées et disparaissent à la fermeture de la page. Connectez-vous ou créez un compte pour les sauvegarder ; ce que vous avez saisi pourra être ajouté à votre compte.</p><div class="bar" style="margin:0"><button class="btn" data-go="login">Se connecter</button><button class="btn ghost" data-go="signup">Créer un compte</button></div></div><div class="card"><h2>Importer des données</h2><p class="sub" style="margin-top:0">Chargez une sauvegarde reçue d’un collègue ou une ancienne sauvegarde. En mode invité, elle reste en mémoire jusqu’à la fermeture de la page : connectez-vous ensuite pour la conserver.</p><button class="btn ghost" data-go="part">Importer des données</button></div>';
   var u=ME,nC=D.classes.length,nE=0,nA=0;
   D.classes.forEach(function(c){nE+=c.students.length;nA+=Object.keys(c.records).filter(function(k){return Object.keys(c.records[k]).length}).length;});
   var ini=u.name.split(/\s+/).slice(0,2).map(function(w){return w.charAt(0).toUpperCase()}).join("");
   return'<h1 style="text-transform:none">Mon compte</h1>'+
   '<div class="card" style="display:flex;gap:12px;align-items:center"><div class="av">'+esc(ini)+'</div><div><b>'+esc(u.name)+'</b><div class="sub" style="margin:0">'+esc(u.login)+(u.school?" · "+esc(u.school):"")+'</div><div class="sub" style="margin:0">'+nC+" classe(s) · "+nE+" élève(s) · "+nA+" appel(s)</div></div></div>"+
-  '<div class="card"><h2>Profil</h2><label class="fld">Nom<input type="text" id="an" value="'+esc(u.name)+'"></label><label class="fld">Établissement<input type="text" id="as" value="'+esc(u.school||"")+'"></label></div>'+
+  '<div class="card"><h2>Profil</h2><label class="fld">Nom<input type="text" id="an" value="'+esc(u.name)+'"></label>'+(ETAB.list.length?"":'<label class="fld">Établissement<input type="text" id="as" value="'+esc(u.school||"")+'"></label>')+'</div>'+
   '<div class="card"><h2>Mot de passe</h2><label class="fld">Mot de passe actuel<input type="password" id="cp0" autocomplete="current-password"></label><label class="fld">Nouveau mot de passe<input type="password" id="cp1" autocomplete="new-password"></label><label class="fld">Confirmer<input type="password" id="cp2" autocomplete="new-password"></label><p class="err" id="cpm" role="status"></p><button class="btn" id="cpw">Changer le mot de passe</button></div>'+
   '<div class="card"><h2>Sauvegarde et partage</h2><p class="sub" style="margin-top:0">Exportez vos données, partagez une classe, imprimez le bilan.</p><button class="btn ghost" data-go="part">Ouvrir</button></div>'+
-  adminCard()+themeCard()+pinCard()+
+  etabCard()+(typeof rentreeCompteCard==="function"?rentreeCompteCard():"")+adminCard()+themeCard()+(typeof rappelsCard==="function"?rappelsCard():"")+pinCard()+aideCard()+
   '<div class="bar"><button class="btn" id="lout">Se déconnecter</button><button class="btn ghost" id="adel">Supprimer mon compte</button></div>';
 }
 
 /* Accès administrateur : le bouton n’apparaît que pour les comptes inscrits dans public.admin_users (voir supabase/acces-admin.sql) */
 function adminCard(){
   if(!IS_ADMIN)return"";
-  return'<div class="card"><h2>Administration</h2><p class="sub" style="margin-top:0">Votre compte a accès au mode administrateur : dossiers des élèves, codes et liens parents.</p><button class="btn" id="adminbtn">Se connecter en tant qu’administrateur</button></div>';
+  return'<div class="card"><h2>Gestion de l’établissement</h2><p class="sub" style="margin-top:0">Réservée au chef d’établissement : classes et salles, dossiers des élèves, enseignants, codes et liens parents.</p><button class="btn" id="adminbtn">Ouvrir la gestion de l’établissement</button></div>';
 }
 function checkAdmin(){
   if(!sb||!ME||GUEST||ME.pending){return;}
@@ -136,6 +136,7 @@ function enter(u,fresh){
     D.cur=g.cur;local();
   }
   IS_ADMIN=false;initSync();render();window.scrollTo(0,0);checkAdmin();
+  if(typeof etabBoot==="function")etabBoot();
 }
 function removeUser(u){
   try{kvWipe(u.key);}catch(e){}
@@ -145,6 +146,7 @@ function removeUser(u){
   if(ME&&ME.id===u.id){stopSync();ME=null;D=blank();KEY="";}
 }
 function doLogout(forced){
+  if(typeof etabReset==="function")etabReset();
   stopSync();ME=null;IS_ADMIN=false;ACC.cur=null;saveAcc();D=blank();KEY="";view="login";render();window.scrollTo(0,0);
   if(!forced&&sb)sb.auth.signOut({scope:"local"}).then(function(){},function(){});
 }
@@ -154,7 +156,6 @@ var freshNext=false;
 function authErr(e){
   var m=String((e&&e.message)||"").toLowerCase(),c=String((e&&e.code)||"");
   if(c==="invalid_credentials"||m.indexOf("invalid login")>=0)return"E-mail ou mot de passe incorrect.";
-  if(c==="email_not_confirmed"||m.indexOf("not confirmed")>=0)return"Adresse e-mail non confirmée. Ouvrez le message de confirmation reçu par e-mail.";
   if(c==="user_already_exists"||m.indexOf("already registered")>=0)return"Un compte existe déjà avec cet e-mail. Connectez-vous.";
   if(c==="weak_password")return"Mot de passe trop faible. Choisissez-en un plus long ou plus varié.";
   if(c==="same_password")return"Le nouveau mot de passe doit être différent de l’ancien.";
@@ -192,7 +193,9 @@ function hashPw(pw,salt){
 }
 function setCred(u,pw){var s=rnd();return hashPw(pw,s).then(function(h){u.s2=s;u.h2=h;saveAcc();},function(){});}
 function checkCred(u,pw){return hashPw(pw,u.s2||"").then(function(h){return!!u.h2&&h===u.h2;},function(){return false;});}
-function netErr(e){return!navigator.onLine||!e||e.status===0||/fetch|network/i.test(String(e.message||""))||String(e.name||"")==="AuthRetryableFetchError";}
+/* Ne se fie pas à navigator.onLine (faux dans certains aperçus d’éditeur) : seul un vrai échec réseau compte */
+function withTimeout(p,ms){return new Promise(function(ok,ko){var t=setTimeout(function(){ko(new Error("network timeout"));},ms);p.then(function(v){clearTimeout(t);ok(v);},function(e){clearTimeout(t);ko(e);});});}
+function netErr(e){return!e||e.status===0||/fetch|network/i.test(String(e.message||""))||String(e.name||"")==="AuthRetryableFetchError";}
 
 /* Compte créé hors ligne : enregistré sur l’appareil, envoyé à Supabase plus tard (voir finalizeDialog) */
 function offlineSignup(nm,email,pw,er,btn){
@@ -223,8 +226,7 @@ function updPend(){pendCore();hookRun("pend");}   /* les bandeaux supplémentair
 function pendCore(){
   var el=document.getElementById("pend");if(!el)return;
   if(!needOnline()||view==="reset"){el.innerHTML="";return;}
-  if(!navigator.onLine){el.innerHTML=ME.pending?'<div class="gban"><span>Compte créé hors ligne : vos données sont sur cet appareil. Finalisez-le dès que vous avez internet.</span></div>':"";return;}
-  el.innerHTML='<div class="gban"><span>'+(ME.pending?"Finalisez votre compte pour sauvegarder vos données en ligne.":"Reconnectez-vous pour reprendre la synchronisation.")+'</span><button class="btn ghost" id="pfin">'+(ME.pending?"Finaliser":"Reconnecter")+'</button></div>';
+  el.innerHTML='<div class="gban"><span>'+(ME.pending?"Compte créé hors ligne : vos données sont sur cet appareil. Finalisez-le dès que vous avez internet.":"Reconnectez-vous pour reprendre la synchronisation.")+'</span><button class="btn ghost" id="pfin">'+(ME.pending?"Finaliser":"Reconnecter")+'</button></div>';
 }
 function closeDlg(){var o=document.getElementById("adlg");if(o)o.remove();}
 function finalizeDialog(){
@@ -251,15 +253,14 @@ function finalizeDialog(){
       if(!ok){go.disabled=false;amsg(er,"Mot de passe incorrect.");return;}
       return sb.auth.signInWithPassword({email:u.login,password:p}).then(function(r){
         if(!r.error){go.disabled=false;done(r.data.user);return;}
-        if(r.error.code==="email_not_confirmed"||/not confirmed/i.test(r.error.message||"")){go.disabled=false;closeDlg();showDialog("Confirmez votre e-mail","Votre compte existe mais votre adresse e-mail n’est pas encore confirmée. Ouvrez le message de confirmation reçu par e-mail, puis appuyez de nouveau sur « Finaliser ».","J’ai compris");return;}
         if((r.error.code==="invalid_credentials"||/invalid login/i.test(r.error.message||""))&&u.pending){
-          return sb.auth.signUp({email:u.login,password:p,options:{data:{name:u.name,school:u.school||""},emailRedirectTo:redirectUrl()}}).then(function(r2){
+          return sb.auth.signUp({email:u.login,password:p,options:{data:{name:u.name,school:u.school||""}}}).then(function(r2){
             go.disabled=false;
             if(r2.error){amsg(er,authErr(r2.error));return;}
             var nu=r2.data.user;
             if(nu&&nu.identities&&!nu.identities.length){amsg(er,"Un compte existe déjà avec cet e-mail et un autre mot de passe. Déconnectez-vous puis connectez-vous avec celui de ce compte.");return;}
             if(r2.data.session){done(nu);return;}
-            closeDlg();showDialog("Compte créé","Un e-mail de confirmation vient de vous être envoyé. Ouvrez-le pour activer votre compte, puis appuyez de nouveau sur « Finaliser ».","J’ai compris");
+            amsg(er,"Le compte n’a pas pu être créé. Réessayez dans un instant.");
           });
         }
         go.disabled=false;amsg(er,r.error.code==="invalid_credentials"?"E-mail ou mot de passe incorrect.":authErr(r.error));
@@ -289,7 +290,7 @@ function initAuth(){
       if(ev==="PASSWORD_RECOVERY"){RECOVERY=true;view="reset";render();return;}
       if(ev==="SIGNED_OUT"){if(ME)doLogout(true);return;}
       if(!s||!s.user||RECOVERY)return;
-      if(ME&&ME.id===s.user.id){if(!col)initSync();checkAdmin();return;}
+      if(ME&&ME.id===s.user.id){if(!col)initSync();checkAdmin();if(!ETAB.loaded&&!ETAB.unavailable&&typeof etabBoot==="function")etabBoot();return;}
       if(ME){stopSync();ME=null;}
       enter(userFrom(s.user));
     },0);

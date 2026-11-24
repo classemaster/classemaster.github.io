@@ -49,7 +49,7 @@ function pmOpen(sid,k){
     '<div class="gr-sh-h"><h3>Prévenir le parent de '+esc(s.name)+'</h3><button type="button" class="gr-sh-x" data-pmx="1" aria-label="Fermer">✕</button></div>'+
     '<p class="sub" style="margin:0 0 8px">'+(v==="a"?"Absence":"Retard")+' · '+esc(fmt(k,true))+'</p>'+
     '<label class="pm-l" for="pm-tel">Téléphone du parent</label>'+
-    '<input type="tel" id="pm-tel" inputmode="tel" autocomplete="off" placeholder="06 123 45 67 ou +242 06 123 45 67" value="'+esc(s.p||"")+'">'+
+    '<input type="tel" id="pm-tel" aria-label="Numéro de téléphone du parent" inputmode="tel" autocomplete="off" placeholder="06 123 45 67 ou +242 06 123 45 67" value="'+esc(s.p||"")+'">'+
     '<label class="pm-l" for="pm-txt">Message (modifiable)</label>'+
     '<textarea id="pm-txt" style="min-height:130px">'+esc(pmText(c,s,k,v))+'</textarea>'+
     '<p class="sub" id="pm-msg" role="status" style="margin:6px 0"></p>'+
@@ -77,7 +77,7 @@ function pmOpen(sid,k){
     if(t.id==="pm-sms"){var j=needTel();if(j)location.href="sms:+"+j+"?&body="+encodeURIComponent(txt.value);return;}
     if(t.id==="pm-cp"){
       var fb=function(){txt.select();try{document.execCommand("copy");say("Message copié.");}catch(er){say("Sélectionnez le texte et copiez-le.");}};
-      try{navigator.clipboard.writeText(txt.value).then(function(){say("Message copié.");},fb);}catch(er){fb();}
+      cmCopy(txt.value,function(g){if(g)say("Message copié.");else fb();});
     }
   });
   document.addEventListener("keydown",pmKey);
@@ -113,6 +113,7 @@ function pmBatchOpen(k){
     '<p class="sub" id="pmb-m" role="status" style="margin:0 0 8px"></p><div id="pmb-l"></div></div></div>';
   document.body.insertAdjacentHTML("beforeend",h);
   var sh=document.getElementById("pm-sh"),box=document.getElementById("pmb-l"),cnt=document.getElementById("pmb-n"),nx=document.getElementById("pmb-next"),msg=document.getElementById("pmb-m");
+  var pmf={open:false};
   function sent(s){return gn(c,k,s.id).w===true;}
   function ready(s){return!!pmIntl(s.p);}
   function nextOne(){return L.find(function(s){return!sent(s)&&ready(s);});}
@@ -126,6 +127,7 @@ function pmBatchOpen(k){
         '<span class="pm-act"><button style="color:var(--accent)" data-pmbe="'+s.id+'">Modifier</button>'+(ready(s)?'<button style="color:var(--accent)" data-pmbw="'+s.id+'">'+(sent(s)?"Renvoyer":"WhatsApp")+'</button>':"")+'</span>'+
         (ready(s)?"":'<input type="tel" class="pm-tel" inputmode="tel" data-pmbt="'+s.id+'" placeholder="Numéro du parent" aria-label="Numéro du parent de '+esc(s.name)+'" value="'+esc(s.p||"")+'">')+'</div>';
     }).join("");
+    if(typeof foldInline==="function")foldInline(box,pmf);   /* longue liste : se déplie sur place dans cette fenêtre */
   }
   function send(s){
     var v=(c.records[k]||{})[s.id];if(!ready(s)||!v)return;

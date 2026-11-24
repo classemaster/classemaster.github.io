@@ -156,15 +156,15 @@ document.getElementById("view").addEventListener("click",function(e){
   if(t.id==="bone"){
     var s=c.students.find(function(x){return x.id===t.dataset.bs;});if(!s)return;
     var cm=document.getElementById("bcm");if(cm){var kk=bcKey(s.id,p),vv=cm.value.trim();if(!c.bc)c.bc={};if(vv)c.bc[kk]=vv;else delete c.bc[kk];save();}
-    saveFile("bulletin-"+fname(s.name)+"-"+(p==="A"?"annuel":"T"+p)+".pdf",bulletinsPDF(c,p,[s.id]),"application/pdf",function(m){var x=document.getElementById("bmsg1");if(x)x.textContent=m;});
+    saveFile("bulletin-"+fname(s.name)+"-"+(p==="A"?"annuel":"T"+p)+".pdf",function(){return bulletinsPDF(c,p,[s.id]);},"application/pdf",function(m){var x=document.getElementById("bmsg1");if(x)x.textContent=m;});
     return;
   }
   if(t.id==="ball"){
-    saveFile("bulletins-"+safe+"-"+(p==="A"?"annuel":"T"+p)+".pdf",bulletinsPDF(c,p),"application/pdf",function(m){var x=document.getElementById("bmsg");if(x)x.textContent=m;});
+    saveFile("bulletins-"+safe+"-"+(p==="A"?"annuel":"T"+p)+".pdf",function(){return bulletinsPDF(c,p);},"application/pdf",function(m){var x=document.getElementById("bmsg");if(x)x.textContent=m;});
     return;
   }
   if(t.id==="brel"){
-    saveFile("releve-"+safe+"-"+(p==="A"?"annuel":"T"+p)+".pdf",relevePDF(c,p),"application/pdf",function(m){var x=document.getElementById("bmsg");if(x)x.textContent=m;});
+    saveFile("releve-"+safe+"-"+(p==="A"?"annuel":"T"+p)+".pdf",function(){return relevePDF(c,p);},"application/pdf",function(m){var x=document.getElementById("bmsg");if(x)x.textContent=m;});
     return;
   }
 });

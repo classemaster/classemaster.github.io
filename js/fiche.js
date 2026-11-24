@@ -21,7 +21,7 @@ function ficheCard(){
   if(!c||!c.students.length)return"";
   var hasTt=(c.tt||[]).length>0;
   return'<div class="card"><h2>Fiche d’appel papier</h2><p class="sub" style="margin-top:0">À imprimer pour « '+esc(c.name)+' » : les noms des élèves et une colonne par jour. Utile quand le téléphone est absent ou déchargé ; la saisie se fait ensuite depuis l’écran d’appel.</p>'+
-  '<label class="pm-l" for="fm">Mois</label><input type="month" id="fm" value="'+esc(today().slice(0,7))+'" style="width:100%">'+
+  '<label class="pm-l" for="fm">Mois</label><input type="month" id="fm" aria-label="Mois de la fiche" value="'+esc(today().slice(0,7))+'" style="width:100%">'+
   '<label class="pm-l" for="fc">Colonnes</label><select id="fc" style="width:100%"><option value="tt"'+(hasTt?" selected":"")+'>Jours de cours de l’emploi du temps</option><option value="wk"'+(hasTt?"":" selected")+'>Du lundi au vendredi</option><option value="blank">20 colonnes vides (à dater à la main)</option></select>'+
   '<div class="bar stk" style="margin:12px 0 0"><button class="btn" id="fpdf">Fiche d’appel PDF</button></div><p class="sub" id="fmsg" role="status"></p></div>';
 }
@@ -89,7 +89,8 @@ function fichePDF(c,ym,mode){
 document.getElementById("view").addEventListener("click",function(e){
   if(e.target.id!=="fpdf")return;
   var c=cl(),ym=(document.getElementById("fm")||{}).value||today().slice(0,7),mode=(document.getElementById("fc")||{}).value||"wk";
-  var r=fichePDF(c,ym,mode),msg=document.getElementById("fmsg");
+  var r=null,msg=document.getElementById("fmsg");
+  try{r=fichePDF(c,ym,mode);}catch(err){msg.textContent="Impossible de créer la fiche. Fermez les autres onglets pour libérer de la mémoire, puis réessayez.";return;}
   if(!r){msg.textContent="Aucun jour de cours ce mois-ci : choisissez « Colonnes vides » ou un autre mois.";return;}
   saveFile("fiche-appel-"+fname(c.name)+"-"+(mode==="blank"?"vierge":ym)+".pdf",r.bytes,"application/pdf",function(m){
     var x=document.getElementById("fmsg");

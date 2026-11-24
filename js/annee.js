@@ -105,6 +105,6 @@ document.getElementById("view").addEventListener("change",function(e){
 document.getElementById("view").addEventListener("click",function(e){
   var t=e.target,c=cl();
   function say(m){var x=document.getElementById("an-msg");if(x)x.textContent=m;}
-  if(t.id==="an-pdf")saveFile("bilan-annuel-"+fname(c.name)+".pdf",anPDF(c),"application/pdf",say);
-  else if(t.id==="an-csv")saveFile("bilan-annuel-"+fname(c.name)+".csv",anCSV(c),"text/csv",say);
+  if(t.id==="an-pdf")saveFile("bilan-annuel-"+fname(c.name)+".pdf",function(){return anPDF(c);},"application/pdf",say);
+  else if(t.id==="an-csv")saveFile("bilan-annuel-"+fname(c.name)+".csv",function(){return anCSV(c);},"text/csv",say);
 });

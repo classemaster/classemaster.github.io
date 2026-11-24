@@ -61,7 +61,7 @@ document.getElementById("view").addEventListener("click",function(e){
   var a=b.dataset.pgx.split(":"),r=PG.opts[a[1]];
   if(!r||!r.chart)return;
   var nm=fname(r.name||"progression");
-  if(a[0]==="csv"){var t=r.chart.toCSV();if(t)saveFile(nm+".csv","\ufeff"+t,"text/csv",toast);}
+  if(a[0]==="csv"){var t="";try{t=r.chart.toCSV();}catch(x){}if(t)saveFile(nm+".csv","\ufeff"+t,"text/csv",toast);else toast("Rien à exporter pour ce graphique.");}
   else if(a[0]==="png"){r.chart.toPNG().then(function(bl){saveFile(nm+".png",bl,"image/png",toast);},function(){toast("Export de l’image impossible ici.");});}
 });
 
