@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://wnlsxtmekyvtizdwxxuc.supabase.co wss://wnlsxtmekyvtizdwxxuc.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#1E3F8A">
+<title>Contacter un administrateur · Classe Master</title>
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<style>
+:root{--bg:#f2f5f9;--surface:#fff;--ink:#16202e;--mute:#5d6b7e;--line:#d9e0ea;--p:#1f7a4d;--a:#b42b3a;--accent:#1E3F8A;--soft:#e6ecf8;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0c1424;--surface:#192232;--ink:#e8edf5;--mute:#9aa8bc;--line:#2b3850;--p:#5fd08e;--a:#ff8591;--accent:#8fb0f5;--soft:#22304a;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:720px;margin:0 auto;padding:16px 16px 48px}
+h1{font-size:1.5rem;margin:8px 0 2px}h2{font-size:1.05rem;margin:0 0 8px}
+.sub{color:var(--mute);font-size:.9rem;margin:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+input,textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 10px;min-height:42px}
+textarea{min-height:110px;resize:vertical}
+label{display:block;font-size:.85rem;color:var(--mute);margin:10px 0 3px}
+.btn{font:inherit;border:0;border-radius:10px;padding:10px 14px;min-height:42px;background:var(--accent);color:var(--bg);font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+.btn.ghost{background:var(--soft);color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:default}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.tg{border-radius:999px;padding:1px 9px;font-size:.78rem;font-weight:700;white-space:nowrap;background:var(--soft);color:var(--accent)}
+.tg.new{background:rgba(31,122,77,.16);color:var(--p)}
+details.card summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:8px}
+details.card summary::-webkit-details-marker{display:none}
+.msg{border-radius:12px;padding:8px 11px;margin:8px 0;background:var(--soft);max-width:92%}
+.msg.adm{background:rgba(31,122,77,.13);margin-left:auto}
+.msg small{display:block;color:var(--mute);font-size:.78rem;margin-bottom:2px}
+.msg p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+#msg{min-height:1.3em;margin:8px 0 0}
+</style>
+</head>
+<body>
+<main id="app"><p class="sub" style="text-align:center;margin-top:40px">Chargement…</p></main>
+<script src="js/vendor/supabase.js"></script>
+<script src="js/supabase.js"></script>
+<script>
+/* Contacter les administrateurs de Classe Master : chefs d'établissement et enseignants.
+   Les messages sont lus par l'équipe Classe Master seulement (voir supabase/contact-v73.sql). */
+(function(){
+  var app=document.getElementById("app"),me=null,ETS=[],DEM=null,openId=null,busy=false;
+  var CAT={question:"Une question",probleme:"Un problème",code:"Code d’accès",etablissement:"Mon établissement",autre:"Autre"};
+  function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+  function say(t){var e=document.getElementById("msg");if(e)e.textContent=t||"";}
+  function fdt(v){return v?new Date(v).toLocaleString("fr-FR",{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"}):"";}
+  function frErr(e){var m=String((e&&e.message)||e||"").toLowerCase(),st=e&&e.status;
+    if(navigator.onLine===false||st===0||/failed to fetch|networkerror|load failed|network request/.test(m))return"pas de connexion internet";
+    if(st===401||/jwt|not authenticated|invalid token/.test(m))return"votre session a expiré, reconnectez-vous";
+    if(/does not exist|could not find the|schema cache/.test(m))return"la messagerie n’est pas encore installée sur le serveur (script contact-v73.sql)";
+    return"erreur inattendue";}
+  function cErr(r){
+    if(r.error)return frErr(r.error);
+    return({bad_input:"le sujet (100 caractères au plus) et le message (2 000 au plus) sont obligatoires",not_member:"vous n’êtes pas membre de cet établissement",
+      too_many:"trop de demandes ou de messages en peu de temps : réessayez plus tard",not_found:"demande introuvable : actualisez"})[r.data&&r.data.err]||"action impossible";}
+  function login(note){
+    app.innerHTML='<h1>Contacter un administrateur</h1><p class="sub">Classe Master</p><div class="card"><h2>Connexion</h2><label for="em">E-mail</label><input id="em" type="email" autocomplete="username"><label for="pw">Mot de passe</label><input id="pw" type="password" autocomplete="current-password"><div class="bar"><button class="btn" id="in">Se connecter</button><a class="btn ghost" href="./">← Application</a></div><p class="sub" id="msg" role="status">'+esc(note||"")+'</p></div>';
+    function go(){
+      var em=document.getElementById("em").value.trim(),pw=document.getElementById("pw").value;
+      if(!em||!pw){say("Entrez l’e-mail et le mot de passe.");return;}
+      say("Connexion…");
+      sb.auth.signInWithPassword({email:em,password:pw}).then(function(r){
+        if(r.error||!r.data||!r.data.session){say(r.error&&r.error.code!=="invalid_credentials"?"Échec de la connexion : "+frErr(r.error):"E-mail ou mot de passe incorrect.");return;}
+        me=r.data.session.user;load();
+      },function(){say("Pas d’internet.");});
+    }
+    document.getElementById("in").onclick=go;
+    document.getElementById("pw").onkeydown=function(e){if(e.key==="Enter")go();};
+  }
+  function load(note){
+    Promise.all([sb.rpc("mes_etablissements"),sb.rpc("contact_mes_demandes")]).then(function(a){
+      ETS=(!a[0].error&&Array.isArray(a[0].data))?a[0].data:[];
+      if(a[1].error){DEM=null;main("Échec : "+frErr(a[1].error));return;}
+      DEM=Array.isArray(a[1].data)?a[1].data:[];main(note||"");
+    },function(){DEM=null;main("Pas d’internet.");});
+  }
+  function thread(d){
+    return(d.echanges||[]).map(function(e){return'<div class="msg'+(e.de_admin?" adm":"")+'"><small>'+(e.de_admin?"Administrateur Classe Master":"Vous")+" · "+esc(fdt(e.created_at))+'</small><p>'+esc(e.corps)+'</p></div>';}).join("");
+  }
+  function demHtml(){
+    if(DEM===null)return'<div class="card"><p class="sub" style="margin:0">Vos demandes ne peuvent pas être affichées pour le moment.</p></div>';
+    if(!DEM.length)return'<div class="card"><p class="sub" style="margin:0">Aucune demande pour le moment.</p></div>';
+    return DEM.map(function(d){
+      return'<details class="card" data-id="'+esc(d.id)+'"'+(openId===d.id?" open":"")+'><summary><span style="min-width:0"><b>'+esc(d.sujet)+'</b><br><span class="sub">'+esc(CAT[d.categorie]||"Autre")+(d.etab_nom?" · "+esc(d.etab_nom):"")+" · "+esc(fdt(d.maj_le))+'</span></span><span>'+(d.non_lu?'<span class="tg new">Nouvelle réponse</span> ':"")+'<span class="tg">'+(d.statut==="traite"?"Traitée":"Ouverte")+'</span></span></summary>'+
+        thread(d)+'<label for="r-'+esc(d.id)+'">Ajouter un message</label><textarea id="r-'+esc(d.id)+'" maxlength="2000"></textarea><div class="bar"><button class="btn" data-rep="'+esc(d.id)+'">Envoyer</button></div></details>';
+    }).join("");
+  }
+  function main(note){
+    var opts='<option value="">Aucun établissement en particulier</option>'+ETS.map(function(e){return'<option value="'+esc(e.id)+'">'+esc(e.nom)+(e.ville?" · "+esc(e.ville):"")+'</option>';}).join("");
+    var cats=Object.keys(CAT).map(function(k){return'<option value="'+k+'">'+esc(CAT[k])+'</option>';}).join("");
+    app.innerHTML='<div class="top"><div><h1>Contacter un administrateur</h1><p class="sub">'+esc((me&&me.email)||"")+' · Les administrateurs de Classe Master lisent votre message et vous répondent ici. Vous n’êtes pas averti par e-mail : revenez sur cette page.</p></div><div class="bar" style="margin:0"><a class="btn ghost" href="./">← Application</a><button class="btn ghost" id="out">Se déconnecter</button></div></div>'+
+      '<div class="card"><h2>Nouvelle demande</h2><label for="et">Établissement concerné</label><select id="et">'+opts+'</select><label for="ct">Sujet de la demande</label><select id="ct">'+cats+'</select>'+
+      '<label for="sj">Titre</label><input id="sj" maxlength="100" autocomplete="off"><label for="co">Votre message</label><textarea id="co" maxlength="2000"></textarea>'+
+      '<p class="sub" style="margin-top:6px">Ne mettez ni nom d’élève, ni note, ni mot de passe dans votre message.</p><div class="bar"><button class="btn" id="send">Envoyer</button></div></div>'+
+      '<h2 style="margin-top:20px">Mes demandes</h2>'+demHtml()+'<p class="sub" id="msg" role="status">'+esc(note||"")+'</p>';
+  }
+  app.addEventListener("toggle",function(ev){
+    var d=ev.target;if(!d||!d.matches||!d.matches("details[data-id]"))return;
+    var id=d.getAttribute("data-id");
+    if(d.open){openId=id;var x=(DEM||[]).filter(function(e){return e.id===id;})[0];
+      if(x&&x.non_lu){x.non_lu=false;sb.rpc("contact_marquer_lu",{p_id:id}).then(function(){},function(){});var t=d.querySelector(".tg.new");if(t)t.remove();}
+    }else if(openId===id)openId=null;
+  },true);
+  app.addEventListener("click",function(ev){
+    var b=ev.target.closest?ev.target.closest("button"):null;if(!b)return;
+    if(b.id==="out"){sb.auth.signOut().then(function(){me=null;DEM=null;login("Déconnecté.");});return;}
+    if(busy)return;
+    if(b.id==="send"){
+      var sj=document.getElementById("sj").value.trim(),co=document.getElementById("co").value.trim();
+      if(!sj||!co){say("Écrivez un titre et un message.");return;}
+      busy=true;b.disabled=true;
+      sb.rpc("contact_envoyer",{p_etab:document.getElementById("et").value||null,p_categorie:document.getElementById("ct").value,p_sujet:sj,p_corps:co}).then(function(r){
+        busy=false;b.disabled=false;
+        if(r.error||!r.data||r.data.ok!==true){say("Échec : "+cErr(r));return;}
+        openId=r.data.id;load("Demande envoyée. Vous verrez la réponse ici.");
+      },function(){busy=false;b.disabled=false;say("Pas d’internet.");});
+      return;
+    }
+    if(b.dataset.rep){
+      var id=b.dataset.rep,ta=document.getElementById("r-"+id),tx=ta?ta.value.trim():"";
+      if(!tx){say("Écrivez un message.");return;}
+      busy=true;b.disabled=true;
+      sb.rpc("contact_repondre",{p_id:id,p_corps:tx}).then(function(r){
+        busy=false;b.disabled=false;
+        if(r.error||!r.data||r.data.ok!==true){say("Échec : "+cErr(r));return;}
+        openId=id;load("Message envoyé.");
+      },function(){busy=false;b.disabled=false;say("Pas d’internet.");});
+    }
+  });
+  if(!sb){app.innerHTML='<div style="text-align:center;padding:40px 10px"><h1>Indisponible</h1><p class="sub">La connexion au serveur n’est pas configurée.</p></div>';return;}
+  sb.auth.getSession().then(function(r){
+    var s=r&&r.data&&r.data.session;
+    if(s){me=s.user;load();}else login();
+  },function(){login("Pas d’internet.");});
+})();
+</script>
+</body>
+</html>

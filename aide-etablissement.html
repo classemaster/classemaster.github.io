@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Guide du chef d’établissement · Classe Master</title>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="stylesheet" href="css/guide.css">
+<meta name="theme-color" content="#1E3F8A">
+</head>
+<body>
+<main>
+<a class="back" href="etablissement.html">← Gestion de l’établissement</a>
+<h1>Guide du chef d’établissement</h1>
+<p class="sub">Mise en route, gestion au quotidien et dépannage. Touchez une rubrique pour la lire.</p>
+
+<details open>
+<summary>1. Mise en route (une seule fois)</summary>
+<p>Dans Supabase, ouvrez <b>SQL Editor › New query</b>, collez le contenu du fichier indiqué, puis touchez <b>Run</b>. Respectez cet ordre :</p>
+<ol>
+<li><code>schema.sql</code> : base de données de l’application.</li>
+<li><code>partage-parents.sql</code> : liens de suivi pour les parents.</li>
+<li><code>partage-admin.sql</code> : dossiers élèves et lien unique famille.</li>
+<li><code>acces-admin.sql</code> : liste des administrateurs.</li>
+<li><code>code-enseignant.sql</code> : l’enseignant peut afficher le code famille de ses élèves.</li>
+<li><code>securite-v32.sql</code> : affectation des élèves aux enseignants.</li>
+<li><code>tableau-bord-admin.sql</code> : tableau de bord.</li>
+<li><code>vie-scolaire-admin.sql</code> : enseignants, discipline, fin de période.</li>
+</ol>
+<p>Ces scripts peuvent être relancés sans risque. Ensuite : collez la clé publique dans <code>js/supabase.js</code>, renseignez les adresses autorisées (Authentication › URL Configuration : <code>https://classemaster.github.io/</code> et <code>https://classemaster.github.io/**</code>), puis publiez les fichiers sur GitHub. Le détail est dans <code>supabase/LISEZ-MOI.md</code>.</p>
+</details>
+
+<details>
+<summary>2. Donner l’accès administrateur à un compte</summary>
+<ol>
+<li>La personne crée d’abord son compte dans Classe Master (avec son adresse e-mail).</li>
+<li>Dans <code>acces-admin.sql</code>, remplacez <code>VOTRE-ADRESSE@EXEMPLE.COM</code> par son adresse, puis lancez le script.</li>
+<li>Elle ouvre <code>etablissement.html</code> (bouton « Gestion de l’établissement » dans <b>Compte</b>).</li>
+</ol>
+<p>Pour retirer l’accès, utilisez la ligne « Retirer l’accès » à la fin du même script. Si la page affiche « Accès réservé », l’adresse n’a pas été ajoutée, ou ne correspond pas exactement.</p>
+</details>
+
+<details>
+<summary>3. Au quotidien</summary>
+<ul>
+<li><b>Tableau de bord</b> : Aperçu, Effectifs, Assiduité, Résultats, Enseignants, Discipline, Fin de période.</li>
+<li><b>Affecter une classe à un enseignant</b> : onglet « Enseignants » (adresse e-mail de l’enseignant et nom de la classe). Sans affectation, l’enseignant ne peut pas afficher le code famille des élèves de cette classe.</li>
+<li><b>Lien unique pour une famille</b> : les parents ouvrent un seul lien qui regroupe toutes les matières de leur enfant.</li>
+<li><b>Fin de période</b> : enregistrez ici les décisions de passage.</li>
+</ul>
+</details>
+
+<details>
+<summary>4. Avant chaque mise à jour du site</summary>
+<ol>
+<li>Lancez <code>node outils/tests.js</code> : tous les tests doivent réussir.</li>
+<li>Changez <code>VERSION</code> en haut de <code>sw.js</code> (par exemple <code>cm-v54</code> puis <code>cm-v55</code>) : sinon les téléphones gardent l’ancienne version.</li>
+<li>Publiez sur le dépôt GitHub <code>classemaster.github.io</code>. Demandez aux enseignants de fermer puis rouvrir l’application avec internet.</li>
+</ol>
+</details>
+
+<details>
+<summary>5. Dépannage</summary>
+<ul>
+<li><b>« Statistiques indisponibles »</b> : relancez <code>tableau-bord-admin.sql</code>.</li>
+<li><b>Onglets Enseignants, Discipline ou Fin de période « Indisponibles »</b> : lancez <code>vie-scolaire-admin.sql</code>.</li>
+<li><b>La page admin affiche « élément absent côté serveur »</b> : un script SQL manque. Reprenez la liste de la rubrique 1.</li>
+<li><b>« Action non autorisée »</b> : le compte n’est pas administrateur (rubrique 2), ou la classe n’est pas affectée à l’enseignant.</li>
+<li><b>Impossible de se connecter</b> : vérifiez les adresses autorisées dans Authentication › URL Configuration.</li>
+<li><b>Bouton Google « pas activé »</b> : renseignez l’identifiant et le secret Google dans Authentication › Providers › Google, ou ignorez ce bouton.</li>
+<li><b>Les enseignants ne voient pas la nouvelle version</b> : <code>VERSION</code> de <code>sw.js</code> non changée (rubrique 4).</li>
+<li><b>Une donnée semble perdue</b> : demandez à l’enseignant de regarder la corbeille (Compte › Espace et sauvegarde) ou de restaurer sa dernière sauvegarde complète.</li>
+</ul>
+</details>
+
+<details>
+<summary>6. Données personnelles et sécurité</summary>
+<ul>
+<li>La clé publique de <code>js/supabase.js</code> est faite pour être publique : la protection vient des règles Supabase (RLS) installées par les scripts SQL.</li>
+<li>Ne partagez jamais la clé « service role » de Supabase ni le mot de passe de votre compte Supabase.</li>
+<li>Les parents n’ont accès qu’à la lecture, et seulement avec leur code famille. Les incidents de discipline ne leur sont pas visibles.</li>
+<li>Les noms et notes des élèves sont des données sensibles : n’envoyez pas de captures de la page d’administration par messagerie ouverte.</li>
+</ul>
+</details>
+</main>
+</body>
+</html>

@@ -51,6 +51,8 @@ h1{font-size:1.5rem;margin:8px 0 2px}h2{font-size:1.05rem;margin:0 0 8px}
 [hidden]{display:none!important}
 footer{color:var(--mute);font-size:.8rem;text-align:center;margin-top:18px}
 </style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&display=swap">
+<link rel="stylesheet" href="css/carnet.css">
 </head>
 <body>
 <main id="m"><p class="sub" style="text-align:center;margin-top:40px">Chargement…</p></main>
@@ -59,6 +61,8 @@ footer{color:var(--mute);font-size:.8rem;text-align:center;margin-top:18px}
 (function(){
   var m=document.getElementById("m");
   function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+  function ni(v){v=Math.floor(+v);return isFinite(v)&&v>0?Math.min(v,99999):0;}
+  function cp(o,ks){var r={},i;o=o&&typeof o==="object"?o:{};for(i=0;i<ks.length;i++)r[ks[i]]=ni(o[ks[i]]);if(o.p!==undefined)r.p=o.p;return r;}
   function nf(x){return x===null||x===undefined||isNaN(x)?"–":String(Math.round(x*100)/100).replace(".",",");}
   function fd(k){var p=String(k).split("-");if(p.length<3)return esc(k);return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"long",year:"numeric"});}
   function fu(u){return u?new Date(u).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"}):"–";}
@@ -69,7 +73,7 @@ footer{color:var(--mute);font-size:.8rem;text-align:center;margin-top:18px}
   }
   /* Présence, notes, devoirs d'une matière (sans titre) */
   function body(d){
-    var p=d.pres||{},h='';
+    var p=cp(d.pres,["n","a","j","r"]),h='';
     h+='<div class="card"><h2>Présence</h2><div class="k"><div class="ok"><b>'+(p.p===null||p.p===undefined?"–":nf(p.p)+" %")+'</b><span>présence</span></div><div class="no"><b>'+(p.a||0)+'</b><span>absence'+((p.a||0)>1?"s":"")+(p.j?" ("+p.j+" justifiée"+(p.j>1?"s":"")+")":"")+'</span></div><div class="re"><b>'+(p.r||0)+'</b><span>retard'+((p.r||0)>1?"s":"")+'</span></div></div>';
     if((d.abs||[]).length){
       var ar=function(x){return'<div class="row"><span>'+fd(x.d)+(x.m?'<br><span class="sub">'+esc(x.m)+'</span>':"")+'</span><span class="tag '+(x.v==="r"?"t-r":x.j?"t-j":"t-a")+'">'+(x.v==="r"?"Retard":x.j?"Absence justifiée":"Absence")+'</span></div>';};
@@ -87,7 +91,7 @@ footer{color:var(--mute);font-size:.8rem;text-align:center;margin-top:18px}
       if(nl.length>SHOW_NOTES)h+='<div hidden>'+nl.slice(SHOW_NOTES).map(nr).join("")+'</div>'+more(nl.length-SHOW_NOTES);
       h+='</div>';
     }
-    var w=d.hw||{},tot=(w.r||0)+(w.l||0)+(w.n||0);
+    var w=cp(d.hw,["r","l","n"]),tot=(w.r||0)+(w.l||0)+(w.n||0);
     if(tot)h+='<div class="card"><h2>Devoirs</h2><div class="k"><div class="ok"><b>'+(w.r||0)+'</b><span>rendus</span></div><div class="re"><b>'+(w.l||0)+'</b><span>en retard</span></div><div class="no"><b>'+(w.n||0)+'</b><span>non rendus</span></div></div></div>';
     return h;
   }
@@ -101,6 +105,14 @@ footer{color:var(--mute);font-size:.8rem;text-align:center;margin-top:18px}
     b.textContent=open?"Réduire":"Voir tout l’historique ("+b.dataset.n+" de plus)";
     b.setAttribute("aria-expanded",open?"true":"false");
   });
+  /* Messages de l’établissement aux familles (sans le script SQL v71 : aucun message, sans erreur) */
+  function famMsgs(code,box){
+    rpc("get_messages_famille",{p_code:code}).then(function(L){
+      if(!Array.isArray(L)||!L.length||!box)return;
+      var h=L.map(function(x){return'<div class="card" style="border-left:4px solid var(--b,#1E3F8A)"><b>'+esc(x.titre)+'</b><p class="sub" style="margin:4px 0 2px;white-space:pre-wrap">'+esc(x.corps)+'</p><p class="sub" style="margin:0;font-size:.8rem">Message de l’établissement · '+fu(x.at)+'</p></div>';}).join("");
+      box.insertAdjacentHTML("afterbegin",h);
+    },function(){});
+  }
   function foot(u){return'<footer>Mis à jour le '+fu(u)+' · Classe Master<br>Lecture seule, réservé à la famille de l’élève.</footer>';}
 
 
@@ -122,11 +134,11 @@ footer{color:var(--mute);font-size:.8rem;text-align:center;margin-top:18px}
       lab.forEach(function(x){dupl[x]=(dupl[x]||0)+1;});
       lab=lab.map(function(x,i){return dupl[x]>1&&L[i].teacher?x+" ("+L[i].teacher+")":x;});
       var N=0,A=0,R=0,av=[],last="";
-      L.forEach(function(d){var p=d.pres||{};N+=p.n||0;A+=p.a||0;R+=p.r||0;if(d.avg!==null&&d.avg!==undefined)av.push(d.avg);if(d.updated_at&&d.updated_at>last)last=d.updated_at;});
+      L.forEach(function(d){var p=cp(d.pres,["n","a","j","r"]);N+=p.n||0;A+=p.a||0;R+=p.r||0;if(d.avg!==null&&d.avg!==undefined)av.push(d.avg);if(d.updated_at&&d.updated_at>last)last=d.updated_at;});
       var mg=av.length?av.reduce(function(a,b){return a+b;},0)/av.length:null;
       var ov='<div class="card"><h2>Vue d’ensemble</h2><div class="k"><div><b>'+nf(mg)+'</b><span>moyenne des matières /20</span></div><div class="ok"><b>'+(N?nf((N-A)/N*100)+" %":"–")+'</b><span>présence</span></div><div class="no"><b>'+A+'</b><span>absence'+(A>1?"s":"")+' · '+R+' retard'+(R>1?"s":"")+'</span></div></div>'+
         '<p class="sub" style="margin:8px 0 6px">Moyenne simple des matières, sans coefficients.</p>';
-      L.forEach(function(d,i){var p=d.pres||{};ov+='<button type="button" class="sj" data-tab="'+(i+1)+'"><span>'+esc(lab[i])+'<small>'+esc(d.teacher||"")+(d.cavg!==null&&d.cavg!==undefined?(d.teacher?" · ":"")+"classe : "+nf(d.cavg):"")+' · '+(p.a||0)+' abs. · '+(p.r||0)+' ret.</small></span><b>'+(d.avg===null||d.avg===undefined?"–":nf(d.avg)+" / 20")+'</b></button>';});
+      L.forEach(function(d,i){var p=cp(d.pres,["n","a","j","r"]);ov+='<button type="button" class="sj" data-tab="'+(i+1)+'"><span>'+esc(lab[i])+'<small>'+esc(d.teacher||"")+(d.cavg!==null&&d.cavg!==undefined?(d.teacher?" · ":"")+"classe : "+nf(d.cavg):"")+' · '+(p.a||0)+' abs. · '+(p.r||0)+' ret.</small></span><b>'+(d.avg===null||d.avg===undefined?"–":nf(d.avg)+" / 20")+'</b></button>';});
       ov+='</div>';
       var h='<h1>'+esc(name)+'</h1><p class="sub">'+L.length+' matière'+(L.length>1?"s":"")+(L[0].school?" · "+esc(L[0].school):"")+'</p>';
       h+='<div class="tabs" role="tablist" aria-label="Matières"><button type="button" role="tab" id="tb0" aria-selected="true" aria-controls="pn0" data-tab="0">Ensemble</button>'+lab.map(function(x,i){return'<button type="button" role="tab" id="tb'+(i+1)+'" aria-selected="false" aria-controls="pn'+(i+1)+'" data-tab="'+(i+1)+'">'+esc(x)+'</button>';}).join("")+'</div>';
@@ -172,7 +184,7 @@ footer{color:var(--mute);font-size:.8rem;text-align:center;margin-top:18px}
     var box=document.getElementById("fam");
     if(sel.L===null)box.innerHTML='<div class="err"><h2>Impossible de charger le suivi</h2><p class="sub">Vérifiez votre connexion internet puis réessayez.</p><button type="button" class="vm" data-retry="1">Réessayer</button></div>';
     else if(!sel.L.length)box.innerHTML='<div class="err"><h2>Code introuvable ou désactivé</h2><p class="sub">Demandez un nouveau code à l’établissement, puis retirez celui-ci.</p></div>';
-    else renderFamily(sel.L,box);
+    else{renderFamily(sel.L,box);famMsgs(sel.c,box);}
   }
   document.addEventListener("click",function(e){
     var t=e.target.closest&&e.target.closest("[data-kid],[data-addkid],[data-login],[data-cancel],[data-rm],[data-logout],[data-retry],[data-savekid]");if(!t)return;
@@ -204,7 +216,7 @@ footer{color:var(--mute);font-size:.8rem;text-align:center;margin-top:18px}
     if(code.length<10||code.length>40)return fail("Lien invalide","Demandez un nouveau lien à l’établissement ou à l’enseignant.");
     loadCode(code).then(function(L){
       if(!L.length)return fail("Lien introuvable ou désactivé","Demandez un nouveau lien à l’établissement ou à l’enseignant.");
-      var box=document.createElement("div");m.innerHTML="";m.appendChild(box);renderFamily(L,box);
+      var box=document.createElement("div");m.innerHTML="";m.appendChild(box);renderFamily(L,box);famMsgs(code,box);
       var has=saved().some(function(x){return x.c===code;});
       m.insertAdjacentHTML("afterbegin",'<p class="sub" style="text-align:right;margin:0 0 4px"><a class="lnk" href="parent.html">Espace parents</a></p>');
       if(!has)m.insertAdjacentHTML("beforeend",'<button type="button" class="vm" data-savekid="'+esc(code)+'">Enregistrer cet enfant sur cet appareil</button>');

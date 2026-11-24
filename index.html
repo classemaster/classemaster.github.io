@@ -29,7 +29,9 @@
 <meta name="twitter:title" content="Classe Master">
 <meta name="twitter:description" content="Classe Master : l’application gratuite pour enseignants. Faites l’appel en quelques secondes, suivez les absences et retards, saisissez les notes et partagez le bilan de vos classes.">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Classe Master","url":"https://classemaster.github.io/","description":"Classe Master : l’application gratuite pour enseignants. Faites l’appel en quelques secondes, suivez les absences et retards, saisissez les notes et partagez le bilan de vos classes.","applicationCategory":"EducationalApplication","operatingSystem":"Any","inLanguage":"fr","offers":{"@type":"Offer","price":"0","priceCurrency":"XAF"},"author":{"@type":"Organization","name":"MPOUCK Digital Agency"}}</script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Figtree:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/theme.css">
 <link rel="stylesheet" href="css/features.css">
@@ -37,6 +39,9 @@
 <link rel="stylesheet" href="css/graphiques.css">
 <link rel="stylesheet" href="css/print.css">
 <link rel="stylesheet" href="css/undo.css">
+<link rel="stylesheet" href="css/liste.css">
+<link rel="stylesheet" href="css/carnet.css">
+<link rel="stylesheet" href="css/design.css">
 <meta name="theme-color" content="#1E3F8A">
 <script src="js/theme.js"></script>
 </head>
@@ -45,12 +50,13 @@
 <header>
   <select id="cls" aria-label="Classe"></select>
   <input type="date" id="dt" aria-label="Date de l’appel">
+  <div class="dchips" id="dchips" hidden><button type="button" class="dchip" data-dchip="0">Aujourd’hui</button><button type="button" class="dchip" data-dchip="1">Hier</button></div>
 </header>
-<nav role="tablist" aria-label="Navigation principale">
-  <button role="tab" data-v="home" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5V20H4z"/><path d="M10 20v-5h4v5"/></svg><span>Accueil</span></button>
-  <button role="tab" data-v="hist" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7"/></svg><span>Bilan</span></button>
-  <button role="tab" data-v="search" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5.5 5.5"/></svg><span>Recherche</span></button>
-  <button role="tab" data-v="compte" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c0-4 3.4-6.500 7.500-6.500s7.500 2.500 7.500 6.500"/></svg><span>Compte</span></button>
+<nav aria-label="Navigation principale">
+  <button data-v="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5V20H4z"/><path d="M10 20v-5h4v5"/></svg><span>Accueil</span></button>
+  <button data-v="hist"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7"/></svg><span>Bilan</span></button>
+  <button data-v="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5.5 5.5"/></svg><span>Recherche</span></button>
+  <button data-v="compte"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c0-4 3.4-6.500 7.500-6.500s7.500 2.500 7.500 6.500"/></svg><span>Compte</span></button>
   <button type="button" id="thm" data-theme-toggle="1" aria-label="Passer en mode nuit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span>Nuit</span></button>
 </nav>
 <p class="sync" id="sync"></p>
@@ -74,8 +80,10 @@
 <script src="js/idb.js" defer></script>
 <script src="js/utils.js" defer></script>
 <script src="js/auth.js" defer></script>
+<script src="js/liste.js" defer></script>
 <script src="js/nav.js" defer></script>
 <script src="js/appel.js" defer></script>
+<script src="js/telecharger.js" defer></script>
 <script src="js/export.js" defer></script>
 <script src="js/bilan.js" defer></script>
 <script src="js/classes.js" defer></script>
@@ -93,7 +101,12 @@
 <script src="js/merge.js" defer></script>
 <script src="js/undo.js" defer></script>
 <script src="js/sync.js" defer></script>
+<script src="js/etab.js" defer></script>
+<script src="js/niveaux.js" defer></script>
+<script src="js/rentree.js" defer></script>
+<script src="js/design.js" defer></script>
 <script src="js/horaires.js" defer></script>
+<script src="js/rappels.js" defer></script>
 <script src="js/observations.js" defer></script>
 <script src="js/parents.js" defer></script>
 <script src="js/share.js" defer></script>
@@ -104,6 +117,8 @@
 <script src="js/prevention.js" defer></script>
 <script src="js/annee.js" defer></script>
 <script src="js/stats-eleve.js" defer></script>
+<script src="js/aide.js" defer></script>
+<script src="js/tour.js" defer></script>
 <script src="js/main.js" defer></script>
 <script src="js/maj.js" defer></script>
 <script>if("serviceWorker" in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}</script>
