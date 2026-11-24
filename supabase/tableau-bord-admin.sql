@@ -6,6 +6,29 @@
 -- Seul un compte administrateur reçoit des lignes, et seulement pour ses propres dossiers élèves.
 -- Aucun code ni numéro de téléphone n'est renvoyé.
 
+-- 0. Lecture sûre des valeurs publiées par les enseignants (v51)
+-- Une valeur mal formée (texte à la place d'un nombre, date impossible) devient NULL au lieu de faire échouer
+-- tout le tableau de bord pour tous les administrateurs.
+create or replace function public.safe_num(t text)
+returns numeric language sql immutable set search_path = ''
+as $$ select case when t ~ '^-?[0-9]{1,9}([.][0-9]{1,15})?$' then t::numeric end $$;
+
+create or replace function public.safe_int(t text)
+returns integer language sql immutable set search_path = ''
+as $$ select case when t ~ '^-?[0-9]{1,9}$' then t::integer end $$;
+
+create or replace function public.safe_date(t text)
+returns date language plpgsql immutable set search_path = ''
+as $$
+begin
+  if t is null or t !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' then return null; end if;
+  return t::date;
+exception when others then
+  return null;
+end $$;
+
+revoke all on function public.safe_num(text), public.safe_int(text), public.safe_date(text) from public;
+
 -- 1. Résumés publiés par les enseignants : une ligne par élève et par matière
 drop function if exists public.admin_dashboard();
 
@@ -36,14 +59,14 @@ as $$
          g.class_label,
          coalesce(x.snapshot->>'subj', ''),
          coalesce(x.snapshot->>'teacher', ''),
-         coalesce((x.snapshot #>> '{pres,n}')::integer, 0),
-         coalesce((x.snapshot #>> '{pres,a}')::integer, 0),
-         coalesce((x.snapshot #>> '{pres,j}')::integer, 0),
-         coalesce((x.snapshot #>> '{pres,r}')::integer, 0),
+         coalesce(public.safe_int(x.snapshot #>> '{pres,n}'), 0),
+         coalesce(public.safe_int(x.snapshot #>> '{pres,a}'), 0),
+         coalesce(public.safe_int(x.snapshot #>> '{pres,j}'), 0),
+         coalesce(public.safe_int(x.snapshot #>> '{pres,r}'), 0),
          ab.recent_a,
-         (x.snapshot->>'avg')::numeric,
+         public.safe_num(x.snapshot->>'avg'),
          round(tr.t1, 2), round(tr.t2, 2), round(tr.t3, 2),
-         coalesce((x.snapshot #>> '{hw,n}')::integer, 0),
+         coalesce(public.safe_int(x.snapshot #>> '{hw,n}'), 0),
          x.updated_at
   from public.registry_students g
   join lateral (
@@ -56,15 +79,15 @@ as $$
     select count(*)::integer as recent_a
     from jsonb_array_elements(case when jsonb_typeof(x.snapshot->'abs') = 'array' then x.snapshot->'abs' else '[]'::jsonb end) e
     where coalesce(e->>'v', 'a') <> 'r'
-      and case when e->>'d' ~ '^\d{4}-\d{2}-\d{2}$' then (e->>'d')::date end >= current_date - 14
+      and public.safe_date(e->>'d') >= current_date - 14
   ) ab
   cross join lateral (
     select avg(v) filter (where mo in (9, 10, 11, 12)) as t1,
            avg(v) filter (where mo in (1, 2, 3))       as t2,
            avg(v) filter (where mo in (4, 5, 6, 7, 8)) as t3
     from (
-      select (e->>'n')::numeric / nullif((e->>'m')::numeric, 0) * 20 as v,
-             case when e->>'d' ~ '^\d{4}-\d{2}-\d{2}$' then extract(month from (e->>'d')::date)::integer end as mo
+      select public.safe_num(e->>'n') / nullif(public.safe_num(e->>'m'), 0) * 20 as v,
+             extract(month from public.safe_date(e->>'d'))::integer as mo
       from jsonb_array_elements(case when jsonb_typeof(x.snapshot->'notes') = 'array' then x.snapshot->'notes' else '[]'::jsonb end) e
     ) q
   ) tr
