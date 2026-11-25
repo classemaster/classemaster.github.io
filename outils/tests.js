@@ -304,7 +304,7 @@ t("v73 : le chef a un lien de contact sur sa page et sur l'écran « Accès rés
   (fs.readFileSync(path.join(root, "etablissement.html"), "utf8").match(/href="contact\.html"/g) || []).length >= 2);
 /* ---- v74 : plus de confirmation d'e-mail, synchronisation sans écrasement, pages d'administration hors cache ---- */
 const rd = (...p) => fs.readFileSync(path.join(root, ...p), "utf8");
-t("v80 : le cache hors ligne passe en cm-v80", () => /VERSION="cm-v80"/.test(rd("sw.js")));
+t("v81 : le cache hors ligne passe en cm-v81", () => /VERSION="cm-v81"/.test(rd("sw.js")));
 t("v80 : « Vérifier la validation » ouvre une boîte de dialogue avec bouton de contact", () => { const e = rd("js/etab.js"); return /function etabCheck\(/.test(e) && /b\.id==="etchk"\)\{etabCheck\(\)/.test(e) && /Contacter l’administrateur/.test(e) && /contact\.html\?c=etablissement/.test(e) && /Pas encore validé/.test(e) && /Établissement validé/.test(e); });
 t("v80 : la page de contact préremplit le formulaire", () => { const c = rd("contact.html"); return /URLSearchParams/.test(c) && /set\("sj",P\.s\)/.test(c); });
 t("v80 : le bouton Détails du bandeau reste branché", () => /getElementById\("pend"\)\.addEventListener\("click"/.test(rd("js/etab.js")));
@@ -412,6 +412,44 @@ t("v79 cahier : l'écran affiche les boutons par mois et la carte « Nettoyer le
   cxSetup(); run('view="cahier";cxConf="";');
   const h = run("renderCahier()"), conf = (run('cxConf="s|2026-11";'), run("renderCahier()")); run('cxConf="";');
   return /Vider ce mois/.test(h) && /Nettoyer le cahier/.test(h) && /Tout effacer : séances et programme/.test(h) && /Oui, effacer/.test(conf) && /Effacer les 2 séances de Novembre 2026/.test(conf) && !/Oui, effacer/.test(h) && /Tout effacer : 3 séances et 4 leçons/.test((run('cxConf="all";'), run("renderCahier()")));
+});
+
+/* ---- v81 : retirer tout le programme du cahier d'un seul geste, depuis le haut de la liste ---- */
+function cxBig(n, faites) {
+  run('KEY="test-cx";D={classes:[{id:"c1",name:"5e",ct:[],pg:[],cur:"c1"}],cur:"c1"};save=function(){};toast=function(){};try{kvDel(tkey())}catch(e){}');
+  run('var P=[];for(var i=0;i<' + n + ';i++){var o={id:"l"+i,t:"Leçon "+i};if(i<' + faites + ')o.x=true;P.push(o);}D.classes[0].pg=P;');
+}
+t("v81 cahier : « Retirer tout le programme » vide 391 leçons d'un coup, et « Annuler » les rétablit", () => {
+  cxBig(391, 2);
+  const r = run('cxApply(D.classes[0],"top-p")');
+  const vide = run("D.classes[0].pg.length") === 0 && r && r.p === 391;
+  const msg = run('trashRestore(tLoad().filter(function(e){return e.id==="' + r.id + '"})[0])');
+  return vide && msg === "" && run("D.classes[0].pg.length") === 391 && run("D.classes[0].pg[0].id") === "l0";
+});
+t("v81 cahier : « Retirer les leçons non faites » garde les leçons cochées faites", () => {
+  cxBig(391, 2);
+  const r = run('cxApply(D.classes[0],"p-undone")');
+  return r.p === 389 && run("D.classes[0].pg.length") === 2 && run("D.classes[0].pg.every(function(l){return l.x})") === true;
+});
+t("v81 cahier : les boutons du haut s'affichent avec le nombre de leçons, et demandent confirmation", () => {
+  cxBig(391, 2); run('view="cahier";cxConf="";');
+  const a = run("renderCahier()"); run('cxConf="top-p";');
+  const b = run("renderCahier()"); run('cxConf="";');
+  const iTop = a.indexOf("Retirer tout le programme (391)"), iList = a.indexOf("data-pgx=");
+  return iTop > 0 && iTop < iList && /Retirer les leçons non faites \(389\)/.test(a) && /Oui, effacer/.test(b) && /Retirer les 391 leçons du programme/.test(b);
+});
+t("v81 cahier : le bouton du mois est en haut du mois, avant les leçons", () => {
+  cxBig(5, 0); run('view="cahier";cxConf="";');
+  const a = run("renderCahier()"); const i = a.indexOf("Retirer les leçons sans mois"), j = a.indexOf('data-pgx="l0"');
+  return i > 0 && j > i;
+});
+
+t("v81 corbeille : en mode invité aussi, « Annuler » rétablit ce qui vient d'être retiré", () => {
+  cxBig(30, 0); run('KEY="";TMEM=[];');
+  const r = run('cxApply(D.classes[0],"top-p")');
+  const vide = run("D.classes[0].pg.length") === 0;
+  run("undoTrash('" + r.id + "')");
+  const ok2 = run("D.classes[0].pg.length") === 30; run('KEY="test-cx";TMEM=[];'); return vide && ok2;
 });
 
 console.log(`\n${ok} tests réussis, ${ko} en échec.`);
