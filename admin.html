@@ -111,13 +111,13 @@ button.dr{cursor:pointer}
       load();
     },function(){login("Pas d’internet.");});
   }
-  function load(){
+  function load(note){
     sb.rpc("sa_etablissements",{p_statut:null}).then(function(r){
       if(r.error){L=[];U=null;main("Échec : "+frErr(r.error));return;}
       L=Array.isArray(r.data)?r.data:[];
       sb.rpc("sa_usage").then(function(u){U=(u.error||!u.data)?null:u.data;},function(){U=null;}).then(function(){
         return sb.rpc("sa_contact_liste",{p_statut:null}).then(function(c){C=(c.error||!Array.isArray(c.data))?null:c.data;},function(){C=null;});
-      }).then(function(){main("");});
+      }).then(function(){main(note||"");});
     },function(){L=[];U=null;C=null;main("Pas d’internet.");});
   }
   function cnt(st){return(L||[]).filter(function(x){return!st||x.statut===st;}).length;}
@@ -132,7 +132,7 @@ button.dr{cursor:pointer}
     if(r.error)return frErr(r.error);
     var e=r.data&&r.data.err;
     return({unknown_user:"aucun compte avec cette adresse (la personne doit d’abord créer son compte dans l’application)",bad_email:"adresse e-mail invalide",
-      not_valid:"seul un établissement validé a un code d’accès",not_found:"établissement introuvable : actualisez",not_allowed:"action réservée à l’administrateur du site",bad_input:"message vide ou trop long (2 000 caractères au plus)"})[e]||"action impossible (actualisez)";}
+      not_valid:"seul un établissement validé a un code d’accès",not_deletable:"seul un établissement suspendu ou refusé peut être supprimé",bad_name:"le nom saisi ne correspond pas",not_found:"établissement introuvable : actualisez",not_allowed:"action réservée à l’administrateur du site",bad_input:"message vide ou trop long (2 000 caractères au plus)"})[e]||"action impossible (actualisez)";}
   var LAB={valide:"Validé",refuse:"Refusé",suspendu:"Suspendu",en_attente:"En attente"};
   function row(x,dup){
     var st=x.statut,lab=LAB[st]||"En attente",ue=um()[x.id],
@@ -140,9 +140,9 @@ button.dr{cursor:pointer}
         d=fd(x.cree),dec=x.decide_le?fd(x.decide_le):"",
         btn="";
     if(st==="en_attente")btn='<button class="btn" data-sav="'+esc(x.id)+'">Valider</button><button class="btn ghost" data-sar="'+esc(x.id)+'">Refuser</button>';
-    else if(st==="refuse")btn='<button class="btn" data-sav="'+esc(x.id)+'">Valider</button>';
+    else if(st==="refuse")btn='<button class="btn" data-sav="'+esc(x.id)+'">Valider</button><button class="btn warn" data-sdel="'+esc(x.id)+'">Supprimer</button>';
     else if(st==="valide")btn='<button class="btn warn" data-sas="'+esc(x.id)+'">Suspendre</button><button class="btn ghost" data-snc="'+esc(x.id)+'">Nouveau code</button><button class="btn ghost" data-sch="'+esc(x.id)+'">Changer de chef</button>';
-    else if(st==="suspendu")btn='<button class="btn" data-sav="'+esc(x.id)+'">Réactiver</button><button class="btn ghost" data-sch="'+esc(x.id)+'">Changer de chef</button>';
+    else if(st==="suspendu")btn='<button class="btn" data-sav="'+esc(x.id)+'">Réactiver</button><button class="btn ghost" data-sch="'+esc(x.id)+'">Changer de chef</button><button class="btn warn" data-sdel="'+esc(x.id)+'">Supprimer</button>';
     return'<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div style="min-width:0"><b>'+esc(x.nom)+'</b>'+(x.ville?" · "+esc(x.ville):"")+'</div><span class="sub" style="margin:0;white-space:nowrap"><b>'+lab+'</b></span></div>'+
       (dup?'<p class="sub" style="margin:6px 0 0;color:var(--a)"><b>Doublon possible</b> : un autre établissement porte le même nom dans la même ville.</p>':"")+
       '<p class="sub" style="margin:6px 0 0">Responsable'+((x.chefs||[]).length>1?"s":"")+" : "+chefs+'</p>'+
@@ -241,6 +241,25 @@ button.dr{cursor:pointer}
         busy=false;
         if(r.error||!r.data||r.data.ok!==true){say("Échec : "+saErr(r));return;}
         load();
+      },function(){busy=false;say("Pas d’internet.");});
+      return;
+    }
+    if(b.dataset.sdel){
+      if(busy)return;
+      var did=b.dataset.sdel;busy=true;
+      sb.rpc("sa_apercu_suppression",{p_etab:did}).then(function(a){
+        busy=false;var d=a.data||{};
+        if(a.error){say("Suppression indisponible : exécutez supabase/suppression-v78.sql dans Supabase.");return;}
+        if(d.ok===false){say("Échec : "+(({not_deletable:"seul un établissement suspendu ou refusé peut être supprimé",not_found:"établissement introuvable : actualisez",not_allowed:"action réservée à l’administrateur du site"})[d.err]||"action impossible")+".");return;}
+        var nm=prompt("SUPPRESSION DÉFINITIVE de « "+d.nom+" ».\n\nSeront effacés : "+d.eleves+" dossier"+(d.eleves>1?"s":"")+" d’élève"+(d.eleves>1?"s":"")+" (et leurs liens famille), "+d.membres+" membre"+(d.membres>1?"s":"")+", les messages et le journal. Les enseignants et le chef devront choisir un nouvel établissement. Les classes gardées dans leur application restent.\n\nPour confirmer, retapez le nom exact de l’établissement :","");
+        if(nm===null)return;
+        if(nm.trim().toLowerCase()!==String(d.nom).trim().toLowerCase()){say("Le nom ne correspond pas : rien n’a été supprimé.");return;}
+        busy=true;
+        sb.rpc("sa_supprimer_etablissement",{p_etab:did,p_nom:nm}).then(function(r){
+          busy=false;
+          if(r.error||(r.data&&r.data.ok===false)){say("Échec : "+(r.error?frErr(r.error):(({bad_name:"le nom saisi ne correspond pas",not_deletable:"seul un établissement suspendu ou refusé peut être supprimé"})[(r.data||{}).err]||"action impossible : actualisez")+"."));return;}
+          load("Établissement supprimé ("+((r.data||{}).eleves||0)+" dossier(s) d’élève effacé(s)).");
+        },function(){busy=false;say("Pas d’internet.");});
       },function(){busy=false;say("Pas d’internet.");});
       return;
     }
