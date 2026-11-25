@@ -304,7 +304,10 @@ t("v73 : le chef a un lien de contact sur sa page et sur l'écran « Accès rés
   (fs.readFileSync(path.join(root, "etablissement.html"), "utf8").match(/href="contact\.html"/g) || []).length >= 2);
 /* ---- v74 : plus de confirmation d'e-mail, synchronisation sans écrasement, pages d'administration hors cache ---- */
 const rd = (...p) => fs.readFileSync(path.join(root, ...p), "utf8");
-t("v78 : le cache hors ligne passe en cm-v78", () => /VERSION="cm-v78"/.test(rd("sw.js")));
+t("v80 : le cache hors ligne passe en cm-v80", () => /VERSION="cm-v80"/.test(rd("sw.js")));
+t("v80 : « Vérifier la validation » ouvre une boîte de dialogue avec bouton de contact", () => { const e = rd("js/etab.js"); return /function etabCheck\(/.test(e) && /b\.id==="etchk"\)\{etabCheck\(\)/.test(e) && /Contacter l’administrateur/.test(e) && /contact\.html\?c=etablissement/.test(e) && /Pas encore validé/.test(e) && /Établissement validé/.test(e); });
+t("v80 : la page de contact préremplit le formulaire", () => { const c = rd("contact.html"); return /URLSearchParams/.test(c) && /set\("sj",P\.s\)/.test(c); });
+t("v80 : le bouton Détails du bandeau reste branché", () => /getElementById\("pend"\)\.addEventListener\("click"/.test(rd("js/etab.js")));
 t("v74 : plus aucune trace de la confirmation d'e-mail dans l'application ni les guides", () =>
   !/email_not_confirmed|not confirmed|e-mail de confirmation|Confirmez votre e-mail/i.test(rd("js", "auth.js") + rd("js", "events.js") + rd("js", "etab.js") + rd("aide-etablissement.html")) &&
   !/Si « Confirm email » est activé/.test(rd("supabase", "LISEZ-MOI.md")));
@@ -371,6 +374,44 @@ t("SQL v78 : le journal est nettoyé APRÈS la suppression des dossiers (qui ins
 t("v78 : admin.html propose Supprimer sur un établissement suspendu ou refusé, avec aperçu et nom à retaper", () => {
   const a = fs.readFileSync(path.join(root, "admin.html"), "utf8");
   return /sa_apercu_suppression/.test(a) && /sa_supprimer_etablissement/.test(a) && /data-sdel/.test(a) && /retapez le nom exact/.test(a);
+});
+
+/* ---- v79 : nettoyage du cahier de textes (par mois, ou en entier), annulable ---- */
+function cxSetup() {
+  run('KEY="test-cx";D={classes:[{id:"c1",name:"5e",ct:[{id:"s1",d:"2026-11-03",t:"a",p:"l1"},{id:"s2",d:"2026-11-10",t:"b",p:""},{id:"s3",d:"2026-12-01",t:"c",p:""}],pg:[{id:"l1",t:"L1",m:"11"},{id:"l2",t:"L2",m:"12"},{id:"l3",t:"L3"},{id:"l4",t:"L4",m:"11"}]}],cur:"c1"};save=function(){};toast=function(){};try{kvDel(tkey())}catch(e){}');
+  return run("D.classes[0]");
+}
+t("v79 cahier : vider un mois de séances ne touche ni les autres mois ni le programme", () => {
+  cxSetup();
+  const r = run('cxApply(D.classes[0],"s|2026-11")');
+  return r.s === 2 && r.p === 0 && run("D.classes[0].ct.map(function(s){return s.id}).join()") === "s3" && run("D.classes[0].pg.length") === 4;
+});
+t("v79 cahier : retirer les leçons d'un mois détache le lien des séances mais garde leur texte", () => {
+  cxSetup();
+  const r = run('cxApply(D.classes[0],"p|11")');
+  return r.p === 2 && r.s === 0 && run("D.classes[0].pg.map(function(l){return l.id}).join()") === "l2,l3" && run('D.classes[0].ct[0].p===""&&D.classes[0].ct[0].t==="a"&&D.classes[0].ct.length===3');
+});
+t("v79 cahier : « tout effacer » vide séances et programme ; « toutes les séances » garde le programme", () => {
+  cxSetup(); const a = run('cxApply(D.classes[0],"all-s")'); const keep = run("D.classes[0].pg.length") === 4 && run("D.classes[0].ct.length") === 0;
+  cxSetup(); const b = run('cxApply(D.classes[0],"all")');
+  return a.s === 3 && keep && b.s === 3 && b.p === 4 && run("D.classes[0].ct.length+D.classes[0].pg.length") === 0;
+});
+t("v79 cahier : rien à effacer → aucune entrée, pas d'erreur", () => { cxSetup(); run('D.classes[0].ct=[];'); return run('cxApply(D.classes[0],"s|2030-01")') === null; });
+t("v79 cahier : annuler rétablit séances, leçons, ordre et liens", () => {
+  cxSetup(); const r = run('cxApply(D.classes[0],"p|11")');
+  const msg = run('trashRestore(tLoad().filter(function(e){return e.id==="' + r.id + '"})[0])');
+  const ids = run("D.classes[0].pg.map(function(l){return l.id}).join()"), lien = run("D.classes[0].ct[0].p");
+  const again = run('trashRestore(tLoad().filter(function(e){return e.id==="' + r.id + '"})[0])');
+  return msg === "" && ids === "l1,l2,l3,l4" && lien === "l1" && again === "Déjà rétabli.";
+});
+t("v79 cahier : un effacement demande confirmation (aucun effacement au premier clic)", () => {
+  const src = fs.readFileSync(path.join(root, "js", "cahier.js"), "utf8");
+  return /data-cxc/.test(src) && /data-cxok/.test(src) && /Oui, effacer/.test(src) && /cxConf=cc\.dataset\.cxc;/.test(src) && !/cxConf=cc\.dataset\.cxc;[^}]*cxApply/.test(src);
+});
+t("v79 cahier : l'écran affiche les boutons par mois et la carte « Nettoyer le cahier »", () => {
+  cxSetup(); run('view="cahier";cxConf="";');
+  const h = run("renderCahier()"), conf = (run('cxConf="s|2026-11";'), run("renderCahier()")); run('cxConf="";');
+  return /Vider ce mois/.test(h) && /Nettoyer le cahier/.test(h) && /Tout effacer : séances et programme/.test(h) && /Oui, effacer/.test(conf) && /Effacer les 2 séances de Novembre 2026/.test(conf) && !/Oui, effacer/.test(h) && /Tout effacer : 3 séances et 4 leçons/.test((run('cxConf="all";'), run("renderCahier()")));
 });
 
 console.log(`\n${ok} tests réussis, ${ko} en échec.`);
