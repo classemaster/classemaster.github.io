@@ -304,7 +304,7 @@ t("v73 : le chef a un lien de contact sur sa page et sur l'écran « Accès rés
   (fs.readFileSync(path.join(root, "etablissement.html"), "utf8").match(/href="contact\.html"/g) || []).length >= 2);
 /* ---- v74 : plus de confirmation d'e-mail, synchronisation sans écrasement, pages d'administration hors cache ---- */
 const rd = (...p) => fs.readFileSync(path.join(root, ...p), "utf8");
-t("v75 : le cache hors ligne passe en cm-v75", () => /VERSION="cm-v75"/.test(rd("sw.js")));
+t("v78 : le cache hors ligne passe en cm-v78", () => /VERSION="cm-v78"/.test(rd("sw.js")));
 t("v74 : plus aucune trace de la confirmation d'e-mail dans l'application ni les guides", () =>
   !/email_not_confirmed|not confirmed|e-mail de confirmation|Confirmez votre e-mail/i.test(rd("js", "auth.js") + rd("js", "events.js") + rd("js", "etab.js") + rd("aide-etablissement.html")) &&
   !/Si « Confirm email » est activé/.test(rd("supabase", "LISEZ-MOI.md")));
@@ -347,6 +347,31 @@ t("rappel : la carte de réglage propose d'activer, de désactiver ou explique l
 t("rappel : le bandeau est vide sans séance enregistrée", () => { run('D={cur:"a",classes:[{id:"a",name:"6e A",students:[],records:{},ev:[]}]};'); return run("rappelBanner()") === ""; });
 t("rappel : l'accueil, Compte, le cache et le service worker sont branchés", () => /rappelBanner/.test(rd("js", "horaires.js")) && (rd("js", "auth.js").match(/rappelsCard\(\)/g) || []).length >= 2 && /js\/rappels\.js/.test(rd("index.html")) && /"js\/rappels\.js"/.test(rd("sw.js")) && /notificationclick/.test(rd("sw.js")));
 run("D=null;ME=null;localStorage.removeItem('classemaster-rappels');localStorage.removeItem('classemaster-rappels-vus');");
+
+t("v76 : les boutons des bandeaux de l'accueil (Détails, Lu) ont leur propre écouteur", () => {
+  const e = fs.readFileSync(path.join(root, "js", "etab.js"), "utf8");
+  return /getElementById\("pend"\)\.addEventListener\("click"/.test(e) && /data-go="compte">Détails/.test(e) && /dataset\.go==="compte"/.test(e);
+});
+
+t("v77 : sur l'écran de rattachement, le retour de l'appareil remonte l'historique au lieu de rester piégé", () => {
+  run('ME={id:"u1",name:"T",login:"t@x.fr"};GUEST=false;sb={};ETAB.loaded=true;ETAB.list=[];view="etab";var __b=0;history={back:function(){__b++;},pushState:function(){},replaceState:function(){}};');
+  run('onPop({state:{view:"signup"}})');
+  const skipped = run("__b===1&&view===\"etab\"");
+  run('onPop({state:{view:"etab"}})'); const kept = run("__b===1");   /* une entrée « rattachement » s'affiche normalement */
+  run('ETAB.list=[{id:"e1",nom:"X",role:"admin"}];view="home";onPop({state:{view:"home"}})'); const normal = run("__b===1&&view===\"home\"");
+  run("sb=null;ME=null;ETAB.list=[];ETAB.loaded=false;");
+  return skipped && kept && normal;
+});
+
+const sqlV78 = fs.readFileSync(path.join(root, "supabase", "suppression-v78.sql"), "utf8");
+t("SQL v78 : suppression réservée à l'administrateur du site, établissement suspendu ou refusé, nom retapé, archive", () =>
+  (sqlV78.match(/est_admin_plateforme/g) || []).length >= 2 && /not in \('suspendu', 'refuse'\)/.test(sqlV78) && /bad_name/.test(sqlV78) && /plateforme_suppressions/.test(sqlV78) &&
+  !/grant execute on function[^;]*to anon/.test(sqlV78) && (sqlV78.match(/\(/g) || []).length === (sqlV78.match(/\)/g) || []).length);
+t("SQL v78 : le journal est nettoyé APRÈS la suppression des dossiers (qui inscrit des départs)", () => sqlV78.indexOf("delete from public.etablissements") < sqlV78.indexOf("delete from public.registry_log"));
+t("v78 : admin.html propose Supprimer sur un établissement suspendu ou refusé, avec aperçu et nom à retaper", () => {
+  const a = fs.readFileSync(path.join(root, "admin.html"), "utf8");
+  return /sa_apercu_suppression/.test(a) && /sa_supprimer_etablissement/.test(a) && /data-sdel/.test(a) && /retapez le nom exact/.test(a);
+});
 
 console.log(`\n${ok} tests réussis, ${ko} en échec.`);
 process.exit(ko ? 1 : 0);
