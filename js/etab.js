@@ -204,6 +204,58 @@ function etabCall(fn,args,ok){
     ok(d);
   },function(){ETAB.busy=false;toast("Pas de connexion internet.");});
 }
+/* « Vérifier la validation » : une boîte de dialogue donne le résultat (validé, pas encore validé, refusé, suspendu) et,
+   si la validation tarde, un bouton pour écrire à l’administrateur de Classe Master (contact.html). */
+function etabCheckInfo(e){
+  var nom=e?'« '+e.nom+' »':"";
+  if(!e)return{k:"none",title:"Aucune demande",text:"Aucune demande d’établissement n’est en cours pour ce compte (elle a pu être annulée). Revenez à l’écran Compte pour en faire une nouvelle.",contact:false,manage:false};
+  if(e.role!=="admin"){
+    if(e.membre_statut==="en_attente")return{k:"wait-t",title:"Pas encore accepté",text:"Votre chef d’établissement n’a pas encore accepté votre demande pour "+nom+". Prévenez-le : il la trouve dans sa page de gestion, rubrique des enseignants.",contact:false,manage:false};
+    return{k:"ok-t",title:"Demande acceptée",text:"Vous faites partie de l’établissement "+nom+".",contact:false,manage:false};
+  }
+  var st=etabStatut(e);
+  if(st==="valide")return{k:"ok",title:"Établissement validé",text:"Bonne nouvelle : votre établissement "+nom+" a été validé. Le tableau de bord, la gestion des enseignants et le code d’accès sont maintenant disponibles.",contact:false,manage:true};
+  if(st==="refuse")return{k:"refuse",title:"Demande refusée",text:"Votre établissement "+nom+" n’a pas été validé"+(e.motif?" : "+e.motif:"")+". Vous pouvez écrire à l’administrateur pour en savoir plus, ou annuler la demande et en faire une nouvelle.",contact:true,manage:false};
+  if(st==="suspendu")return{k:"susp",title:"Établissement suspendu",text:"Votre établissement "+nom+" est suspendu"+(e.motif?" : "+e.motif:"")+". Écrivez à l’administrateur pour demander sa réactivation.",contact:true,manage:false};
+  return{k:"wait",title:"Pas encore validé",text:"Votre établissement "+nom+" est toujours en attente de validation par un administrateur de Classe Master. En attendant, vous pouvez utiliser l’application comme enseignant. Si la validation tarde, écrivez à l’administrateur.",contact:true,manage:false};
+}
+function etabContactUrl(e){
+  var m=e?'Bonjour, mon établissement « '+e.nom+' »'+(e.ville?' ('+e.ville+')':'')+' est '+(etabStatut(e)==="suspendu"?'suspendu. Pouvez-vous le réactiver ? Merci.':etabStatut(e)==="refuse"?'refusé. Pouvez-vous m’en indiquer la raison ? Merci.':'en attente de validation. Pouvez-vous le traiter ? Merci.'):"";
+  return"contact.html?c=etablissement&e="+encodeURIComponent(e?e.id:"")+"&s="+encodeURIComponent(e?"Validation de mon établissement":"")+"&m="+encodeURIComponent(m.slice(0,300));
+}
+/* Boîte de dialogue : titre, texte, boutons [{id,label,ghost}] ; « close » la ferme */
+function etabDlg(title,text,btns,e){
+  var o=document.getElementById("etdlg");if(o)o.remove();
+  o=document.createElement("div");o.id="etdlg";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.setAttribute("aria-labelledby","etdlgt");
+  o.style.cssText="position:fixed;left:0;top:0;right:0;bottom:0;z-index:1000;background:rgba(10,20,40,.6);display:flex;align-items:center;justify-content:center;padding:20px";
+  o.innerHTML='<div style="background:var(--surface,#fff);color:var(--ink,#0F1E45);max-width:420px;width:100%;border-radius:20px;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.35)"><h2 id="etdlgt" style="margin:0 0 8px">'+esc(title)+'</h2><p style="margin:0 0 16px;line-height:1.45">'+esc(text)+'</p><div class="bar" style="margin:0;flex-wrap:wrap">'+(btns||[]).map(function(b){return'<button type="button" class="btn'+(b.ghost?' ghost':'')+'" data-dl="'+b.id+'">'+esc(b.label)+'</button>';}).join("")+'</div></div>';
+  document.body.appendChild(o);
+  o.addEventListener("click",function(ev){
+    var b=ev.target.closest?ev.target.closest("button"):null;
+    if(ev.target===o||(b&&b.dataset.dl==="close")){o.remove();return;}
+    if(!b)return;
+    if(b.dataset.dl==="contact"){location.href=etabContactUrl(e);}
+    else if(b.dataset.dl==="manage"){location.href="etablissement.html";}
+    else if(b.dataset.dl==="retry"){o.remove();etabCheck();}
+  });
+  var f=o.querySelector("button");if(f)f.focus();
+}
+function etabCheck(){
+  var fail=function(){etabDlg("Vérification impossible","Impossible de joindre le serveur : vérifiez votre connexion internet, puis réessayez.",[{id:"retry",label:"Réessayer"},{id:"close",label:"Fermer",ghost:true}]);};
+  if(!navigator.onLine){fail();return;}
+  etabDlg("Vérification en cours…","Un instant, nous interrogeons le serveur.",[]);
+  var done=false,tm=setTimeout(function(){if(!done){done=true;fail();}},15000);
+  etabLoad(function(){
+    if(done)return;done=true;clearTimeout(tm);
+    if(!ETAB.loaded){fail();return;}
+    var e=etabCur(),i=etabCheckInfo(e),b=[];
+    if(i.manage)b.push({id:"manage",label:"Ouvrir la gestion"});
+    if(i.contact)b.push({id:"contact",label:"Contacter l’administrateur"});
+    b.push({id:"close",label:"Fermer",ghost:b.length>0});
+    etabDlg(i.title,i.text,b,e);
+    render();   /* la carte « Établissement » et les bandeaux se mettent à jour derrière la boîte */
+  });
+}
 function etabRefresh(){ETAB.mem=null;etabLoad(function(){render();});}
 function etabClick(t){
   var e=etabCur(),b=t.closest?t.closest("button"):null;
@@ -212,7 +264,7 @@ function etabClick(t){
   if(b.id==="elout"){doLogout();return true;}
   if(b.dataset.msgread){etabReadAdd(b.dataset.msgread);render();return true;}
   if(b.dataset.go==="etab-now"){ETAB.loaded=true;view="etab";render();return true;}
-  if(b.id==="etchk"){etabRefresh();toast("Vérification en cours…");return true;}
+  if(b.id==="etchk"){etabCheck();return true;}
   if(b.id==="etcancel"){
     if(!confirm("Annuler la demande pour cet établissement ? Vous pourrez ensuite choisir de nouveau votre type de compte."))return true;
     var cur=etabCur();if(!cur)return true;
@@ -260,4 +312,11 @@ hookOn("pend",function(){
   etabMsgsNew().slice(0,3).forEach(function(m){
     el.innerHTML+='<div class="gban" role="status" style="border-radius:16px;padding:8px 8px 8px 14px"><span><b>'+esc(m.titre)+'</b> · '+esc(m.etab||"")+'<br>'+esc(m.corps)+'</span><button class="btn ghost" data-msgread="'+esc(m.id)+'">Lu</button></div>';
   });
+});
+
+/* Les bandeaux (#pend) sont hors de #view, dont l’écouteur gère data-go : leurs boutons « Détails » et « Lu » ont leur propre écouteur. */
+document.getElementById("pend").addEventListener("click",function(e){
+  var b=e.target.closest?e.target.closest("button"):null;if(!b)return;
+  if(b.dataset.msgread){etabReadAdd(b.dataset.msgread);updPend();return;}
+  if(b.dataset.go==="compte"){view="compte";render();window.scrollTo(0,0);}
 });
