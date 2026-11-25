@@ -58,6 +58,9 @@ function trackHist(){
 }
 function onPop(e){
   var s=e.state;
+  /* Écran de rattachement obligatoire : sans cette règle, le retour de l’appareil revenait à l’inscription, que l’application
+     renvoyait aussitôt sur le rattachement (en ajoutant une entrée) : impossible de quitter l’écran. On remonte donc l’historique. */
+  if(typeof etabNeeded==="function"&&etabNeeded()&&(!s||s.view!=="etab")){try{history.back();}catch(x){}return;}
   if(!s||!s.view)s={view:(ME||GUEST)?"home":"login"};
   if(s.cur&&D&&D.classes.some(function(c){return c.id===s.cur}))D.cur=s.cur;
   sel=s.sel||"";evid=s.evid||"";fb=s.fb||"hist";view=s.view;
