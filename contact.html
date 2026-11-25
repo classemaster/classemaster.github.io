@@ -91,6 +91,7 @@ details.card summary::-webkit-details-marker{display:none}
         thread(d)+'<label for="r-'+esc(d.id)+'">Ajouter un message</label><textarea id="r-'+esc(d.id)+'" maxlength="2000"></textarea><div class="bar"><button class="btn" data-rep="'+esc(d.id)+'">Envoyer</button></div></details>';
     }).join("");
   }
+  var PRE=(function(){try{var q=new URLSearchParams(location.search);return{c:q.get("c")||"",e:q.get("e")||"",s:(q.get("s")||"").slice(0,100),m:(q.get("m")||"").slice(0,300)};}catch(e){return null;}})();
   function main(note){
     var opts='<option value="">Aucun établissement en particulier</option>'+ETS.map(function(e){return'<option value="'+esc(e.id)+'">'+esc(e.nom)+(e.ville?" · "+esc(e.ville):"")+'</option>';}).join("");
     var cats=Object.keys(CAT).map(function(k){return'<option value="'+k+'">'+esc(CAT[k])+'</option>';}).join("");
@@ -99,6 +100,13 @@ details.card summary::-webkit-details-marker{display:none}
       '<label for="sj">Titre</label><input id="sj" maxlength="100" autocomplete="off"><label for="co">Votre message</label><textarea id="co" maxlength="2000"></textarea>'+
       '<p class="sub" style="margin-top:6px">Ne mettez ni nom d’élève, ni note, ni mot de passe dans votre message.</p><div class="bar"><button class="btn" id="send">Envoyer</button></div></div>'+
       '<h2 style="margin-top:20px">Mes demandes</h2>'+demHtml()+'<p class="sub" id="msg" role="status">'+esc(note||"")+'</p>';
+    if(PRE){   /* arrivée depuis « Vérifier la validation » : on préremplit le formulaire, une seule fois */
+      var P=PRE;PRE=null;
+      var set=function(id,v){var x=document.getElementById(id);if(x&&v)x.value=v;};
+      if(CAT[P.c])set("ct",P.c);
+      if(P.e&&ETS.some(function(x){return x.id===P.e;}))set("et",P.e);
+      set("sj",P.s);set("co",P.m);
+    }
   }
   app.addEventListener("toggle",function(ev){
     var d=ev.target;if(!d||!d.matches||!d.matches("details[data-id]"))return;
