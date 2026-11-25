@@ -240,3 +240,9 @@ html{touch-action:manipulation}
 
 .eintro{display:block;margin:0 0 14px;text-align:left;font-size:13.5px;line-height:20px;color:#666}.eintro b{color:#111}
 .aterms[hidden]{display:none}
+
+/* v81 : lignes du programme lisibles (le texte de la leçon prend toute la largeur, mois et « Retirer » dessous) */
+.pg-li{flex-wrap:wrap;gap:6px 8px}
+.pg-li .pgl{flex:1 1 100%}
+.pg-li .cx-sel{flex:1 1 0;max-width:none;min-width:0;padding:4px 30px 4px 10px;background-position:right 10px center}
+.pg-li button{flex:none}
