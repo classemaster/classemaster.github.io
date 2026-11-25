@@ -59,8 +59,9 @@ function cxProgramme(c,P,now){
     var L=P.filter(function(l){return(CX_MOIS.indexOf(l.m)>=0?l.m:"")===m;});if(!L.length)return;
     var n=L.filter(function(l){return pgDone(c,l);}).length,body=L.map(function(l){
       var seen=ctList(c).filter(function(s){return s.p===l.id;}).sort(function(a,b){return a.d<b.d?-1:1;})[0];
-      return'<div class="li"><label class="pgl"><input type="checkbox" data-pgx="'+l.id+'"'+(pgDone(c,l)?' checked':'')+(seen?' disabled':'')+'><span>'+esc(l.t)+(seen?'<br><small class="sub">vue le '+esc(fmt(seen.d))+'</small>':'')+'</span></label><select class="cx-sel" data-pgm="'+l.id+'" aria-label="Mois de la leçon « '+esc(l.t)+' »">'+cxMoisOpts(m,true)+'</select><button data-pgdel="'+l.id+'" aria-label="Retirer la leçon">Retirer</button></div>';
+      return'<div class="li pg-li"><label class="pgl"><input type="checkbox" data-pgx="'+l.id+'"'+(pgDone(c,l)?' checked':'')+(seen?' disabled':'')+'><span>'+esc(l.t)+(seen?'<br><small class="sub">vue le '+esc(fmt(seen.d))+'</small>':'')+'</span></label><select class="cx-sel" data-pgm="'+l.id+'" aria-label="Mois de la leçon « '+esc(l.t)+' »">'+cxMoisOpts(m,true)+'</select><button data-pgdel="'+l.id+'" aria-label="Retirer la leçon">Retirer</button></div>';
     }).join("");
+    body=cxCleanBtn(c,"p|"+m,m?"Retirer les leçons de ce mois":"Retirer les leçons sans mois")+body;
     h+=cxMonth("p|"+m,m?CX_NOM[m]:"Sans mois",n+" / "+L.length+" faite"+(L.length>1?"s":""),cxIsOpen("p|"+m,m===now),body);
   });
   return h;
@@ -75,9 +76,70 @@ function cxSeances(c,P,S){
       var l=P.filter(function(x){return x.id===s.p})[0];
       return'<div class="card" style="padding:12px"><div class="cr-h"><span><b>'+esc(fmt(s.d,true))+'</b>'+(l?'<br><span class="tg k-aut">'+esc(l.t)+'</span>':'')+'</span><button class="lnk" data-cxdel="'+s.id+'" style="color:var(--a)" aria-label="Supprimer la séance">Supprimer</button></div><p style="margin:6px 0 0;white-space:pre-wrap">'+esc(s.t)+'</p>'+(s.w?'<p class="sub" style="margin:6px 0 0"><b>À faire :</b> '+esc(s.w)+'</p>':'')+'</div>';
     }).join("");
+    body=cxCleanBtn(c,"s|"+k,"Vider ce mois")+body;
     h+=cxMonth("s|"+k,(CX_NOM[m]||m)+" "+y,L.length+" séance"+(L.length>1?"s":""),cxIsOpen("s|"+k,k===cur||i===0),body);
   });
   return h;
+}
+/* Nettoyage du cahier : par mois, ou en entier. Une seule entrée dans la corbeille (7 jours) permet de tout rétablir.
+   Clés : "s|AAAA-MM" séances d'un mois · "p|MM" leçons prévues un mois ("p|" = sans mois) · "all-s" toutes les séances · "all-p" tout le programme · "all" tout. */
+var cxConf="";   /* clé en attente de confirmation (le bouton de confirmation s'affiche à sa place) */
+function cxSel(c,key){
+  var S=[],P=[],a=String(key).split("|"),v=a[1]||"";
+  if(a[0]==="s")S=ctList(c).filter(function(s){return String(s.d).slice(0,7)===v;});
+  else if(a[0]==="p")P=pgList(c).filter(function(l){return(CX_MOIS.indexOf(l.m)>=0?l.m:"")===v;});
+  else if(key==="p-undone")P=pgList(c).filter(function(l){return!pgDone(c,l);});
+  else{if(key==="all"||key==="all-s")S=ctList(c).slice();if(key==="all"||key==="all-p"||key==="top-p")P=pgList(c).slice();}
+  return{S:S,P:P};
+}
+function cxLabel(key){
+  var a=String(key).split("|"),v=a[1]||"";
+  if(a[0]==="s")return"Séances de "+(CX_NOM[v.slice(5,7)]||v.slice(5,7))+" "+v.slice(0,4);
+  if(a[0]==="p")return"Leçons "+(v?"de "+CX_NOM[v]:"sans mois");
+  if(key==="p-undone")return"Leçons non faites du programme";
+  return key==="all-s"?"Toutes les séances du cahier":(key==="all-p"||key==="top-p")?"Tout le programme":"Tout le cahier de textes";
+}
+function cxApply(c,key){
+  var x=cxSel(c,key),sid={},pid={},links={},order=pgList(c).map(function(l){return l.id;});
+  if(!x.S.length&&!x.P.length)return null;
+  x.S.forEach(function(s){sid[s.id]=1;});x.P.forEach(function(l){pid[l.id]=1;});
+  c.ct=ctList(c).filter(function(s){return!sid[s.id];});
+  c.ct.forEach(function(s){if(s.p&&pid[s.p]){links[s.id]=s.p;s.p="";}});   /* une séance garde son texte, mais perd le lien avec une leçon retirée */
+  c.pg=pgList(c).filter(function(l){return!pid[l.id];});
+  var tid=trashAdd("cx",cxLabel(key),c.id,{ct:x.S,pg:x.P,links:links,order:order});
+  save();return{id:tid,s:x.S.length,p:x.P.length};
+}
+function cxMsg(key,n){
+  var a=String(key).split("|");
+  var tail=" Vous pourrez annuler juste après, ou depuis la corbeille (7 jours).";
+  if(a[0]==="s")return"Effacer "+(n.S.length>1?"les "+n.S.length+" séances":"la séance")+" de "+cxLabel(key).slice(11)+" ? Les leçons du programme restent."+tail;
+  if(a[0]==="p")return"Retirer "+(n.P.length>1?"les "+n.P.length+" leçons":"la leçon")+" "+(a[1]?"prévue"+(n.P.length>1?"s":"")+" en "+CX_NOM[a[1]]:"sans mois")+" du programme ? Les séances déjà écrites restent."+tail;
+  if(key==="all-s")return"Effacer les "+n.S.length+" séances du cahier ? Le programme reste."+tail;
+  if(key==="p-undone")return"Retirer les "+n.P.length+" leçons non faites du programme ? Les leçons cochées « faites » restent."+tail;
+  if(key==="all-p"||key==="top-p")return"Retirer les "+n.P.length+" leçons du programme ? Les séances déjà écrites restent."+tail;
+  return"Tout effacer : "+n.S.length+" séance"+(n.S.length>1?"s":"")+" et "+n.P.length+" leçon"+(n.P.length>1?"s":"")+" ? Le cahier sera entièrement vidé."+tail;
+}
+/* Bouton de nettoyage ; au clic, il est remplacé par la question de confirmation */
+function cxCleanBtn(c,key,label){
+  var n=cxSel(c,key),tot=n.S.length+n.P.length;
+  if(!tot)return key==="all"||key.indexOf("all")===0?'<button class="btn ghost" disabled>'+esc(label)+'</button>':"";
+  if(cxConf===key)return'<div class="card" role="alertdialog" aria-label="Confirmer l’effacement" style="border:2px solid var(--a);margin:10px 0 0"><p style="margin:0 0 10px"><b>'+esc(cxMsg(key,n))+'</b></p><div class="bar" style="margin:0"><button class="btn" data-cxok="'+esc(key)+'" style="background:var(--a);color:#fff">Oui, effacer</button><button class="btn ghost" data-cxno="1">Annuler</button></div></div>';
+  return'<div class="bar" style="margin:10px 0 0"><button class="btn ghost" data-cxc="'+esc(key)+'" style="color:var(--a)">'+esc(label)+'</button></div>';
+}
+/* En haut du programme : retirer tout d'un coup (ou seulement les leçons non faites), sans parcourir toute la liste */
+function cxProgTools(c,P){
+  if(P.length<2)return"";
+  var und=pgList(c).filter(function(l){return!pgDone(c,l);}).length,h="";
+  h+=cxCleanBtn(c,"top-p","Retirer tout le programme ("+P.length+")");
+  if(und>0&&und<P.length)h+=cxCleanBtn(c,"p-undone","Retirer les leçons non faites ("+und+")");
+  return h?'<div style="margin:0 0 12px">'+h+'</div>':"";
+}
+function cxCleanCard(c){
+  var h='<div class="card"><h2>Nettoyer le cahier</h2><p class="sub" style="margin-top:0">Pour effacer par mois, ouvrez le mois ci-dessus et touchez « Vider ce mois ». Ici : tout effacer d’un coup. Une confirmation est demandée, et vous pouvez annuler ensuite.</p>';
+  h+=cxCleanBtn(c,"all-s","Effacer toutes les séances ("+ctList(c).length+")");
+  h+=cxCleanBtn(c,"all-p","Effacer tout le programme ("+pgList(c).length+")");
+  h+=cxCleanBtn(c,"all","Tout effacer : séances et programme");
+  return h+'</div>';
 }
 function renderCahier(){
   var c=cl(),P=pgList(c),S=ctList(c).slice().sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0});
@@ -89,12 +151,12 @@ function renderCahier(){
   '<input type="text" id="cxw" placeholder="Travail à faire (facultatif)" aria-label="Travail à faire" style="width:100%;margin-top:8px">'+
   '<div class="bar" style="margin:8px 0 0"><button class="btn" id="cxadd">Enregistrer la séance</button></div></div>';
   var pm=cxPgm!==""&&cxPgm!==undefined?cxPgm:cxMoisNow(),now=cxMoisNow();
-  h+='<div class="card"><h2>Programme ('+P.length+' leçon'+(P.length>1?'s':'')+')</h2>'+
+  h+='<div class="card"><h2>Programme ('+P.length+' leçon'+(P.length>1?'s':'')+')</h2>'+cxProgTools(c,P)+
   (P.length?cxProgramme(c,P,now):'<p class="sub" style="margin-top:0">Aucune leçon pour le moment.</p>')+
   '<p class="sub" style="margin:12px 0 4px">Ajouter des leçons à un mois, une par ligne (vous pouvez coller tout le programme du mois) :</p><select id="pgm" aria-label="Mois des leçons à ajouter" style="width:100%;margin-bottom:8px">'+cxMoisOpts(pm,true)+'</select><textarea id="pgt" rows="4" placeholder="Le nom et le groupe nominal&#10;Le présent de l’indicatif&#10;Le récit au passé" aria-label="Leçons à ajouter"></textarea><div class="bar" style="margin:8px 0 0"><button class="btn ghost" id="pgadd">Ajouter au programme</button></div></div>';
   h+='<h2 style="font-size:1.05rem">Séances ('+S.length+')</h2>';
   h+=S.length?cxSeances(c,P,S):'<p class="sub">Aucune séance enregistrée.</p>';
-  return h;
+  return h+cxCleanCard(c);
 }
 document.getElementById("view").addEventListener("click",function(e){
   var t=e.target,c=cl(),y;
@@ -112,6 +174,15 @@ document.getElementById("view").addEventListener("click",function(e){
     var pmv=(document.getElementById("pgm")||{}).value||"";cxPgm=pmv;if(pmv)cxOpen["p|"+pmv]=true;
     lines.forEach(function(n){var o={id:uid(),t:n};if(pmv)o.m=pmv;pgList(c).push(o);});
     if(lines.length){save();y=window.scrollY;render();window.scrollTo(0,y);}return;
+  }
+  var cc=t.closest("[data-cxc]");
+  if(cc){cxConf=cc.dataset.cxc;y=window.scrollY;render();window.scrollTo(0,y);return;}
+  if(t.closest("[data-cxno]")){cxConf="";y=window.scrollY;render();window.scrollTo(0,y);return;}
+  var ck=t.closest("[data-cxok]");
+  if(ck){
+    var key=ck.dataset.cxok,r=cxApply(c,key);cxConf="";
+    if(r)toast((r.s?r.s+" séance"+(r.s>1?"s":"")+" effacée"+(r.s>1?"s":""):"")+(r.s&&r.p?" et ":"")+(r.p?r.p+" leçon"+(r.p>1?"s":"")+" retirée"+(r.p>1?"s":""):"")+" du cahier","Annuler",function(){undoTrash(r.id);});
+    y=window.scrollY;render();window.scrollTo(0,y);return;
   }
   var pdl=t.closest("[data-pgdel]");
   if(pdl){var g=pgList(c).filter(function(x){return x.id===pdl.dataset.pgdel})[0];if(g&&confirm("Retirer la leçon « "+g.t+" » du programme ?")){delItem(c,"pg",g.id,g.t);ctList(c).forEach(function(s){if(s.p===g.id)s.p="";});save();y=window.scrollY;render();window.scrollTo(0,y);}return;}

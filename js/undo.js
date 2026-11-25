@@ -1,12 +1,13 @@
 /* Annuler et récupérer : message « Annuler » après chaque suppression + corbeille de 7 jours sur l'appareil */
 var TRASH_DAYS=7,TRASH_MAX=60,toastT=null;
-var KINDS={ev:"Évaluation",ob:"Observation",cr:"Message du carnet",ct:"Séance du cahier",pg:"Leçon du programme",tt:"Séance de l’emploi du temps",students:"Élève",appel:"Appel",cls:"Classe"};
+var KINDS={cx:"Nettoyage du cahier",ev:"Évaluation",ob:"Observation",cr:"Message du carnet",ct:"Séance du cahier",pg:"Leçon du programme",tt:"Séance de l’emploi du temps",students:"Élève",appel:"Appel",cls:"Classe"};
 
 function clone(x){return JSON.parse(JSON.stringify(x));}
 function tkey(){return KEY?KEY+"-trash":"";}
-function tLoad(){var k=tkey(),a;if(!k)return[];try{a=JSON.parse(kvGet(k)||"[]");}catch(e){a=[];}return Array.isArray(a)?a:[];}
+var TMEM=[];   /* mode invité (pas de clé de stockage) : la corbeille reste en mémoire le temps de la visite, pour que « Annuler » marche */
+function tLoad(){var k=tkey(),a;if(!k)return TMEM.slice();try{a=JSON.parse(kvGet(k)||"[]");}catch(e){a=[];}return Array.isArray(a)?a:[];}
 function tSave(a){
-  var k=tkey();if(!k)return;
+  var k=tkey();if(!k){TMEM=a.slice(0,TRASH_MAX);return;}
   try{if(a.length)kvSet(k,JSON.stringify(a));else kvDel(k);}
   catch(e){try{kvSet(k,JSON.stringify(a.slice(0,8)));}catch(e2){}}   /* mémoire pleine : on garde les plus récents */
 }
@@ -63,6 +64,15 @@ function trashRestore(e){
   if(e.kind==="appel"){
     var r=rec(c,d.k);
     Object.keys(d.rec).forEach(function(s){if(!r[s])r[s]=d.rec[s];});   /* ne remplace pas un appel refait depuis */
+    save();return"";
+  }
+  if(e.kind==="cx"){   /* nettoyage du cahier de textes : séances et leçons remises, dans leur ordre d'origine, avec leurs liens */
+    var T=c.ct||(c.ct=[]),G=c.pg||(c.pg=[]),n0=T.length+G.length;
+    (d.ct||[]).forEach(function(s){if(!T.some(function(x){return x.id===s.id;}))T.push(s);});
+    (d.pg||[]).forEach(function(l){if(!G.some(function(x){return x.id===l.id;}))G.push(l);});
+    if(T.length+G.length===n0)return"Déjà rétabli.";
+    var ord=d.order||[];G.sort(function(a,b){var i=ord.indexOf(a.id),j=ord.indexOf(b.id);return(i<0?1e9:i)-(j<0?1e9:j);});
+    Object.keys(d.links||{}).forEach(function(sid){var s=T.find(function(x){return x.id===sid;});if(s&&!s.p&&G.some(function(l){return l.id===d.links[sid];}))s.p=d.links[sid];});
     save();return"";
   }
   L=c[d.k]||(c[d.k]=[]);
