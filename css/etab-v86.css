@@ -1,0 +1,74 @@
+/* Pages de l'établissement (v89) : style épuré v86, chargé après les autres feuilles ; menu commun. */
+/* v86 — page épurée, dans le même esprit que la page d'une classe : titre en Fraunces, grands chiffres, bordures fines, aucune ombre, beaucoup d'air. Chargée en dernier. */
+main{max-width:640px;padding:12px 16px 64px}
+h1{font-family:var(--serif);font-size:1.9rem;font-weight:700;letter-spacing:-.02em;line-height:1.1;margin:6px 0 6px}
+h2{font-size:1.05rem;font-weight:700;letter-spacing:-.005em}
+.sub{color:var(--mute)}
+.back{display:inline-flex;align-items:center;min-height:44px;color:var(--accent);font-weight:700;text-decoration:none}
+.pills{display:flex;gap:8px;overflow-x:auto;margin:16px -16px 6px;padding:0 16px;scrollbar-width:none}
+.pills::-webkit-scrollbar{display:none}
+.pill{flex:none;display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border:0;border-radius:999px;background:var(--soft);color:var(--accent);font:inherit;font-size:.86rem;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer}
+.pill:active{transform:scale(.97)}
+.sec{display:block;margin:34px 0 10px}
+.sec h2{font-family:var(--serif);font-size:1.5rem;font-weight:700;letter-spacing:-.015em;line-height:1.15}
+.sec .sub{margin:4px 0 0;font-size:.9rem}
+.card,.stc{border:1px solid var(--line);border-radius:20px;box-shadow:none;padding:18px;margin:12px 0}
+details.card .card{border:0;border-top:1px solid var(--line);border-radius:0;padding:16px 0 6px;margin:16px 0 0}
+.btn{border-radius:14px;min-height:46px;font-weight:700;transition:transform .12s}
+.btn:active{transform:scale(.97)}
+.st .bs .btn,.stc .bs .btn{min-height:40px;border-radius:12px}
+input,textarea,select{background:var(--surface);border:1.5px solid var(--line);border-radius:14px;min-height:46px}
+label{font-size:.82rem;font-weight:600;margin:12px 0 4px}
+details.card>summary,details.dd>summary,details.more>summary{list-style:none;display:flex;align-items:center;gap:10px;min-height:46px;font-weight:700;cursor:pointer}
+details>summary::-webkit-details-marker{display:none}
+details.card>summary::after,details.dd>summary::after,details.more>summary::after{content:"";flex:none;width:8px;height:8px;margin:0 4px 0 auto;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:rotate(45deg);transition:transform .15s}
+details[open]>summary::after{transform:rotate(-135deg)}
+details.more{margin-top:4px}
+details.more>summary{min-height:40px;color:var(--mute);font-size:.88rem;font-weight:600}
+.tb2,.tb2.wrap{gap:8px;margin:2px -4px 14px;padding:0 4px 2px}
+.tb2 .btn{min-height:38px;padding:0 16px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--mute);font-size:.86rem}
+.tb2 .btn[aria-selected=true]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.kpis{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0 6px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 6px 11px}
+.kpi b{font-family:var(--serif);font-size:1.8rem;font-weight:700;letter-spacing:-.02em;font-variant-numeric:lining-nums tabular-nums}
+.kpi span{display:block;margin-top:3px;font-size:.66rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.dh{font-family:var(--serif);font-size:1.1rem;font-weight:700;margin:22px 0 6px}
+.lvl{font-family:var(--serif);font-size:1.15rem;font-weight:700;margin:26px 0 10px}
+.lvl .sub{font-family:"Figtree",system-ui,sans-serif;font-size:.8rem;font-weight:500}
+.tiles{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.tile{border:1.5px solid var(--line);border-radius:16px;box-shadow:none;min-height:88px;padding:14px;transition:transform .12s,border-color .12s}
+.tile:active{transform:scale(.97)}
+.tile .tn{font-family:var(--serif);font-size:1.5rem;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+.tile .sub{font-size:.8rem}
+#back{background:none;color:var(--accent);padding:0;min-height:44px;border-radius:0}
+.stc b{font-family:var(--serif);font-size:1.15rem}
+.dr,.mrow{padding:12px 0}
+.tg{padding:2px 10px}
+.cd{border-radius:10px;padding:7px 12px}
+.al{border-radius:14px}
+.pb{height:5px}
+
+/* v89 — menu commun des pages de l'établissement */
+.etab-menu{margin-top:14px}
+.pill.on{background:var(--ink);color:var(--bg)}
+.pill.soon{opacity:.55;cursor:default}
+.pill .tg{margin-left:8px;padding:0 7px;font-size:.72rem}
+.etab-note{margin:0 0 10px;font-size:.82rem}
+.etab-head .sub{margin:0}
+.etab-sw{margin:10px 0 0}
+.etab-foot{margin-top:34px}
+.al a.btn{text-decoration:none;display:inline-flex;align-items:center}
+a.dr{text-decoration:none}
+
+/* v95 : filtres de la page Résultats et assiduité */
+.rf{display:flex;flex-direction:column;gap:3px;flex:1 1 140px;min-width:0;font-size:.85rem}
+.rf select{width:100%;max-width:100%;min-height:40px}
+
+/* v96 : tableau classe × matière */
+.xtab{border-collapse:collapse;width:100%;font-size:.85rem}
+.xtab th,.xtab td{padding:6px 8px;text-align:center;border-bottom:1px solid var(--line,#e5e7eb);white-space:nowrap}
+.xtab thead th{font-weight:700}
+.xtab tbody th{text-align:left;position:sticky;left:0;background:var(--card,#fff)}
+.xtab .xb{color:#b42318;font-weight:700}
+.xtab .xo{font-weight:600}
+.xtab .xe{opacity:.5}

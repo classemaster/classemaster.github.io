@@ -1,0 +1,5 @@
+/* Page Fin d'année (v92) : tableau du passage de rentrée */
+.rtt{width:100%;border-collapse:collapse;font-size:.9rem;margin-top:8px}
+.rtt th,.rtt td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+.rtt th{font-size:.78rem;color:var(--mute);font-weight:700}
+.scroll{overflow-x:auto}
