@@ -1,0 +1,14 @@
+# Vérification automatique à chaque publication : signale un script cassé, un nom en double ou un fichier oublié dans le cache hors ligne.
+name: Vérifier le code
+on: [push, pull_request]
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install acorn --no-save
+      - run: node outils/verifier-code.js
+      - run: node outils/tests.js
