@@ -50,6 +50,11 @@ button.dr{cursor:pointer}
 .tg.bad{background:rgba(180,43,58,.14);color:var(--a)}.tg.ok{background:rgba(31,122,77,.14);color:var(--p)}
 .tb2{display:flex;gap:6px;overflow-x:auto;margin:6px 0 8px;padding-bottom:2px}
 .tb2 .btn{flex:0 0 auto;min-height:38px;padding:7px 13px;font-size:.9rem}
+.tb2.wrap{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.tb2.wrap::-webkit-scrollbar{display:none}
+.sec{display:flex;gap:12px;align-items:center;margin:26px 0 6px}.sec h2{margin:0;font-size:1.25rem}.sec .sub{margin:2px 0 0}.sn{flex:0 0 34px;height:34px;border-radius:50%;background:var(--accent);color:var(--on-accent,#fff);display:grid;place-items:center;font-weight:800}
+.adm>summary{font-weight:700;cursor:pointer;min-height:44px;display:flex;align-items:center}
+.mrow{padding:10px 0;border-top:1px solid var(--line)}.mrow:first-of-type{border-top:0}
+.mrow .mi{min-width:0;overflow-wrap:anywhere}.mrow .mb{display:flex;gap:8px;margin-top:8px}.mrow .mb .btn{flex:1 1 0;min-height:40px;padding:7px 10px;font-size:.9rem}
 .pb{height:6px;border-radius:9px;background:var(--soft);margin-top:6px;overflow:hidden}.pb i{display:block;height:100%;background:var(--accent);border-radius:9px}
 #msg{min-height:1.3em;margin:8px 0 0}
 .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -67,8 +72,60 @@ button.dr{cursor:pointer}
 .cp-i small{display:block;font-size:8pt;color:#333}
 @media print{body{background:#fff}main>*:not(#pr){display:none!important}#pr{display:block}@page{size:A4;margin:10mm}}
 </style>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap">
 <link rel="stylesheet" href="css/carnet.css">
+<link rel="stylesheet" href="css/charts.css">
+<link rel="stylesheet" href="css/graph-etab.css">
+<style id="v86">
+/* v86 — page épurée, dans le même esprit que la page d'une classe : titre en Fraunces, grands chiffres, bordures fines, aucune ombre, beaucoup d'air. Chargée en dernier. */
+main{max-width:640px;padding:12px 16px 64px}
+h1{font-family:var(--serif);font-size:1.9rem;font-weight:700;letter-spacing:-.02em;line-height:1.1;margin:6px 0 6px}
+h2{font-size:1.05rem;font-weight:700;letter-spacing:-.005em}
+.sub{color:var(--mute)}
+.back{display:inline-flex;align-items:center;min-height:44px;color:var(--accent);font-weight:700;text-decoration:none}
+.pills{display:flex;gap:8px;overflow-x:auto;margin:16px -16px 6px;padding:0 16px;scrollbar-width:none}
+.pills::-webkit-scrollbar{display:none}
+.pill{flex:none;display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border:0;border-radius:999px;background:var(--soft);color:var(--accent);font:inherit;font-size:.86rem;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer}
+.pill:active{transform:scale(.97)}
+.sec{display:block;margin:34px 0 10px}
+.sec h2{font-family:var(--serif);font-size:1.5rem;font-weight:700;letter-spacing:-.015em;line-height:1.15}
+.sec .sub{margin:4px 0 0;font-size:.9rem}
+.card,.stc{border:1px solid var(--line);border-radius:20px;box-shadow:none;padding:18px;margin:12px 0}
+details.card .card{border:0;border-top:1px solid var(--line);border-radius:0;padding:16px 0 6px;margin:16px 0 0}
+.btn{border-radius:14px;min-height:46px;font-weight:700;transition:transform .12s}
+.btn:active{transform:scale(.97)}
+.st .bs .btn,.stc .bs .btn{min-height:40px;border-radius:12px}
+input,textarea,select{background:var(--surface);border:1.5px solid var(--line);border-radius:14px;min-height:46px}
+label{font-size:.82rem;font-weight:600;margin:12px 0 4px}
+details.card>summary,details.dd>summary,details.more>summary{list-style:none;display:flex;align-items:center;gap:10px;min-height:46px;font-weight:700;cursor:pointer}
+details>summary::-webkit-details-marker{display:none}
+details.card>summary::after,details.dd>summary::after,details.more>summary::after{content:"";flex:none;width:8px;height:8px;margin:0 4px 0 auto;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:rotate(45deg);transition:transform .15s}
+details[open]>summary::after{transform:rotate(-135deg)}
+details.more{margin-top:4px}
+details.more>summary{min-height:40px;color:var(--mute);font-size:.88rem;font-weight:600}
+.tb2,.tb2.wrap{gap:8px;margin:2px -4px 14px;padding:0 4px 2px}
+.tb2 .btn{min-height:38px;padding:0 16px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--mute);font-size:.86rem}
+.tb2 .btn[aria-selected=true]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.kpis{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0 6px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 6px 11px}
+.kpi b{font-family:var(--serif);font-size:1.8rem;font-weight:700;letter-spacing:-.02em;font-variant-numeric:lining-nums tabular-nums}
+.kpi span{display:block;margin-top:3px;font-size:.66rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.dh{font-family:var(--serif);font-size:1.1rem;font-weight:700;margin:22px 0 6px}
+.lvl{font-family:var(--serif);font-size:1.15rem;font-weight:700;margin:26px 0 10px}
+.lvl .sub{font-family:"Figtree",system-ui,sans-serif;font-size:.8rem;font-weight:500}
+.tiles{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.tile{border:1.5px solid var(--line);border-radius:16px;box-shadow:none;min-height:88px;padding:14px;transition:transform .12s,border-color .12s}
+.tile:active{transform:scale(.97)}
+.tile .tn{font-family:var(--serif);font-size:1.5rem;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+.tile .sub{font-size:.8rem}
+#back{background:none;color:var(--accent);padding:0;min-height:44px;border-radius:0}
+.stc b{font-family:var(--serif);font-size:1.15rem}
+.dr,.mrow{padding:12px 0}
+.tg{padding:2px 10px}
+.cd{border-radius:10px;padding:7px 12px}
+.al{border-radius:14px}
+.pb{height:5px}
+</style>
 </head>
 <body>
 <main id="app"><p class="sub" style="text-align:center;margin-top:40px">Chargement…</p></main>
@@ -77,6 +134,12 @@ button.dr{cursor:pointer}
 <script src="js/qr.js"></script>
 <script src="js/telecharger.js"></script>
 <script src="js/niveaux.js"></script>
+<script src="js/graphiques/core.js" defer></script>
+<script src="js/graphiques/donut-chart.js" defer></script>
+<script src="js/graphiques/charts.js" defer></script>
+<script src="js/graphiques/charts-extra.js" defer></script>
+<script src="js/graphiques/charts-more.js" defer></script>
+<script src="js/graph-etab.js" defer></script>
 <script>
 (function(){
   var app=document.getElementById("app"),AL="ABCDEFGHJKMNPQRSTUVWXYZ23456789",rows=[],filt="",shown={},me=null,asg=[],qtxt="",lim=50,ed={},curC=null,dash=null,mov=null,dtab="apercu",tch=null,dsc=null,dec=null;
@@ -150,14 +213,15 @@ button.dr{cursor:pointer}
   }
   function memHtml(){
     if(!MEM.length)return"";
+    var dup={};MEM.forEach(function(m){var k=(m.nom||"").trim().toLowerCase();if(k)dup[k]=(dup[k]||0)+1;});
     var pend=MEM.filter(function(m){return m.statut==="en_attente";}),L=pend.concat(MEM.filter(function(m){return m.statut!=="en_attente";}));
     return'<p class="sub" style="margin:10px 0 4px">Les nouveaux enseignants doivent être acceptés par vous : <b>'+(ET.valider_enseignants?"oui":"non")+'</b></p><div class="bs" style="margin-top:0"><button class="btn ghost" id="evalid">'+(ET.valider_enseignants?"Ne plus exiger de validation":"Exiger ma validation")+'</button></div>'+
       (pend.length?'<div class="al" role="status"><b>'+pend.length+' demande'+(pend.length>1?"s":"")+' en attente</b> : acceptez ou refusez ci-dessous.</div>':"")+
-      '<details class="dd"'+(MEM.length<=8||pend.length?" open":"")+'><summary>Enseignants et administrateurs ('+MEM.length+')</summary>'+L.map(function(m){
+      '<details class="dd"'+(MEM.length<=3||pend.length?" open":"")+'><summary>Enseignants et administrateurs ('+MEM.length+')</summary>'+L.map(function(m){
       var moi=me&&m.user_id===me.id;
-      if(m.statut==="en_attente")return'<div class="st" style="padding:8px 0;display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="min-width:0"><b>'+esc(m.nom||m.email)+'</b> · <span class="tg bad">en attente</span><br><span class="sub" style="margin:0">'+esc(m.email)+'</span></span><span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn" data-macc="'+esc(m.user_id)+'">Accepter</button><button class="btn warn" data-mref="'+esc(m.user_id)+'">Refuser</button></span></div>';
-      return'<div class="st" style="padding:8px 0;display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="min-width:0"><b>'+esc(m.nom||m.email)+'</b>'+(m.role==="admin"?' · <span class="tg ok">chef</span>':'')+(moi?' · vous':'')+'<br><span class="sub" style="margin:0">'+esc(m.email)+'</span></span>'+
-        (moi?'':'<span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn ghost" data-mrole="'+esc(m.user_id)+'|'+(m.role==="admin"?"enseignant":"admin")+'">'+(m.role==="admin"?"Retirer chef":"Nommer chef")+'</button><button class="btn warn" data-mrm="'+esc(m.user_id)+'">Retirer</button></span>')+'</div>';
+      if(m.statut==="en_attente")return'<div class="st mrow"><div class="mi"><b>'+esc(m.nom||m.email)+'</b> · <span class="tg bad">en attente</span><br><span class="sub" style="margin:0">'+esc(m.email)+'</span></div><div class="mb"><button class="btn" data-macc="'+esc(m.user_id)+'">Accepter</button><button class="btn warn" data-mref="'+esc(m.user_id)+'">Refuser</button></div></div>';
+      return'<div class="st mrow"><div class="mi"><b>'+esc(m.nom||m.email)+'</b>'+(m.role==="admin"?' · <span class="tg ok">chef</span>':'')+(moi?' · vous':'')+(dup[(m.nom||"").trim().toLowerCase()]>1?' · <span class="tg bad" title="Plusieurs comptes portent ce nom">même nom</span>':'')+'<br><span class="sub" style="margin:0">'+esc(m.email)+'</span></div>'+
+        (moi?'':'<div class="mb"><button class="btn ghost" data-mrole="'+esc(m.user_id)+'|'+(m.role==="admin"?"enseignant":"admin")+'">'+(m.role==="admin"?"Retirer chef":"Nommer chef")+'</button><button class="btn warn" data-mrm="'+esc(m.user_id)+'">Retirer</button></div>')+'</div>';
     }).join("")+'</details>';
   }
   function reloadMem(msg){
@@ -427,17 +491,21 @@ button.dr{cursor:pointer}
   function pbar(p,bad){return p===null?"":'<div class="pb"><i style="width:'+Math.max(2,Math.min(100,p))+'%'+(bad?";background:var(--a)":"")+'"></i></div>';}
   function sortCls(a,b){return lvlRank(lvl(a))-lvlRank(lvl(b))||a.localeCompare(b,"fr",{numeric:true});}
   var DT=[["apercu","Aperçu"],["eff","Effectifs"],["ass","Assiduité"],["res","Résultats"],["ens","Enseignants"],["dis","Discipline"],["fin","Fin de période"]];
+  /* Graphiques : l'emplacement #ge est inséré avant la première liste de l'onglet (à la fin pour « Fin de période »), puis rempli par geDraw */
+  var GEM=null;
+  function geWrap(tab,b,M){GEM=M||null;var i=tab==="fin"?-1:b.indexOf('<h3 class="dh"'),ph='<div class="gr ge" id="ge" data-t="'+tab+'"></div>';return i<0?b+ph:b.slice(0,i)+ph+b.slice(i);}
+  function geCtx(){return{M:GEM,rows:rows,TH:TH,tch:tch,dsc:dsc,fin:window.__GEfin||null,sortCls:sortCls,lvl:lvl,lvlRank:lvlRank,pc:pc,mean:mean,get:get,stat:tstat,tname:tname,dstrOf:dstrOf};}
   function dashHtml(){
     if(!rows.length)return"";
-    var h='<section class="card"><h2>Tableau de bord</h2><div class="tb2" role="tablist" aria-label="Rubriques">'+DT.map(function(t){return'<button type="button" role="tab" class="btn'+(dtab===t[0]?"":" ghost")+'" aria-selected="'+(dtab===t[0])+'" data-dtab="'+t[0]+'">'+t[1]+'</button>';}).join("")+'</div>';
-    if(dtab==="eff")return h+dEff()+'</section>';
-    if(dtab==="ens")return h+dEns()+'</section>';
-    if(dtab==="dis")return h+dDis()+'</section>';
+    var h='<section class="card"><div class="tb2 wrap" role="tablist" aria-label="Rubriques">'+DT.map(function(t){return'<button type="button" role="tab" class="btn'+(dtab===t[0]?"":" ghost")+'" aria-selected="'+(dtab===t[0])+'" data-dtab="'+t[0]+'">'+t[1]+'</button>';}).join("")+'</div>';
+    if(dtab==="eff")return h+geWrap("eff",dEff())+'</section>';
+    if(dtab==="ens")return h+geWrap("ens",dEns())+'</section>';
+    if(dtab==="dis")return h+geWrap("dis",dDis())+'</section>';
     if(dash===null)return h+'<p class="sub">Chargement des statistiques…</p></section>';
     if(dash.err)return h+'<p class="sub">Statistiques indisponibles ('+esc(dash.err)+'). Exécutez <b>supabase/tableau-bord-admin.sql</b> dans Supabase (SQL Editor), puis rechargez cette page.</p></section>';
     if(!dash.length)return h+'<p class="sub">Aucun enseignant n’a encore publié de suivi pour vos élèves. Les statistiques apparaîtront ici dès les premières publications.</p></section>';
     var M=dmodel();
-    return h+(dtab==="ass"?dAss(M):dtab==="res"?dRes(M):dtab==="fin"?dFin(M):dApercu(M))+'</section>';
+    return h+geWrap(dtab,(dtab==="ass"?dAss(M):dtab==="res"?dRes(M):dtab==="fin"?dFin(M):dApercu(M)),M)+'</section>';
   }
   /* Modèle commun : un cumul par élève, par classe, par enseignant et par matière */
   function dmodel(){
@@ -464,8 +532,8 @@ button.dr{cursor:pointer}
     var risk=M.ids.filter(function(i){var s=M.S[i],p=pc(s.n,s.a);return(s.m!==null&&s.m<TH.moy)||(p!==null&&p<TH.pres);}).sort(function(x,y){return(M.S[x].m===null?99:M.S[x].m)-(M.S[y].m===null?99:M.S[y].m);});
     h+='<h3 class="dh">À surveiller</h3>';
     if(!risk.length)h+='<p class="sub">Aucun élève sous '+nf1(TH.moy)+' de moyenne ou sous '+nf1(TH.pres)+' % de présence.</p>';
-    else{risk.slice(0,8).forEach(function(i){var s=M.S[i],r=M.byId[i],p=pc(s.n,s.a);h+=dr(r.name,(r.class_label||"(sans classe)")+" · moyenne "+nf1(s.m)+" · présence "+(p===null?"–":nf1(p)+" %"),s.m!==null&&s.m<TH.moy?"moyenne":"absences",undefined,true);});
-      if(risk.length>8)h+='<p class="sub">+ '+(risk.length-8)+' autre'+(risk.length-8>1?"s":"")+'. Voir les onglets Assiduité et Résultats.</p>';}
+    else{risk.slice(0,5).forEach(function(i){var s=M.S[i],r=M.byId[i],p=pc(s.n,s.a);h+=dr(r.name,(r.class_label||"(sans classe)")+" · moyenne "+nf1(s.m)+" · présence "+(p===null?"–":nf1(p)+" %"),s.m!==null&&s.m<TH.moy?"moyenne":"absences",undefined,true);});
+      if(risk.length>5)h+='<p class="sub">+ '+(risk.length-5)+' autre'+(risk.length-5>1?"s":"")+'. Voir les onglets Assiduité et Résultats.</p>';}
     h+='<h3 class="dh">Enseignants</h3>';
     Object.keys(M.T).map(function(k){return M.T[k];}).sort(function(x,y){return(x.last||"")<(y.last||"")?-1:1;}).forEach(function(t){
       var old=!t.last||(Date.now()-new Date(t.last).getTime())>14*864e5,cl=Object.keys(t.cls);
@@ -664,7 +732,7 @@ button.dr{cursor:pointer}
     h+='<h3 class="dh">Passages et redoublements</h3>';
     var opts=[];for(var v=8;v<=12;v+=0.5)opts.push(v);
     h+='<label for="thr">Seuil de passage (/20) · proposé : « passe » dès ce seuil, « à examiner » jusqu’à 2 points en dessous, « redoublement » sous cette limite</label><select id="thr">'+opts.map(function(v){return'<option value="'+v+'"'+(v===thr?" selected":"")+'>'+nf1(v)+'</option>';}).join("")+'</select>';
-    var cnt={p:0,x:0,r:0,n:0},conf=0,PC={};
+    var cnt={p:0,x:0,r:0,n:0},conf=0,PC={};window.__GEfin={cnt:cnt,PC:PC};
     rows.forEach(function(r){var d=finDec(M,r.id),k=r.class_label||"",c=PC[k]||(PC[k]={p:0,x:0,r:0,n:0,conf:0,eff:0});c[d.fin]++;c.eff++;cnt[d.fin]++;if(d.set){c.conf++;conf++;}});
     h+='<div class="kpis">'+kp(cnt.p,"passent")+kp(cnt.x,"à examiner")+kp(cnt.r,"redoublent")+kp(cnt.n,"non évalués")+kp(conf+"/"+rows.length,"décisions confirmées")+'</div>';
     if(dec&&dec.err)h+='<p class="sub">Décisions indisponibles ('+esc(dec.err)+') : exécutez <b>supabase/vie-scolaire-admin.sql</b> dans Supabase. Les propositions restent visibles.</p>';
@@ -768,11 +836,15 @@ button.dr{cursor:pointer}
   /* ---------- Page principale ---------- */
   function main(){
     var cl=classes(),V=view(),keep=document.activeElement&&document.activeElement.id==="qs";
-    var h='<div class="top"><div><h1>Gestion de l’établissement</h1><p class="sub">'+rows.length+' élève'+(rows.length>1?"s":"")+' · '+esc((me&&me.email)||"")+'</p></div><div class="bs" style="margin:0"><a class="btn ghost" href="aide-etablissement.html" style="text-decoration:none;display:inline-flex;align-items:center">Guide</a><a class="btn ghost" href="contact.html" style="text-decoration:none;display:inline-flex;align-items:center">Contacter un administrateur</a><a class="btn ghost" href="./" style="text-decoration:none;display:inline-flex;align-items:center">← Application</a><button class="btn ghost" id="out">Se déconnecter</button></div></div>';
-    if(ET&&curC===null)h+=etabBar()+gestionHtml();
+    var h='<a class="back" href="./">← Application</a><h1>Gestion de l’établissement</h1><p class="sub">'+rows.length+' élève'+(rows.length>1?'s':'')+' · '+esc((me&&me.email)||"")+'</p>'+
+      '<div class="pills"><a class="pill" href="aide-etablissement.html">Guide</a><a class="pill" href="contact.html">Contacter un administrateur</a><button type="button" class="pill" id="out">Se déconnecter</button></div>';
+    var admA="",admB="",rtaH="";
+    function SEC(n,t,d){return'<div class="sec"><h2>'+t+'</h2><p class="sub">'+d+'</p></div>';}
+    if(ET&&curC===null)admA=etabBar()+gestionHtml();
     if(curC===null){
-    if(!qtxt.trim())h+=dashHtml()+rtaHtml(window.__M||null);
-    h+='<details class="card"'+(rows.length?'':' open')+'><summary style="font-weight:700;cursor:pointer">Gestion : ajouter, importer, enseignants</summary>';
+    if(!qtxt.trim()){h+=SEC(1,"Vue d’ensemble","Où en est l’établissement ? Choisissez une rubrique.")+dashHtml();rtaH=rtaHtml(window.__M||null);}
+    var hS=h;h="";
+    h+='<details class="card"'+(rows.length?'':' open')+'><summary style="font-weight:700;cursor:pointer">Ajouter, importer, affecter des enseignants</summary>';
     h+='<div class="card"><h2>Reprendre mes classes existantes</h2><p class="sub" style="margin:0">Crée automatiquement un dossier, avec son code, pour chaque élève déjà présent dans les classes de ce compte (classes archivées exclues). Les élèves déjà créés sont ignorés.</p><div class="bs"><button class="btn" id="imp">Attribuer un code à tous mes élèves</button></div></div>';
     h+='<div class="card"><h2>Ajouter des élèves</h2><p class="sub" style="margin:0 0 6px">Un élève par ligne : <b>Nom;Classe</b> (la classe est facultative). Chaque élève reçoit automatiquement son code secret.</p>'+
       '<label for="dc">Classe pour les lignes sans classe</label><input id="dc" type="text" placeholder="ex. 2nde C" autocomplete="off">'+
@@ -783,14 +855,15 @@ button.dr{cursor:pointer}
       '<label for="tc">Classe</label><select id="tc"><option value="">Tous les élèves</option>'+cl.map(function(c){return'<option value="'+esc(c)+'">'+esc(c||"(sans classe)")+'</option>';}).join("")+'</select>'+
       '<div class="bs"><button class="btn" id="tas"'+(rows.length?"":" disabled")+'>Affecter</button></div>'+
       (asg.length?'<div style="margin-top:12px">'+asg.map(function(a,i){return'<div class="st" style="padding:8px 0;display:flex;justify-content:space-between;align-items:center;gap:8px"><span><b>'+esc(a.email)+'</b><br><span class="sub">'+esc(a.class_label||"(sans classe)")+' · '+a.n+' élève'+(a.n>1?"s":"")+'</span></span><button class="btn warn" style="min-height:36px;padding:6px 10px" data-un="'+i+'">Retirer</button></div>';}).join("")+'</div>':'<p class="sub" style="margin-top:10px">Aucune affectation.</p>')+'</div>';
-    h+='</details>';
+    h+='</details>';admB=h;h=hS;
     }
     function stHtml(r){
       var open=shown[r.id]!==false;
       return '<div class="stc">'+(ed[r.id]?'<label for="en'+r.id+'">Nom</label><input id="en'+r.id+'" type="text" value="'+esc(r.name)+'" maxlength="120"><label for="ec'+r.id+'">Classe</label><input id="ec'+r.id+'" type="text" value="'+esc(r.class_label||"")+'" maxlength="80"><div class="bs"><button class="btn" data-act="save" data-id="'+r.id+'">Enregistrer</button><button class="btn ghost" data-act="cancel" data-id="'+r.id+'">Annuler</button></div>':'<b style="font-size:1.08rem">'+esc(r.name)+'</b> <span class="sub">'+esc(r.class_label||"")+'</span> <button class="btn ghost" style="min-height:30px;padding:3px 9px;font-size:.8rem" data-act="edit" data-id="'+r.id+'">Modifier</button>')+
         (open?'<div class="cdb"><span class="sub">Code</span><span class="cd">'+esc(fmt(r.code))+'</span></div>':'')+
         '<label for="ph'+r.id+'">Téléphone du parent (facultatif)</label><input id="ph'+r.id+'" type="tel" inputmode="tel" data-ph="'+r.id+'" value="'+esc(r.phone||"")+'" placeholder="06 123 45 67">'+
-        '<div class="bs"><button class="btn ghost" data-act="show" data-id="'+r.id+'">'+(open?"Masquer le code":"Afficher le code")+'</button><button class="btn" data-act="wa" data-id="'+r.id+'">WhatsApp</button><button class="btn ghost" data-act="cp" data-id="'+r.id+'">Copier le lien</button><button class="btn ghost" data-act="mv" data-id="'+r.id+'">Déplacer</button><button class="btn warn" data-act="rot" data-id="'+r.id+'">Nouveau code</button><button class="btn warn" data-act="del" data-id="'+r.id+'">Supprimer</button></div></div>';
+        '<div class="bs"><button class="btn" data-act="wa" data-id="'+r.id+'">WhatsApp</button><button class="btn ghost" data-act="show" data-id="'+r.id+'">'+(open?"Masquer le code":"Afficher le code")+'</button></div>'+
+        '<details class="more"><summary>Plus d’actions</summary><div class="bs"><button class="btn ghost" data-act="cp" data-id="'+r.id+'">Copier le lien</button><button class="btn ghost" data-act="mv" data-id="'+r.id+'">Déplacer</button><button class="btn warn" data-act="rot" data-id="'+r.id+'">Nouveau code</button><button class="btn warn" data-act="del" data-id="'+r.id+'">Supprimer</button></div></details></div>';
     }
     var cnt=function(n){return n+" élève"+(n>1?"s":"");};
     if(curC!==null){
@@ -804,12 +877,13 @@ button.dr{cursor:pointer}
       V.forEach(function(r){h+=stHtml(r);});
     }else{
       /* ---- Accueil : un carré par classe, rangés par niveau ---- */
-      h+='<div class="card"><h2>Élèves par classe</h2><p class="sub" style="margin:0">Touchez une classe pour voir ses élèves et leurs codes.</p>'+
+      h+=SEC(2,"Classes et élèves","Ouvrez une classe pour voir ses élèves, leurs codes et imprimer les cartes.")+'<div class="card"><h2>Élèves par classe</h2><p class="sub" style="margin:0">Touchez une classe pour voir ses élèves et leurs codes.</p>'+
         '<label for="qs">Rechercher un élève (nom ou classe)</label><input id="qs" type="search" autocomplete="off" value="'+esc(qtxt)+'" placeholder="ex. Kimbembe">'+
         '<p class="sub" style="margin:6px 0 0">'+cnt(V.length)+' · '+cl.length+' classe'+(cl.length>1?"s":"")+'</p>'+
+        '<details class="dd" data-pn="exports"'+(OP.exports?" open":"")+'><summary>Cartes de codes et listes à imprimer</summary>'+
         '<div class="bs"><button class="btn" id="cards"'+(V.length?"":" disabled")+'>Imprimer les cartes de codes (QR) de toutes les classes</button></div>'+
         '<div class="bs"><button class="btn ghost" id="ex1"'+(V.length?"":" disabled")+'>Liste pour les enseignants (sans code)</button><button class="btn ghost" id="ex2"'+(V.length?"":" disabled")+'>Liste confidentielle (avec codes)</button></div>'+
-        '<p class="sub" style="margin-top:8px">La liste enseignants contient Nom, Classe et Réf : la Réf ne permet rien lire. Chaque enseignant l’importe dans sa classe.</p>';
+        '<p class="sub" style="margin-top:8px">La liste enseignants contient Nom, Classe et Réf : la Réf ne permet rien lire. Chaque enseignant l’importe dans sa classe.</p></details>';
       if(qtxt.trim()){
         h+='</div>';
         if(!V.length)h+='<p class="sub" style="margin-top:12px">Aucun élève.</p>';
@@ -829,9 +903,11 @@ button.dr{cursor:pointer}
         h+='</div>';
       }
     }
+    if(curC===null&&(admA||rtaH||admB))h+=SEC(3,"Administration","À faire de temps en temps : équipe, import, rentrée.")+'<details class="card adm"'+(rows.length?'':' open')+'><summary>Ouvrir l’administration</summary>'+admA+rtaH+admB+'</details>';
     h+='<p class="sub" id="msg" role="status"></p><div id="pr" aria-hidden="true"></div>';
     app.innerHTML=h;
     bind();
+    if(window.geDraw)try{geDraw(geCtx());}catch(e){}
     if(keep){var qi=document.getElementById("qs");if(qi){qi.focus();var L=qi.value.length;try{qi.setSelectionRange(L,L);}catch(e){}}}
   }
   function get(id){return rows.find(function(r){return r.id===id;});}
