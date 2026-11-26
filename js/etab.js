@@ -39,7 +39,7 @@ function etabCur(){var i;for(i=0;i<ETAB.list.length;i++)if(ETAB.list[i].id===ETA
 function etabId(){var e=etabCur();return e?e.id:undefined;}
 function etabIsAdmin(){var e=etabCur();return!!e&&e.role==="admin";}
 function etabNeeded(){return!!(ME&&!GUEST&&sb&&ETAB.loaded&&!ETAB.list.length);}
-function etabReset(){ETAB.list=[];ETAB.cur="";ETAB.loaded=false;ETAB.unavailable=false;ETAB.err="";ETAB.mem=null;ETAB.busy=false;ETAB.msgs=[];}
+function etabReset(){ETAB.list=[];ETAB.cur="";ETAB.loaded=false;ETAB.unavailable=false;ETAB.err="";ETAB.mem=null;ETAB.busy=false;ETAB.msgs=[];if(typeof recuReset==="function")recuReset();}
 /* Validation : un établissement créé reste « en attente » tant qu’un administrateur de Classe Master ne l’a pas validé.
    Sans le script SQL de validation, le serveur ne renvoie pas de statut : l’établissement est alors considéré comme validé. */
 function etabStatut(e){return!e||!e.statut?"valide":e.statut;}
@@ -80,6 +80,7 @@ function etabLoad(cb){
     var saved="";try{saved=localStorage.getItem(etabKey())||"";}catch(e){}
     ETAB.cur=ETAB.list.some(function(x){return x.id===saved;})?saved:(ETAB.list[0]?ETAB.list[0].id:"");
     etabApply();
+    if(typeof recuLoad==="function")recuLoad();   /* classes données par le chef (v88) */
     if(ETAB.list.some(function(x){return x.role==="admin";})&&typeof checkAdmin==="function")checkAdmin();
     if(cb)cb();
     sb.rpc("mes_messages_etab").then(function(m){   /* sans le script SQL v71 : aucun message, sans erreur */

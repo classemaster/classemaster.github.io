@@ -11,7 +11,7 @@ var AIDE=[
     "Le chef peut fermer les inscriptions, créer un nouveau code, nommer d’autres administrateurs (direction, CPE) ou retirer un enseignant. Les données d’un établissement ne sont jamais visibles par un autre."]],
   ["Premiers pas en 3 minutes",[
     "Ouvrez l’<b>Accueil</b>, puis touchez « Ajouter des élèves ».",
-    "Importez un fichier Excel ou CSV, ou collez votre liste (un nom par ligne). Vous pouvez créer d’autres classes avec « + Nouvelle classe » dans le menu en haut.",
+    "Importez un fichier Excel ou CSV, ou collez votre liste (un nom par ligne). Vous pouvez créer d’autres classes avec « + Nouvelle classe » dans le menu en haut. Si vous êtes rattaché à un établissement, c’est votre chef d’établissement qui vous donne vos classes et vos matières : elles arrivent toutes seules avec leurs élèves.",
     "Revenez à l’Accueil et touchez « Faire l’appel »."]],
   ["Faire l’appel",[
     "Pour chaque élève, indiquez présent, absent ou en retard. « Tous présents » remplit la liste d’un coup : il ne reste qu’à corriger les absents.",

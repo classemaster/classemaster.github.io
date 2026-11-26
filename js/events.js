@@ -32,6 +32,7 @@ document.getElementById("view").addEventListener("input",function(e){
 });
 document.getElementById("cls").addEventListener("change",function(e){qs="";
   if(e.target.value==="__new"){
+    if(typeof recuLocked==="function"&&recuLocked()){recuNotice();render();return;}
     var nm=prompt("Nom de la nouvelle classe (ex. 4e B)");
     if(nm&&nm.trim()){var id=uid();D.classes.push({id:id,name:nm.trim(),students:[],records:{},et:etabId()});D.cur=id;view="eleves";save();}
   }else{D.cur=e.target.value;}
@@ -44,7 +45,7 @@ document.getElementById("view").addEventListener("click",function(e){
   var t=e.target,c=cl();
   var pk=t.closest("[data-pick]");
   if(pk){var sl0=document.querySelector(".hm-cls"),x0=sl0?sl0.scrollLeft:0;D.cur=pk.dataset.pick;view="classe";local();render();window.scrollTo(0,0);return;}
-  if(t.closest("[data-newclass]")){var nn=prompt("Nom de la nouvelle classe (ex. 4e B)");if(nn&&nn.trim()){var nid=uid();D.classes.push({id:nid,name:nn.trim(),students:[],records:{},et:etabId()});D.cur=nid;save();render();}return;}
+  if(t.closest("[data-newclass]")){if(typeof recuLocked==="function"&&recuLocked()){recuNotice();return;}var nn=prompt("Nom de la nouvelle classe (ex. 4e B)");if(nn&&nn.trim()){var nid=uid();D.classes.push({id:nid,name:nn.trim(),students:[],records:{},et:etabId()});D.cur=nid;save();render();}return;}
   if(t.closest("[data-guest]")){if(!GUEST){D=blank();KEY="";}GUEST=true;ME=null;view="home";date=today();qs="";render();window.scrollTo(0,0);return;}
   var ey=t.closest("[data-eye]");
   if(ey){var pi=document.getElementById(ey.dataset.eye);if(pi){var sh=pi.type==="password";pi.type=sh?"text":"password";ey.setAttribute("aria-pressed",String(sh));ey.setAttribute("aria-label",sh?"Masquer le mot de passe":"Afficher le mot de passe");}return;}

@@ -46,5 +46,5 @@ function renderEval(){
   h+='<div class="card"><h2>Résultats</h2><p class="sub" id="evs" style="margin-top:0">'+evLine(e,c)+'</p>';
   if(!c.students.length)h+='<p class="sub">Aucun élève.</p>';
   c.students.forEach(function(s){var v=e.s[s.id];h+='<div class="er"><div class="li"><span style="flex:1;min-width:0">'+esc(s.name)+'</span><input type="text" inputmode="decimal" enterkeyhint="next" autocomplete="off" data-ns="'+s.id+'" value="'+(typeof v==="number"?nf(v):"")+'" placeholder="–" aria-label="Note de '+esc(s.name)+'" style="width:84px;text-align:right"></div>'+(e.h?'<div class="rd">'+rdBtns(e,s)+'</div>':'')+'</div>';});
-  return h+'</div><div id="evst">'+evStatsHTML(e,c)+'</div><button class="btn ghost" id="delev">Supprimer cette évaluation</button>';
+  return h+'</div><div id="evst">'+evStatsHTML(e,c)+'</div><div class="card"><h2>Relevé de ce devoir</h2><p class="sub" style="margin:0 0 8px">PDF prêt à imprimer : une ligne par élève, classés par note, avec la moyenne de la classe.</p><button class="btn" id="evrel">Télécharger le relevé de ce devoir</button><p class="sub" id="evrelmsg" role="status"></p></div><button class="btn ghost" id="delev">Supprimer cette évaluation</button>';
 }

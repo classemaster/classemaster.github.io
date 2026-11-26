@@ -30,7 +30,7 @@ function loadDirty(){var k=dkey();if(!k)return;try{var a=JSON.parse(kvGet(k)||"[
 
 function hasCls(c){return!!((c.students&&c.students.length)||Object.keys(c.records||{}).length);}
 /* Cahier de textes, programme, carnet et appréciations : rangés dans la colonne « th » (clé « x »), sans changer la base */
-var XK=["cr","ct","pg","bc","tt","pa","et"];
+var XK=["cr","ct","pg","bc","tt","pa","et","ca"];
 function xPack(c){var x={};XK.forEach(function(k){var v=c[k];if(v&&(Array.isArray(v)?v.length:Object.keys(v).length))x[k]=v;});return x;}
 function thRow(c){var o={},b=c.th||{a:3,r:3},k;for(k in b)o[k]=b[k];var x=xPack(c);if(Object.keys(x).length)o.x=x;return o;}
 function xUnpack(n){
@@ -132,6 +132,7 @@ function pushNow(){
 }
 
 function finSync(ch){
+  if(typeof recuApply==="function"&&recuApply(true))ch=true;   /* classes reçues du chef : après la reprise des classes en ligne, pour ne pas créer de doublon */
   if(!D.classes.length){D.classes.push({id:uid(),name:"Ma classe",students:[],records:{},notes:{}});ch=true;}
   if(!D.classes.some(function(c){return c.id===D.cur})){D.cur=D.classes[0].id;ch=true;}
   if(ch){local();var a=document.activeElement;if(!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))render();}

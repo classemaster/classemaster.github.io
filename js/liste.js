@@ -2,8 +2,10 @@
    Seuls les premiers noms sont visibles, avec un bouton « Voir la liste complète » qui l’ouvre en plein écran.
    Tout se fait après l’affichage de l’écran (foldDraw), sans toucher aux écrans eux-mêmes : les lignes restent les mêmes éléments,
    donc les boutons, les champs et les notes continuent de fonctionner dans la liste ouverte. */
-var FOLD={show:5,min:9,open:"",y:0,top:0,h:false};   /* show : lignes visibles ; min : nombre de lignes à partir duquel on replie */
+var FOLD={show:5,min:9,minHist:6,open:"",y:0,top:0,h:false};   /* minHist : les listes d'appels se replient dès 6 lignes */   /* show : lignes visibles ; min : nombre de lignes à partir duquel on replie */
 
+/* Nombre de lignes à partir duquel une liste de ce type se replie */
+function foldMin(k){return k==="hist"?FOLD.minHist:FOLD.min;}
 /* Type de ligne répétée (vide si l’élément n’est pas une ligne de liste) */
 function foldKind(el){
   var c=el.classList;
@@ -46,7 +48,7 @@ function foldFind(root){
       if(!k){i++;continue;}
       run=[kids[i]];j=i+1;
       while(j<kids.length&&foldKind(kids[j])===k){run.push(kids[j]);j++;}
-      if(run.length>=FOLD.min)out.push({items:run,wrap:null});
+      if(run.length>=foldMin(k))out.push({items:run,wrap:null});
       i=j;
     }
     for(i=0;i<kids.length;i++)if(kids[i].children.length&&!kids[i].classList.contains("fold")&&kids[i].tagName!=="TABLE")scan(kids[i]);

@@ -59,7 +59,7 @@ function renderClasse(){
   c.students.slice().sort(function(a,b){return a.name.localeCompare(b.name,"fr")}).forEach(function(s){var t=tot[s.id];h+='<tr><td><button class="lnk" data-fiche="'+s.id+'">'+esc(s.name)+'</button>'+(alertTxt(c,t)?'<span class="al">⚠</span>':'')+'</td><td class="n">'+t.a+'</td><td class="n">'+t.r+'</td><td class="n">'+fr(rate(t))+'</td></tr>';});
   h+='</table></div></div>';
   h+=classeHoraires(c)+classeCahier(c)+classeCarnet(c)+classeObs(c)+classeDevoirs(c);
-  h+='<h2 style="font-size:1.05rem">Derniers appels</h2>'+(ks.length?ks.slice(0,8).map(function(k){var v=c.students.map(function(s){return c.records[k][s.id]});return'<button class="hist" data-open="'+k+'"><span>'+esc(fmt(k,true))+'</span><span>'+v.filter(function(z){return z==="a"}).length+' abs. · '+v.filter(function(z){return z==="r"}).length+' ret.</span></button>';}).join(''):'<p class="sub">Aucun appel sur cette période.</p>');
+  h+='<h2 style="font-size:1.05rem">Derniers appels</h2>'+(ks.length?ks.slice(0,120).map(function(k){var v=c.students.map(function(s){return c.records[k][s.id]});return'<button class="hist" data-open="'+k+'"><span>'+esc(fmt(k,true))+'</span><span>'+v.filter(function(z){return z==="a"}).length+' abs. · '+v.filter(function(z){return z==="r"}).length+' ret.</span></button>';}).join(''):'<p class="sub">Aucun appel sur cette période.</p>');
   return h;
 }
 function renderHome(){
@@ -72,7 +72,7 @@ function renderHome(){
   var h='<div class="hm"><section class="hm-hero"><div class="hm-top"><div><div class="hm-date">'+esc(fmt(t,true))+'</div><h1 class="hm-hi">'+esc(hi)+'</h1><div class="hm-cl">'+esc(c.name)+(c.subj?" · "+esc(c.subj):"")+'</div></div><div class="hm-ring" role="img" aria-label="Présence aujourd’hui : '+(pct===null?"appel non fait":pct+" %")+'">'+ring+'</div></div>'+
   '<div class="hm-st">'+(!st.n?"Aucun élève dans cette classe pour le moment.":st.done?st.cn.p+" présent(s) · "+st.cn.a+" absent(s) · "+st.cn.r+" retard(s)":"L’appel d’aujourd’hui n’est pas encore fait.")+'</div>'+
   '<button class="hm-cta" data-go="'+(st.n?"appel":"eleves")+'">'+(!st.n?"Ajouter des élèves":st.done?"Modifier l’appel":"Faire l’appel")+'</button></section>';
-  h+=(typeof rentreeCard==="function"?rentreeCard():"")+homeToday();
+  h+=(typeof recuCard==="function"?recuCard():"")+(typeof rentreeCard==="function"?rentreeCard():"")+homeToday();
   // semaine
   var d0=new Date(),dw=(d0.getDay()+6)%7,wk="",L=["L","M","M","J","V"];
   for(i=0;i<5;i++){
@@ -89,7 +89,7 @@ function renderHome(){
     var q=clsStats(x);
     cc+='<button class="cc'+(x.id===c.id?" on":"")+'" data-pick="'+x.id+'" aria-pressed="'+(x.id===c.id)+'"><b>'+esc(x.name)+'</b><small>'+(x.subj?esc(x.subj)+" · ":"")+q.n+" élève"+(q.n>1?"s":"")+'</small><div class="sp" aria-hidden="true">'+q.sp.map(function(d){return d?'<i style="height:'+Math.max(14,Math.round(d.p*100))+'%"></i>':'<i class="e"></i>';}).join("")+'</div><em class="'+(q.done?"ok":"todo")+'">'+(q.done?"Appel fait":"À faire")+'</em></button>';
   });
-  cc+='<button class="cc add" data-newclass="1"><b>+</b><small>Nouvelle classe</small></button>';
+  if(!(typeof recuLocked==="function"&&recuLocked()))cc+='<button class="cc add" data-newclass="1"><b>+</b><small>Nouvelle classe</small></button>';
   h+='<h2 class="hm-h hm-h2">Mes classes</h2><div class="hm-cls">'+cc+'</div>';
   var ar=D.classes.filter(isArch);
   if(ar.length)h+='<section class="hm-card"><h2 class="hm-h">Années précédentes</h2>'+ar.map(function(x){return'<button class="hist" data-pick="'+x.id+'"><span>'+esc(x.name)+'</span><span>'+x.students.length+' élève'+(x.students.length>1?'s':'')+'</span></button>';}).join("")+'</section>';

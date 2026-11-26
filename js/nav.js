@@ -3,7 +3,7 @@ function navOf(v){return{mois:"hist",fiche:"hist",part:"compte",aide:"compte",cl
 
 function header(){
   var s=document.getElementById("cls");
-  s.innerHTML=D.classes.map(function(c){return'<option value="'+c.id+'"'+(c.id===D.cur?" selected":"")+">"+(isArch(c)?"📁 ":"")+esc(c.name)+"</option>"}).join("")+'<option value="__new">+ Nouvelle classe</option>';
+  s.innerHTML=D.classes.map(function(c){return'<option value="'+c.id+'"'+(c.id===D.cur?" selected":"")+">"+(isArch(c)?"📁 ":"")+esc(c.name)+"</option>"}).join("")+(typeof recuLocked==="function"&&recuLocked()?"":'<option value="__new">+ Nouvelle classe</option>');
   document.getElementById("dt").value=date;
   if(typeof dchipsUpdate==="function")dchipsUpdate();
   document.querySelectorAll("nav button[data-v]").forEach(function(b){if(b.dataset.v===navOf(view))b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});

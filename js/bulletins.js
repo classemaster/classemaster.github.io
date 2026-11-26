@@ -12,10 +12,23 @@ function ficheBulletin(c,s){
   '<div class="bar" style="margin:8px 0 0"><button class="btn" id="bone" data-bs="'+s.id+'">Bulletin PDF</button></div><p class="sub" id="bmsg1" role="status" style="margin:6px 0 0"></p></div>';
 }
 /* Carte « Bulletins » de la page Notes */
+/* Relevé de la classe : au choix un trimestre, la moyenne annuelle, toutes les évaluations, ou UN devoir précis.
+   Valeur du choix : « p:1 », « p:A », « p: » (toutes les évaluations) ou « e:<id> » (un devoir). */
+var brs=null;
+function brsVal(){return brs===null?"p:"+bpOf():brs;}
+function brsOpts(c,sel){
+  var E=evs(c).slice().sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0;});
+  function o(v,t){return'<option value="'+v+'"'+(v===sel?" selected":"")+'>'+t+'</option>';}
+  return'<optgroup label="Par période">'+o("p:","Toutes les évaluations (tous les trimestres)")+o("p:1","Trimestre 1")+o("p:2","Trimestre 2")+o("p:3","Trimestre 3")+o("p:A","Moyenne annuelle (T1 + T2 + T3)")+'</optgroup>'+
+    (E.length?'<optgroup label="Un devoir précis">'+E.map(function(e){return o("e:"+e.id,esc(e.t)+" · "+esc(fmt(e.d))+" · sur "+nf(e.m));}).join("")+'</optgroup>':"");
+}
 function bulletinsCard(c){
   var p=bpOf();
-  return'<div class="card"><h2>Bulletins et relevé</h2><p class="sub" style="margin-top:0">Documents PDF prêts à imprimer, avec moyennes, rangs, appréciations, absences et retards.</p><div class="flt"><select id="bper" aria-label="Période">'+trOpts(p,false)+'</select></div>'+
-  '<div class="bar two" style="margin:0"><button class="btn" id="ball">Tous les bulletins</button><button class="btn ghost" id="brel">Relevé de la classe</button></div><p class="sub" id="bmsg" role="status"></p></div>';
+  return'<div class="card"><h2>Bulletins et relevé</h2><p class="sub" style="margin-top:0">Documents PDF prêts à imprimer, avec moyennes, rangs, appréciations, absences et retards.</p><div class="flt"><select id="bper" aria-label="Période des bulletins">'+trOpts(p,false)+'</select></div>'+
+  '<div class="bar" style="margin:0"><button class="btn" id="ball">Tous les bulletins</button></div>'+
+  '<h3 style="font-size:1rem;margin:16px 0 6px">Relevé de notes de la classe</h3><p class="sub" style="margin:0 0 8px">Choisissez une période, tous les trimestres, ou un seul devoir.</p>'+
+  '<div class="flt"><select id="brsel" aria-label="Relevé : période ou devoir précis">'+brsOpts(c,brsVal())+'</select></div>'+
+  '<div class="bar" style="margin:0"><button class="btn ghost" id="brel">Télécharger le relevé</button></div><p class="sub" id="bmsg" role="status"></p></div>';
 }
 
 /* ---- Dessin PDF ---- */
@@ -111,6 +124,34 @@ function releveRows(c,p){
   var L=c.students.slice().sort(function(a,b){var x=rm[a.id].r,y=rm[b.id].r;return(x===null?1e9:x)-(y===null?1e9:y)||a.name.localeCompare(b.name,"fr");});
   return{rm:rm,tr:tr,L:L};
 }
+/* Relevé d'UN devoir : une ligne par élève, classés par note, avec la moyenne, la plus forte et la plus faible note */
+function releveDevoirPDF(c,e){
+  var pages=[],cur="",y,X=[40,75,300,385,470],H=["Rang","Élève","Note","Sur 20","Mention"],m=e.m>0?e.m:20;
+  var rows=c.students.map(function(s){var v=e.s&&e.s[s.id];return{s:s,v:typeof v==="number"?v:null};});
+  var ok=rows.filter(function(r){return r.v!==null;}).sort(function(a,b){return b.v-a.v||a.s.name.localeCompare(b.s.name,"fr");});
+  ok.forEach(function(r,i){r.r=i&&Math.round(r.v*100)===Math.round(ok[i-1].v*100)?ok[i-1].r:i+1;});
+  var L=ok.concat(rows.filter(function(r){return r.v===null;}).sort(function(a,b){return a.s.name.localeCompare(b.s.name,"fr");}));
+  var st=evStat(e,c);
+  function head(){
+    var o=pdRect(40,y-6,515,20,PDF_SOFT),j;
+    for(j=0;j<H.length;j++)o+=pdTx(X[j],y,H[j],9,1);
+    y-=22;return o;
+  }
+  y=800;
+  cur=pdTx(40,y,ME&&ME.school?ME.school:"Établissement scolaire",13,1,PDF_BLUE);y-=20;
+  cur+=pdTx(40,y,"Relevé du devoir – "+c.name+(c.subj?" ("+c.subj+")":""),14,1);y-=18;
+  cur+=pdTx(40,y,pdCut(e.t,56)+" · "+fmt(e.d,true)+" · sur "+nf(m)+(e.k!==undefined&&e.k!==1?" · coefficient "+nf(e.k):"")+" · édité le "+fmt(today(),true),9,0,PDF_GREY);y-=24;
+  cur+=pdTx(40,y,"Moyenne : "+nf(st.avg)+" / "+nf(m)+"   ·   Plus forte : "+nf(st.mx)+"   ·   Plus faible : "+nf(st.mn)+"   ·   "+st.n+" note"+(st.n>1?"s":"")+" sur "+c.students.length+" élèves",10,1);y-=26;
+  cur+=head();
+  L.forEach(function(r){
+    if(y<60){pages.push(cur);y=800;cur=head();}
+    var v20=r.v===null?null:r.v/m*20,row=[r.v===null?"–":String(r.r),pdCut(r.s.name,40),r.v===null?"–":nf(r.v)+" / "+nf(m),nf(v20),apprec(v20)||"–"],j;
+    for(j=0;j<row.length;j++)cur+=pdTx(X[j],y,row[j],10,0);
+    cur+=pdLine(40,y-5,555,y-5,0.3);y-=17;
+  });
+  pages.push(cur);
+  return pdfBytes(pages);
+}
 function relevePDF(c,p){
   var R=releveRows(c,p),ann=p==="A",pages=[],cur="",y;
   var X=ann?[40,75,265,320,375,430,495]:[40,75,330,420];
@@ -143,6 +184,7 @@ document.getElementById("view").addEventListener("change",function(e){
   var t=e.target,c=cl();
   if(t.id==="ntr"){ntr=trParse(t.value);var y=window.scrollY;render();window.scrollTo(0,y);return;}
   if(t.id==="bper"){bp=trParse(t.value);var y2=window.scrollY;render();window.scrollTo(0,y2);return;}
+  if(t.id==="brsel"){brs=t.value;return;}
   if(t.id==="bcm"){
     var k=bcKey(t.dataset.bcs,bpOf()),v=t.value.trim();
     if(!c.bc)c.bc={};
@@ -164,7 +206,21 @@ document.getElementById("view").addEventListener("click",function(e){
     return;
   }
   if(t.id==="brel"){
-    saveFile("releve-"+safe+"-"+(p==="A"?"annuel":"T"+p)+".pdf",function(){return relevePDF(c,p);},"application/pdf",function(m){var x=document.getElementById("bmsg");if(x)x.textContent=m;});
+    var sl=document.getElementById("brsel"),v=sl?sl.value:brsVal(),msg=function(m){var x=document.getElementById("bmsg");if(x)x.textContent=m;};
+    brs=v;
+    if(v.indexOf("e:")===0){
+      var ev=evs(c).find(function(x){return x.id===v.slice(2);});
+      if(!ev){msg("Ce devoir n’existe plus.");return;}
+      saveFile("releve-"+safe+"-"+fname(ev.t)+".pdf",function(){return releveDevoirPDF(c,ev);},"application/pdf",msg);
+      return;
+    }
+    var rp=trParse(v.slice(2));
+    saveFile("releve-"+safe+"-"+(rp==="A"?"annuel":rp===""?"toutes-evaluations":"T"+rp)+".pdf",function(){return relevePDF(c,rp);},"application/pdf",msg);
+    return;
+  }
+  if(t.id==="evrel"){
+    var e2=evs(c).find(function(x){return x.id===evid;});if(!e2)return;
+    saveFile("releve-"+safe+"-"+fname(e2.t)+".pdf",function(){return releveDevoirPDF(c,e2);},"application/pdf",function(m){var x=document.getElementById("evrelmsg");if(x)x.textContent=m;});
     return;
   }
 });
