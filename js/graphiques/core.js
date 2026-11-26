@@ -66,8 +66,8 @@
   };
 
   /** Palette partagée : tous les graphiques piochent ici quand aucune couleur n’est donnée. */
-  Charts.palette = ['#8b7cff', '#35d6c9', '#ff6b9a', '#ffc15a', '#38bdf8', '#b6f23c', '#94a3b8'];
-  Charts.colors = { up: '#35d6c9', down: '#ff6b9a', total: '#8b7cff', accent: '#8b7cff' };
+  Charts.palette = ['#4263EB', '#22A06B', '#E5484D', '#F2B705', '#2AA7D6', '#8A97B5', '#94A3B8'];
+  Charts.colors = { up: '#22A06B', down: '#E5484D', total: '#4263EB', accent: '#4263EB' };
 
   /* --------------------------------------------------------------- utilitaires */
   const fmtCache = {};
@@ -374,14 +374,19 @@
       const base = String(name || this.o.label || 'graphique').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
         .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'graphique';
       const save = (blob, ext) => {
+        if (typeof window.saveFile === 'function') {
+          window.saveFile(base + '.' + ext, blob, blob.type, (m) => { if (typeof window.toast === 'function') window.toast(m); });
+          return;
+        }
         const a = document.createElement('a'), url = URL.createObjectURL(blob);
         a.href = url; a.download = base + '.' + ext;
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
       };
       kind = String(kind).toLowerCase();
-      if (kind === 'csv') { const t = this.toCSV(); if (t) save(new Blob(['\ufeff' + t], { type: 'text/csv;charset=utf-8' }), 'csv'); return Promise.resolve(); }
-      if (kind === 'svg') { const t = this.toSVG(); if (t) save(new Blob([t], { type: 'image/svg+xml' }), 'svg'); return Promise.resolve(); }
+      const none = () => { if (typeof window.toast === 'function') window.toast('Rien à exporter pour ce graphique.'); return Promise.resolve(); };
+      if (kind === 'csv') { const t = this.toCSV(); if (!t) return none(); save(new Blob(['\ufeff' + t], { type: 'text/csv;charset=utf-8' }), 'csv'); return Promise.resolve(); }
+      if (kind === 'svg') { const t = this.toSVG(); if (!t) return none(); save(new Blob([t], { type: 'image/svg+xml' }), 'svg'); return Promise.resolve(); }
       if (kind === 'png') return this.toPNG().then((b) => save(b, 'png'));
       return Promise.reject(new Error('Format inconnu : ' + kind));
     }
