@@ -1,0 +1,10 @@
+/* Graphiques du tableau de bord de l'établissement : les jetons --ch-* suivent le thème de la page (clair / sombre). Styles des graphiques : charts.css */
+.ge{--ch-font:inherit;--ch-card:var(--surface);--ch-bg:var(--bg);--ch-ink:var(--ink);--ch-ink-inv:var(--surface);--ch-on-accent:#0C1424;
+  --ch-muted:var(--mute);--ch-line:var(--line);--ch-soft:var(--soft);--ch-accent:var(--accent);--ch-tip-bg:var(--surface);--ch-tip-line:var(--line);
+  --ch-pos:var(--p);--ch-pos-bg:var(--soft);--ch-neg:var(--a);--ch-neg-bg:var(--soft);
+  --ch-r-sm:10px;--ch-r-md:16px;--ch-r-lg:20px;--ch-gap-1:4px;--ch-gap-2:8px;--ch-gap-3:12px;--ch-gap-4:16px;--ch-gap-5:24px;
+  --ch-shadow-card:0 2px 8px rgba(10,18,34,.07);--ch-shadow-tip:0 10px 24px rgba(18,33,59,.22);
+  display:grid;gap:12px;min-width:0;margin:14px 0 4px}
+.ge>*{min-width:0}
+.ge .card{margin:0;overflow:hidden}
+.ge-card .sub{margin:-4px 0 14px;font-size:.85rem}

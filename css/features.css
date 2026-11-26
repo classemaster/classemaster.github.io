@@ -246,3 +246,8 @@ html{touch-action:manipulation}
 .pg-li .pgl{flex:1 1 100%}
 .pg-li .cx-sel{flex:1 1 0;max-width:none;min-width:0;padding:4px 30px 4px 10px;background-position:right 10px center}
 .pg-li button{flex:none}
+
+/* v82 : une ligne d'appel garde ses chiffres sur une seule ligne (c'est la date qui passe à la ligne si besoin) */
+.hist[data-open]>span:first-child{min-width:0;flex:1}
+.hist[data-open]>span:last-child{flex:none;white-space:nowrap}
+#brsel{width:100%;max-width:100%;min-width:0;box-sizing:border-box;text-overflow:ellipsis}
