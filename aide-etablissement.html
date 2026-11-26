@@ -12,7 +12,7 @@
 </head>
 <body>
 <main>
-<a class="back" href="etablissement.html">← Gestion de l’établissement</a>
+<a class="back" href="etab-accueil.html">← Gestion de l’établissement</a>
 <h1>Guide du chef d’établissement</h1>
 <p class="sub">Mise en route, gestion au quotidien et dépannage. Touchez une rubrique pour la lire.</p>
 
@@ -37,7 +37,7 @@
 <ol>
 <li>La personne crée d’abord son compte dans Classe Master (avec son adresse e-mail).</li>
 <li>Dans <code>acces-admin.sql</code>, remplacez <code>VOTRE-ADRESSE@EXEMPLE.COM</code> par son adresse, puis lancez le script.</li>
-<li>Elle ouvre <code>etablissement.html</code> (bouton « Gestion de l’établissement » dans <b>Compte</b>).</li>
+<li>Elle ouvre <code>etab-accueil.html</code> (bouton « Gestion de l’établissement » dans <b>Compte</b>).</li>
 </ol>
 <p>Pour retirer l’accès, utilisez la ligne « Retirer l’accès » à la fin du même script. Si la page affiche « Accès réservé », l’adresse n’a pas été ajoutée, ou ne correspond pas exactement.</p>
 </details>
@@ -45,10 +45,10 @@
 <details>
 <summary>3. Au quotidien</summary>
 <ul>
-<li><b>Tableau de bord</b> : Aperçu, Effectifs, Assiduité, Résultats, Enseignants, Discipline, Fin de période.</li>
-<li><b>Affecter une classe à un enseignant</b> : onglet « Enseignants » (adresse e-mail de l’enseignant et nom de la classe). Sans affectation, l’enseignant ne peut pas afficher le code famille des élèves de cette classe.</li>
+<li><b>Rubriques</b> (menu en haut de chaque page) : Accueil (indicateurs et alertes), Classes (élèves, codes, cartes QR, effectifs, transferts), Enseignants (demandes, affectations), Matières, Résultats et assiduité (avec filtres classe, matière et enseignant, tableau classe × matière et provenance des données), Vie scolaire (discipline, messages), Fin d’année, Paramètres (code de l’établissement, seuils, journal).</li>
+<li><b>Affecter une classe à un enseignant</b> : rubrique « Enseignants » (classe et matière ; les anciens accès par e-mail et classe y restent listés). Sans affectation, l’enseignant ne peut pas afficher le code famille des élèves de cette classe.</li>
 <li><b>Lien unique pour une famille</b> : les parents ouvrent un seul lien qui regroupe toutes les matières de leur enfant.</li>
-<li><b>Fin de période</b> : enregistrez ici les décisions de passage.</li>
+<li><b>Fin d’année</b> : enregistrez ici les décisions de passage et préparez la rentrée.</li>
 </ul>
 </details>
 
@@ -65,7 +65,7 @@
 <summary>5. Dépannage</summary>
 <ul>
 <li><b>« Statistiques indisponibles »</b> : relancez <code>tableau-bord-admin.sql</code>.</li>
-<li><b>Onglets Enseignants, Discipline ou Fin de période « Indisponibles »</b> : lancez <code>vie-scolaire-admin.sql</code>.</li>
+<li><b>Rubriques Enseignants, Vie scolaire ou Fin d’année « Indisponibles »</b> : lancez <code>vie-scolaire-admin.sql</code>.</li>
 <li><b>La page admin affiche « élément absent côté serveur »</b> : un script SQL manque. Reprenez la liste de la rubrique 1.</li>
 <li><b>« Action non autorisée »</b> : le compte n’est pas administrateur (rubrique 2), ou la classe n’est pas affectée à l’enseignant.</li>
 <li><b>Impossible de se connecter</b> : vérifiez les adresses autorisées dans Authentication › URL Configuration.</li>
