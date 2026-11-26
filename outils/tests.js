@@ -241,6 +241,29 @@ t("v71 : seuils d'alerte réglables sur la page du chef, plus de valeur fixe", (
 });
 t("v71 : l'espace parents lit les messages avec le code famille", () => /get_messages_famille/.test(fs.readFileSync(path.join(root, "parent.html"), "utf8")));
 
+/* ---- v87 : classes, matières et affectations (SQL additif) ---- */
+const sqlV87 = fs.readFileSync(path.join(root, "supabase", "classes-matieres-v87.sql"), "utf8");
+const sqlV87Code = sqlV87.split("\n").filter((l) => !/^\s*--/.test(l)).join("\n");
+t("SQL v87 : toutes les fonctions prévues", () => ["etab_classes_liste", "etab_classe_creer", "etab_classe_archiver", "etab_matieres_liste", "etab_matiere_ajouter", "etab_matiere_supprimer", "etab_matieres_initiales", "etab_affecter", "etab_desaffecter", "etab_affectations_liste", "mes_affectations", "registry_lier_classe", "etab_membre_nettoyer"].every((f) => new RegExp("create or replace function public\\." + f + "\\(").test(sqlV87Code)));
+t("SQL v87 : additif — ne redéfinit aucune fonction ni règle de sécurité existante", () =>
+  !/create or replace function public\.(admin_assign|admin_unassign|admin_assignments|can_use_ref|is_etab_admin|is_etab_member|rejoindre_etablissement|etab_retirer|etab_deplacer_eleves)\(/.test(sqlV87Code) &&
+  !/(drop|create) policy/i.test(sqlV87Code) && !/drop (table|function)/i.test(sqlV87Code) && !/alter table[^;]*drop column/i.test(sqlV87Code));
+t("SQL v87 : la reprise n'efface rien et ne retire aucun accès existant", () => {
+  const rep = sqlV87Code.slice(sqlV87Code.indexOf("insert into public.etab_classes (etab_id, nom)"), sqlV87Code.indexOf("create or replace function public.registry_lier_classe"));
+  return rep.length > 200 && !/\b(delete|truncate|drop)\b/i.test(rep) && !/update public\.registry_access/i.test(rep) && !/insert into public\.registry_access/i.test(rep);
+});
+t("SQL v87 : les enseignants déjà actifs gardent leurs accès (reprise seulement si accès à toute la classe)", () => /having count\(\*\) = \(select count\(\*\) from public\.registry_students s where s\.classe_id = g\.classe_id\)/.test(sqlV87Code) && /'reprise'/.test(sqlV87Code));
+t("SQL v87 : le déclencheur ne bloque jamais l'ajout d'un élève", () => /exception when others then\s+new\.classe_id := null/.test(sqlV87Code) && /before insert or update of class_label on public\.registry_students/.test(sqlV87Code));
+t("SQL v87 : seul le chef crée, archive, affecte ; l'enseignant doit être actif ; l'enseignant ne voit que ses classes", () =>
+  ["etab_classe_creer", "etab_classe_archiver", "etab_matiere_ajouter", "etab_matiere_supprimer", "etab_matieres_initiales", "etab_affecter", "etab_desaffecter", "etab_affectations_liste"].every((f) => {
+    const i = sqlV87Code.indexOf("function public." + f + "("); const b = sqlV87Code.slice(i, sqlV87Code.indexOf("end $$;", i));
+    return /is_etab_admin\(p_etab\)/.test(b);
+  }) && /m\.user_id = p_user and m\.statut = 'actif'/.test(sqlV87Code) && /adm or exists \(select 1 from public\.etab_affectations f where f\.classe_id = c\.id and f\.teacher_id = uid\)/.test(sqlV87Code));
+t("SQL v87 : une matière utilisée ne peut pas être supprimée ; une classe archivée n'efface rien", () => /'in_use'/.test(sqlV87Code) && /on delete restrict/.test(sqlV87Code) && /set archivee = coalesce\(p_on, false\)/.test(sqlV87Code));
+t("SQL v87 : droits (revoke public, grant authenticated) et parenthèses / blocs $$ équilibrés", () =>
+  /revoke all on function[\s\S]*mes_affectations\(\)\s+from public/.test(sqlV87Code) && /grant execute on function[\s\S]*mes_affectations\(\)\s+to authenticated/.test(sqlV87Code) &&
+  (sqlV87Code.match(/\(/g) || []).length === (sqlV87Code.match(/\)/g) || []).length && (sqlV87Code.match(/\$\$/g) || []).length % 2 === 0);
+
 /* ---- v72 : aider un chef, chiffres d'usage anonymes (administrateur du site) ---- */
 const sqlV72 = fs.readFileSync(path.join(root, "supabase", "aide-chefs-v72.sql"), "utf8");
 t("SQL v72 : trois fonctions réservées à l'administrateur du site, droits accordés", () =>
@@ -304,7 +327,7 @@ t("v73 : le chef a un lien de contact sur sa page et sur l'écran « Accès rés
   (fs.readFileSync(path.join(root, "etablissement.html"), "utf8").match(/href="contact\.html"/g) || []).length >= 2);
 /* ---- v74 : plus de confirmation d'e-mail, synchronisation sans écrasement, pages d'administration hors cache ---- */
 const rd = (...p) => fs.readFileSync(path.join(root, ...p), "utf8");
-t("v81 : le cache hors ligne passe en cm-v81", () => /VERSION="cm-v81"/.test(rd("sw.js")));
+t("v84 : le cache hors ligne est versionné (cm-vNN)", () => /VERSION="cm-v\d+"/.test(rd("sw.js")));
 t("v80 : « Vérifier la validation » ouvre une boîte de dialogue avec bouton de contact", () => { const e = rd("js/etab.js"); return /function etabCheck\(/.test(e) && /b\.id==="etchk"\)\{etabCheck\(\)/.test(e) && /Contacter l’administrateur/.test(e) && /contact\.html\?c=etablissement/.test(e) && /Pas encore validé/.test(e) && /Établissement validé/.test(e); });
 t("v80 : la page de contact préremplit le formulaire", () => { const c = rd("contact.html"); return /URLSearchParams/.test(c) && /set\("sj",P\.s\)/.test(c); });
 t("v80 : le bouton Détails du bandeau reste branché", () => /getElementById\("pend"\)\.addEventListener\("click"/.test(rd("js/etab.js")));
@@ -451,6 +474,120 @@ t("v81 corbeille : en mode invité aussi, « Annuler » rétablit ce qui vient d
   run("undoTrash('" + r.id + "')");
   const ok2 = run("D.classes[0].pg.length") === 30; run('KEY="test-cx";TMEM=[];'); return vide && ok2;
 });
+
+/* ---- v82 : relevé d'un devoir précis, relevé « tous les trimestres », liste d'appels repliée ---- */
+function pdfText(x) { return typeof x === "string" ? x : Buffer.from(x).toString("latin1"); }
+function setupRel() {
+  run('ME={id:"u1",name:"Prof",school:"CG de Nsou"};GUEST=false;bp=null;brs=null;' +
+    'D={cur:"c1",classes:[{id:"c1",name:"6e B",subj:"Français",students:[{id:"a",name:"Awa Mba"},{id:"b",name:"Paul Obiang"},{id:"c",name:"Luc Ndong"}],records:{},' +
+    'ev:[{id:"e1",t:"Devoir 1",d:"2026-10-05",m:20,s:{a:15,b:8,c:15}},{id:"e2",t:"Dictée",d:"2026-11-09",m:10,s:{a:9,b:4}}]}]};');
+}
+t("v82 relevé : un devoir précis donne un PDF classé avec la moyenne", () => {
+  setupRel();
+  const b = pdfText(run('releveDevoirPDF(D.classes[0],D.classes[0].ev[0])'));
+  return b.startsWith("%PDF") && /Relev. du devoir/.test(b) && /Devoir 1/.test(b) && /Awa Mba/.test(b) && /Paul Obiang/.test(b) && /Moyenne : 12,67/.test(b);
+});
+t("v82 relevé : un devoir sur 10 est ramené sur 20, un élève sans note reste en bas", () => {
+  setupRel();
+  const b = pdfText(run('releveDevoirPDF(D.classes[0],D.classes[0].ev[1])'));
+  return /9 \/ 10/.test(b) && /18/.test(b) && b.indexOf("Awa Mba") < b.indexOf("Paul Obiang") && b.indexOf("Paul Obiang") < b.indexOf("Luc Ndong");
+});
+t("v82 relevé : deux élèves à égalité ont le même rang", () => {
+  setupRel();
+  const b = pdfText(run('releveDevoirPDF(D.classes[0],D.classes[0].ev[0])'));
+  return (b.match(/\(1\) Tj/g) || []).length === 2 && (b.match(/\(3\) Tj/g) || []).length === 1;
+});
+t("v82 relevé : le choix propose les trimestres, tous les trimestres et chaque devoir", () => {
+  setupRel();
+  const h = run("bulletinsCard(D.classes[0])");
+  return /id="brsel"/.test(h) && /Toutes les évaluations \(tous les trimestres\)/.test(h) && /value="p:A"/.test(h) && /value="e:e1"/.test(h) && /value="e:e2"/.test(h) && /Un devoir précis/.test(h) && /id="brel"/.test(h);
+});
+t("v82 relevé : le choix mémorisé reste sélectionné", () => {
+  setupRel(); run('brs="e:e2";');
+  const h = run("bulletinsCard(D.classes[0])"); run("brs=null;");
+  return /<option value="e:e2" selected>/.test(h);
+});
+t("v82 relevé : l'écran d'un devoir a son bouton de relevé", () => {
+  setupRel(); run('evid="e1";');
+  return /id="evrel"/.test(run("renderEval()"));
+});
+t("v82 appels : la liste affiche tous les appels récents (et non plus 8), repliée dès 6 lignes", () => {
+  setupRel();
+  run('var r={};for(var i=1;i<=30;i++){var d="2026-10-"+(i<10?"0"+i:i);r[d]={a:"p",b:"a",c:"p"};}D.classes[0].records=r;view="classe";');
+  const h = run("renderClasse()");
+  return (h.match(/data-open=/g) || []).length === 30 && run('foldMin("hist")') === 6 && run('foldMin("row")') === 9;
+});
+
+t("v83 page établissement : enseignants en pile, onglets visibles, exports repliés, doublons signalés", () => {
+  const e = rd("etablissement.html");
+  return /\.tb2\.wrap\{flex-wrap:wrap/.test(e) && /class="tb2 wrap" role="tablist"/.test(e) &&
+    /class="st mrow"/.test(e) && /class="mb"/.test(e) && !/justify-content:flex-end"><button class="btn ghost" data-mrole/.test(e) &&
+    /data-pn="exports"/.test(e) && /même nom/.test(e) && /risk\.slice\(0,5\)/.test(e) && /MEM\.length<=3\|\|pend\.length/.test(e);
+});
+
+t("v86 : page établissement épurée (en-tête, pastilles, sections sans numéros, actions élève repliées)", () => {
+  const e = rd("etablissement.html");
+  return /<style id="v86">/.test(e) && /class="pills"/.test(e) && !/class="sn"/.test(e) && /class="more"/.test(e) && /data-act="wa"/.test(e) && /VERSION="cm-v(8[6-9]|9\d)"/.test(rd("sw.js")) &&
+    (e.match(/href="contact\.html"/g) || []).length >= 2;
+});
+
+/* ---- v88 : parcours enseignant (classes reçues du chef) ---- */
+const sqlV88 = rd("supabase", "parcours-enseignant-v88.sql").split("\n").filter((l) => !/^\s*--/.test(l)).join("\n");
+t("SQL v88 : une seule fonction ajoutée, additive, réservée aux enseignants actifs, sans code famille ni téléphone", () =>
+  (sqlV88.match(/create or replace function/g) || []).length === 1 && /function public\.mes_classes_recues\(\)/.test(sqlV88) &&
+  !/(drop|create) (policy|table|function)|alter table|delete from|update public/i.test(sqlV88) &&
+  (sqlV88.match(/m\.statut = 'actif'/g) || []).length === 2 && !/\bcode\b|phone/.test(sqlV88.replace(/not authenticated/, "")) &&
+  /not c\.archivee/.test(sqlV88) && /grant execute on function public\.mes_classes_recues\(\) to authenticated/.test(sqlV88) &&
+  (sqlV88.match(/\(/g) || []).length === (sqlV88.match(/\)/g) || []).length && (sqlV88.match(/\$\$/g) || []).length === 2);
+const recuBase = () => {
+  run('ME={id:"u1",name:"Awa T",login:"t@x.fr"};GUEST=false;sb={};ETAB.loaded=true;ETAB.cur="e1";' +
+    'ETAB.list=[{id:"e1",nom:"CG de Nsou",role:"enseignant",statut:"valide",membre_statut:"actif"}];RECU.ok=true;dirty={};' +
+    'RECU.list=[{etab_id:"e1",classe_id:"k1",classe:"6e A",niveau:"",matieres:["Maths","SVT"],eleves:[{ref:"ABCDEFGHJK12",name:"Awa Diop"},{ref:"ZYXWVUTSRQ34",name:"Paul Nkoa"}]}];');
+};
+const recuEnd = () => run('ME=null;sb=null;ETAB.list=[];ETAB.loaded=false;ETAB.cur="";recuReset();dirty={};');
+ctx.crypto = ctx.crypto || require("crypto").webcrypto;
+ctx.btoa = ctx.btoa || ((s) => Buffer.from(s, "binary").toString("base64"));
+ctx.atob = ctx.atob || ((s) => Buffer.from(s, "base64").toString("binary"));
+const D0 = run("JSON.stringify(D)");
+t("v88 : verrou — enseignant rattaché verrouillé ; chef, sans établissement ou serveur sans v88 : libres", () => {
+  recuBase(); const a = run("recuLocked()");
+  run('ETAB.list[0].role="admin"'); const b = run("recuLocked()");
+  run('ETAB.list[0].role="enseignant";RECU.ok=false'); const c = run("recuLocked()");
+  run('RECU.ok=true;ETAB.list=[]'); const d = run("recuLocked()");
+  recuEnd(); return a === true && b === false && c === false && d === false;
+});
+t("v88 : une classe locale de même nom est reliée (pas de doublon), notes et appels conservés, élèves liés ou ajoutés", () => {
+  recuBase();
+  run('D.classes=[{id:"c0",name:"Ma classe",students:[],records:{}},{id:"c1",name:"6e A",subj:"",students:[{id:"s1",name:"Diop Awa"}],records:{"2026-10-05":{s1:"a"}}}];D.cur="c0";');
+  const ch = run("recuApply(true)"); const o = JSON.parse(run("JSON.stringify(D.classes)"));
+  const c = o.find((x) => x.name === "6e A");
+  const r = o.length === 1 && c.id === "c1" && c.ca === "k1" && c.subj === "Maths, SVT" && c.records["2026-10-05"].s1 === "a" &&
+    c.students.length === 2 && c.students.find((s) => s.id === "s1").ref === "ABCDEFGHJK12" && c.students.some((s) => s.name === "Paul Nkoa" && s.ref === "ZYXWVUTSRQ34") &&
+    run("D.cur") === "c1" && run("Object.keys(dirty).join()") === "c1";
+  recuEnd(); return ch === true && r;
+});
+t("v88 : une classe absente de l'appareil est créée avec ses élèves ; le second passage ne change plus rien", () => {
+  recuBase(); run('D.classes=[];D.cur="";');
+  const a = run("recuApply(true)"), b = run("recuApply(true)"); const o = JSON.parse(run("JSON.stringify(D.classes)"));
+  const r = a === true && b === false && o.length === 1 && o[0].name === "6e A" && o[0].ca === "k1" && o[0].et === "e1" && o[0].students.length === 2 && o[0].students.every((s) => s.ref && s.sh);
+  recuEnd(); return r;
+});
+t("v88 : une classe locale avec des données n'est jamais supprimée, même sans correspondance", () => {
+  recuBase(); run('D.classes=[{id:"c9",name:"Club théâtre",students:[{id:"s9",name:"Zoé"}],records:{}},{id:"c0",name:"Ma classe",students:[],records:{}}];D.cur="c0";');
+  run("recuApply(true)"); const o = JSON.parse(run("JSON.stringify(D.classes)"));
+  const r = o.some((x) => x.id === "c9") && !o.some((x) => x.id === "c0") && o.length === 2; recuEnd(); return r;
+});
+t("v88 : bandeau d'accueil — en attente, aucune classe, rien quand des classes sont reçues", () => {
+  recuBase(); run('ETAB.list[0].membre_statut="en_attente";RECU.list=[];'); const a = run("recuCard()");
+  run('ETAB.list[0].membre_statut="actif"'); const b = run("recuCard()");
+  run('RECU.list=[{classe_id:"k1"}]'); const c = run("recuCard()"); recuEnd();
+  return /En attente de validation/.test(a) && /Aucune classe pour le moment/.test(b) && /data-recu/.test(b) && c === "";
+});
+t("v88 : « Nouvelle classe » bloquée partout (menu, accueil, sélecteur) ; le lien classe du chef est conservé en ligne", () =>
+  /recuLocked/.test(rd("js", "nav.js")) && /recuLocked/.test(rd("js", "classes.js")) && (rd("js", "events.js").match(/recuNotice\(\)/g) || []).length === 2 &&
+  /recuCard/.test(rd("js", "classes.js")) && /recuApply\(true\)/.test(rd("js", "sync.js")) && /"et","ca"/.test(rd("js", "sync.js")) && run('xPack({ca:"k1",et:"e1"}).ca') === "k1" &&
+  /recuLoad/.test(rd("js", "etab.js")) && /js\/recues\.js/.test(rd("index.html")) && /"js\/recues\.js"/.test(rd("sw.js")));
+run("D=JSON.parse(" + JSON.stringify(D0) + ")");
 
 console.log(`\n${ok} tests réussis, ${ko} en échec.`);
 process.exit(ko ? 1 : 0);
