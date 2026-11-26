@@ -7,7 +7,7 @@ function shTok(){
 function shUrl(t){return new URL("parent.html?t="+encodeURIComponent(t),location.href).href;}
 function shOn(){return!!(sb&&col);}
 
-/* ---- Liaison avec le dossier de l'établissement (page etablissement.html) ----
+/* ---- Liaison avec le dossier de l'établissement (page de gestion de l’établissement (etab-accueil.html)) ----
    L'administrateur crée chaque élève et son code secret. L'enseignant ne reçoit qu'une référence aléatoire non secrète (« Réf ») :
    elle sert à rattacher son résumé au dossier de l'élève, mais ne permet de rien lire. Le code ne quitte jamais la page administrateur. */
 var SH_RMIN=10;

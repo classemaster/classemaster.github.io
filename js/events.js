@@ -152,7 +152,7 @@ document.getElementById("view").addEventListener("click",function(e){
     return;
   }
   if(t.id==="lout"){doLogout();return;}
-  if(t.id==="adminbtn"){location.href="etablissement.html";return;}
+  if(t.id==="adminbtn"){location.href="etab-accueil.html";return;}
   if(t.id==="contactbtn"){location.href="contact.html";return;}
   if(t.id==="adel"){
     if(!confirm("Supprimer définitivement votre compte ainsi que toutes les classes, élèves et appels enregistrés, en ligne et sur cet appareil ? Pensez à faire une sauvegarde avant."))return;

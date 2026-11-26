@@ -1,4 +1,4 @@
-/* Graphiques du tableau de bord de l'établissement (etablissement.html).
+/* Graphiques du tableau de bord de l'établissement (etab-accueil.html).
    Une carte par graphique, placée sous les indicateurs de chaque onglet. Les données sont celles déjà calculées par la page. */
 var GE={inst:[]};
 function geClear(){GE.inst.forEach(function(i){try{i.destroy();}catch(e){}});GE.inst=[];}

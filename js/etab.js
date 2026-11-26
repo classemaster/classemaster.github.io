@@ -236,7 +236,7 @@ function etabDlg(title,text,btns,e){
     if(ev.target===o||(b&&b.dataset.dl==="close")){o.remove();return;}
     if(!b)return;
     if(b.dataset.dl==="contact"){location.href=etabContactUrl(e);}
-    else if(b.dataset.dl==="manage"){location.href="etablissement.html";}
+    else if(b.dataset.dl==="manage"){location.href="etab-accueil.html";}
     else if(b.dataset.dl==="retry"){o.remove();etabCheck();}
   });
   var f=o.querySelector("button");if(f)f.focus();
