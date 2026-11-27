@@ -83,6 +83,9 @@
         hit.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') select(i); });
         hit.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') select(null); });
         hit.addEventListener('blur', () => select(null));
+        // onPick : { kind:'histogram', index, label, key, from, to, last, count, total } ; la tranche est [from, to[ ,
+        // sauf la dernière (last : vrai) qui garde aussi sa borne haute, comme le comptage du graphique
+        this.bindPick(hit, () => ({ kind: 'histogram', index: i, label: range2(i) + xu, key: this.keyAt(i), from: edges[i], to: edges[i + 1], last: i === nb - 1, count: c, total, value: c }));
       });
       if (th != null && th > edges[0] && th < edges[nb]) {
         $s('line', { x1: x(th), x2: x(th), y1: P.t - 6, y2: H - P.b, class: 'ch-goal' }, svg);
@@ -122,7 +125,7 @@
         const q1 = quantile(v, 0.25), med = quantile(v, 0.5), q3 = quantile(v, 0.75), iqr = q3 - q1;
         const inliers = v.filter((x) => x >= q1 - 1.5 * iqr && x <= q3 + 1.5 * iqr);
         return {
-          label: String(g.label != null ? g.label : this.t('group') + ' ' + (k + 1)), color: colorAt(g.color, k),
+          label: String(g.label != null ? g.label : this.t('group') + ' ' + (k + 1)), key: g.key, color: colorAt(g.color, k),
           n: v.length, min: v[0], max: v[v.length - 1], q1, med, q3, mean: sum(v) / v.length,
           lo: inliers[0], hi: inliers[inliers.length - 1], out: v.filter((x) => x < q1 - 1.5 * iqr || x > q3 + 1.5 * iqr), all: v
         };
@@ -167,6 +170,8 @@
         hit.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') select(i); });
         hit.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') select(null); });
         hit.addEventListener('blur', () => select(null));
+        // onPick : { kind:'box', index, label, key (champ key du groupe), n, min, q1, median, q3, max, mean, value (médiane) }
+        this.bindPick(hit, () => ({ kind: 'box', index: i, label: g.label, key: g.key, n: g.n, min: g.min, q1: g.q1, median: g.med, q3: g.q3, max: g.max, mean: g.mean, value: g.med }));
       });
       const select = (i) => {
         boxes.forEach((b, k) => b.classList.toggle('is-dim', i != null && k !== i));

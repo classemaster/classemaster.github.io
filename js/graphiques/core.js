@@ -4,6 +4,12 @@
  *
  * Fournit : Charts.config(), Charts.palette, Charts.Chart (classe de base).
  * Chaque graphique dispose de : update(options), setState('loading'|'error'|'empty'|'ready'), destroy().
+ *
+ * Rappel au clic (option onPick, étape 17) : onPick(info) est appelé quand on touche ou clique un élément
+ * (barre, tranche, segment, point, zone), ou qu'on le valide au clavier (Entrée ou Espace) ; jamais au simple survol.
+ * Sans onPick, rien ne change : aucun curseur, aucun focus en plus. info contient toujours { chart, kind, index, label }
+ * et, selon le graphique : value, key (option keys[i], pour retrouver une classe ou un trimestre), seriesIndex, seriesName, seriesKey…
+ * Détails dans le commentaire de chaque graphique.
  */
 (function (global) {
   'use strict';
@@ -216,11 +222,44 @@
     }
     get motion() { return !reduceMotion(); }
 
+    /* ---- rappel au clic (option onPick) */
+    /** Vrai quand l'appelant a demandé à être prévenu des clics. */
+    get pickable() { return typeof this.o.onPick === 'function'; }
+    /** Valeur de l'option keys[i] (identifiant de l'élément i : classe, trimestre…), ou undefined. */
+    keyAt(i) { return Array.isArray(this.o.keys) ? this.o.keys[i] : undefined; }
+    /** Prévient l'appelant. Une erreur dans son rappel ne casse jamais le graphique. Rend vrai si onPick existe. */
+    pick(info) {
+      if (!this.pickable) return false;
+      try { this.o.onPick(Object.assign({ chart: this }, info)); } catch (e) { console.error('[Charts] onPick', e); }
+      return true;
+    }
+    /**
+     * Rend un élément cliquable : clic ou toucher, et Entrée ou Espace au clavier. get(evt) renvoie le détail
+     * à transmettre (ou rien pour ne rien envoyer). Sans onPick, ne fait rien du tout.
+     */
+    bindPick(node, get) {
+      if (!this.pickable || !node) return;
+      this.root.classList.add('is-pickable');
+      node.classList.add('is-pickable');
+      if (!node.hasAttribute('tabindex')) node.setAttribute('tabindex', '0');
+      if (!node.hasAttribute('role')) node.setAttribute('role', 'button');
+      const go = (e) => { const d = get(e); if (d) this.pick(d); };
+      node.addEventListener('click', go);
+      node.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(e); } });
+    }
+    /** Position verticale d'un clic dans le dessin (unités du viewBox), ou null (clavier, dessin masqué). */
+    clickY(e, svg, H) {
+      if (!e || e.type !== 'click' || typeof e.clientY !== 'number' || !svg || !svg.getBoundingClientRect) return null;
+      const r = svg.getBoundingClientRect();
+      return r && r.height > 0 ? ((e.clientY - r.top) / r.height) * H : null;
+    }
+
     mount() {
       this.cleanup();
       const r = this.root;
       r.textContent = '';
       r.classList.add('ch');
+      r.classList.remove('is-pickable');
       (this.constructor.cls || []).forEach((c) => r.classList.add(c));
       r.removeAttribute('aria-busy');
       this._built = false;
@@ -288,7 +327,7 @@
       if (!this.root) return;
       this.cleanup();
       this.root.textContent = '';
-      this.root.classList.remove('ch');
+      this.root.classList.remove('ch', 'is-pickable');
       (this.constructor.cls || []).forEach((c) => this.root.classList.remove(c));
       this._built = false;
     }

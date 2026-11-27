@@ -34,6 +34,7 @@
         .map((d, i) => ({
           label: String(d.label != null ? d.label : 'Élément ' + (i + 1)),
           value: finite(d.value, 0),
+          key: d.key, // identifiant libre, renvoyé tel quel à onPick
           color: d.color || Charts.palette[i % Charts.palette.length]
         }))
         .filter((d) => d.value > 0); // les valeurs nulles ou négatives n'ont pas de part à afficher
@@ -114,9 +115,10 @@
           node.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') self.setActive(self.pinned); });
           node.addEventListener('focus', () => self.setActive(i));
           node.addEventListener('blur', () => self.setActive(self.pinned));
-          node.addEventListener('click', () => self.pin(i));
+          node.addEventListener('click', () => self.act(i));
         });
-        seg.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); self.pin(i); } });
+        seg.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); self.act(i); } });
+        if (self.pickable) self.root.classList.add('is-pickable');
 
         self.segs.push(seg); self.pcts.push(t); self.items.push(btn);
         cum += frac;
@@ -140,6 +142,17 @@
       // Ancienne signature : update(data, budget)
       if (Array.isArray(a)) return super.update({ data: a, total: b != null ? b : this.o.total, budget: undefined });
       return super.update(a);
+    }
+
+    /**
+     * Action de l'utilisateur sur une part (clic, toucher, Entrée ou Espace, sur l'anneau ou dans la légende) : épingle la part,
+     * puis prévient onPick -> { kind:'donut', index, label, value, share (en %), selected }. selected est faux quand ce
+     * deuxième clic vient de désépingler la part. pin() seul (appel du programme) ne prévient jamais onPick.
+     */
+    act(i) {
+      this.pin(i);
+      const d = this.d && this.d.data[i];
+      if (d) this.pick({ kind: 'donut', index: i, label: d.label, key: d.key, value: d.value, share: Math.round((d.value / this.d.total) * 100), selected: this.pinned === i });
     }
 
     pin(i) {

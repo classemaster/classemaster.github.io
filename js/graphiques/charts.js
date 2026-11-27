@@ -31,14 +31,15 @@
       const labels = Array.isArray(o.labels) ? o.labels.map(String) : [];
       const series = (Array.isArray(o.series) ? o.series : []).map((s, k) => ({
         name: String(s.name != null ? s.name : 'Série ' + (k + 1)),
+        key: s.key, // identifiant libre, renvoyé tel quel à onPick (seriesKey)
         color: s.color || Charts.palette[k % Charts.palette.length],
         dashed: !!s.dashed, // série de comparaison (période précédente…) : trait pointillé, sans aire
-        values: (Array.isArray(s.values) ? s.values : []).map((v) => finite(v, 0))
+        values: (Array.isArray(s.values) ? s.values : []).map((v) => (o.gaps && v === null ? null : finite(v, 0))) // gaps: true -> un null reste un trou (mois sans note)
       }));
       const n = Math.max(labels.length, ...series.map((s) => s.values.length), 0);
       if (!n || !series.length) return false;
       for (let i = labels.length; i < n; i++) labels.push(String(i + 1));
-      series.forEach((s) => { while (s.values.length < n) s.values.push(0); });
+      series.forEach((s) => { while (s.values.length < n) s.values.push(o.gaps ? null : 0); });
       this.d = { labels, series, n, goal: goalOf(this, o.goal) };
       return true;
     }
@@ -46,7 +47,7 @@
     build() {
       const o = this.o, { labels, series, n, goal } = this.d, unit = o.unit == null ? '' : o.unit;
       const W = 360, H = 230, P = { t: 12, r: 14, b: 28, l: 42 };
-      const all = series.reduce((a, s) => a.concat(s.values), []).concat(goal ? [goal.value] : []);
+      const all = series.reduce((a, s) => a.concat(s.values.filter((v) => v !== null)), []).concat(goal ? [goal.value] : []);
       // min : échelle sans zéro (ex. notes de 10 à 14) ; sans min, la ligne de base reste à 0
       const range = spanRange(minOf(all), maxOf(all), o.min, o.max, 4) || fixedRange(minOf(all), maxOf(all), o.max, 4);
       const x = (i) => (n > 1 ? P.l + (i * (W - P.l - P.r)) / (n - 1) : P.l + (W - P.l - P.r) / 2);
@@ -74,22 +75,27 @@
 
       const animated = [];
       series.forEach((se, k) => {
-        if (n === 1) { // un seul point : pas de courbe possible, on affiche un repère
-          $s('circle', { cx: x(0), cy: y(se.values[0]), r: 7, fill: se.color, 'fill-opacity': 0.25 }, svg);
-          $s('circle', { cx: x(0), cy: y(se.values[0]), r: 3.5, fill: se.color }, svg);
-          return;
-        }
-        const d = smooth(se.values.map((v, i) => [x(i), y(v)]));
-        const area = se.dashed ? null : $s('path', { d: d + ' L' + x(n - 1) + ',' + base + ' L' + x(0) + ',' + base + 'Z', fill: 'url(#' + id + 'g' + k + ')' }, svg);
-        const line = $s('path', { d, fill: 'none', stroke: se.color, 'stroke-width': se.dashed ? 2 : 3, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', pathLength: 1, class: 'ch-line' }, svg);
-        if (se.dashed) { line.style.strokeDasharray = '0.022 0.018'; line.style.opacity = 0.8; }
-        animated.push({ area, line, k, dashed: se.dashed });
+        // une série peut avoir des trous (null) : on la trace par tronçons, un point seul devient un repère
+        const runs = []; let cr = null;
+        se.values.forEach((v, i) => { if (v === null) { cr = null; } else { if (!cr) { cr = []; runs.push(cr); } cr.push([x(i), y(v)]); } });
+        runs.forEach((r) => {
+          if (r.length === 1) {
+            $s('circle', { cx: r[0][0], cy: r[0][1], r: 7, fill: se.color, 'fill-opacity': 0.25 }, svg);
+            $s('circle', { cx: r[0][0], cy: r[0][1], r: 3.5, fill: se.color }, svg);
+            return;
+          }
+          const d = smooth(r);
+          const area = se.dashed ? null : $s('path', { d: d + ' L' + r[r.length - 1][0] + ',' + base + ' L' + r[0][0] + ',' + base + 'Z', fill: 'url(#' + id + 'g' + k + ')' }, svg);
+          const line = $s('path', { d, fill: 'none', stroke: se.color, 'stroke-width': se.dashed ? 2 : 3, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', pathLength: 1, class: 'ch-line' }, svg);
+          if (se.dashed) { line.style.strokeDasharray = '0.022 0.018'; line.style.opacity = 0.8; }
+          animated.push({ area, line, k, dashed: se.dashed });
+        });
       });
 
       // Repères du maximum et du minimum de la première série (option extremes: true)
       if (o.extremes && n > 1) {
-        const v0 = series[0].values, hi = maxOf(v0), lo = minOf(v0);
-        if (hi !== lo) [[v0.indexOf(hi), hi, -10], [v0.lastIndexOf(lo), lo, 17]].forEach((m) => {
+        const v0 = series[0].values, v0n = v0.filter((v) => v !== null), hi = maxOf(v0n), lo = minOf(v0n);
+        if (v0n.length > 1 && hi !== lo) [[v0.indexOf(hi), hi, -10], [v0.lastIndexOf(lo), lo, 17]].forEach((m) => {
           const i = m[0], cx = x(i), anchor = i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle';
           $s('circle', { cx, cy: y(m[1]), r: 4, class: 'ch-ext', stroke: series[0].color }, svg);
           $s('text', { x: cx + (anchor === 'start' ? -2 : anchor === 'end' ? 2 : 0), y: y(m[1]) + m[2], class: 'ch-ext-t', 'text-anchor': anchor }, svg).textContent = this.num(m[1]);
@@ -100,27 +106,30 @@
       const guide = $s('line', { y1: P.t, y2: H - P.b, class: 'ch-guide' }, cursor);
       const dots = series.map((se) => $s('circle', { r: 5.5, class: 'ch-dot', stroke: se.color }, cursor));
       const tip = $h('div', 'ch-tip', wrap);
-      let cur = n - 1;
+      const lastIdx = (() => { for (let i = n - 1; i >= 0; i--) if (series[0].values[i] !== null) return i; return n - 1; })();
+      let cur = lastIdx;
+      const numOr = (v) => (v === null ? '–' : this.num(v));
 
       const select = (i) => {
         cur = i;
         const gx = x(i), vals = series.map((se) => se.values[i]);
         guide.setAttribute('x1', gx); guide.setAttribute('x2', gx);
-        dots.forEach((c, k) => { c.setAttribute('cx', gx); c.setAttribute('cy', y(vals[k])); });
+        dots.forEach((c, k) => { c.style.display = vals[k] === null ? 'none' : ''; if (vals[k] !== null) { c.setAttribute('cx', gx); c.setAttribute('cy', y(vals[k])); } });
+        const shown = vals.filter((v) => v !== null);
         tip.style.left = clamp((gx / W) * 100, 31, 69) + '%';
-        tip.style.top = (Math.min.apply(null, vals.map(y)) / H) * 100 + '%';
+        tip.style.top = (shown.length ? Math.min.apply(null, shown.map(y)) / H : 0.2) * 100 + '%';
         tip.textContent = '';
         $h('div', 'ch-tip-h', tip, labels[i]);
         series.forEach((se, k) => {
           const r = $h('div', 'ch-tip-r', tip);
           $h('i', '', r).style.background = se.color;
           $h('span', '', r, se.name);
-          $h('b', '', r, this.num(vals[k]));
+          $h('b', '', r, numOr(vals[k]));
         });
-        this.setBig(hd.big, this.num(vals[0]), unit);
-        hd.sub.textContent = series[0].name + ' · ' + labels[i];
+        this.setBig(hd.big, numOr(vals[0]), vals[0] === null ? '' : unit);
+        hd.sub.textContent = series[0].name + ' · ' + labels[i] + (vals[0] === null ? ' (pas de note)' : '');
         const prev = i > 0 ? series[0].values[i - 1] : 0;
-        if (prev) { // variation relative, avec une base négative ou nulle on ne l'affiche pas
+        if (prev && vals[0] !== null) { // variation relative, avec une base négative ou nulle on ne l'affiche pas
           const p = Math.round(((vals[0] - prev) / Math.abs(prev)) * 100);
           this.badge(hd.badge, p, (p < 0 ? '▼ ' : '▲ ') + Math.abs(p) + '\u00a0%');
         } else this.badge(hd.badge, null);
@@ -133,14 +142,31 @@
       };
       svg.addEventListener('pointermove', move);
       svg.addEventListener('pointerdown', move);
-      svg.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') select(n - 1); });
+      svg.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') select(lastIdx); });
       svg.addEventListener('keydown', (e) => { // la courbe se parcourt aussi au clavier
         const step = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : e.key === 'Home' ? -n : e.key === 'End' ? n : 0;
         if (!step) return;
         e.preventDefault();
         select(clamp(cur + step, 0, n - 1));
       });
-      select(n - 1);
+      select(lastIdx);
+      // onPick : toucher la courbe renvoie le point le plus proche { kind:'line', index, label, key, values, series:[{name,key,value}] }
+      // et la série la plus proche du doigt (seriesIndex, seriesName, seriesKey, value) ; au clavier : la première série qui a une valeur
+      this.bindPick(svg, (e) => {
+        const vals = series.map((se) => se.values[cur]);
+        if (vals.every((v) => v === null)) return null;
+        let k = vals.findIndex((v) => v !== null);
+        const vy = this.clickY(e, svg, H);
+        if (vy != null) {
+          let best = Infinity;
+          vals.forEach((v, q) => { if (v !== null && Math.abs(y(v) - vy) < best) { best = Math.abs(y(v) - vy); k = q; } });
+        }
+        return {
+          kind: 'line', index: cur, label: labels[cur], key: this.keyAt(cur), values: vals, value: vals[k],
+          seriesIndex: k, seriesName: series[k].name, seriesKey: series[k].key,
+          series: series.map((se, q) => ({ name: se.name, key: se.key, value: vals[q] }))
+        };
+      });
 
       this.dataTable(o.label || 'Courbe', [this.t('label')].concat(series.map((s) => s.name)),
         labels.map((l, i) => [l].concat(series.map((s) => s.values[i]))));
@@ -158,7 +184,7 @@
       });
     }
   }
-  LineChart.defaults = { unit: '', label: 'Courbe', extremes: false, goal: null };
+  LineChart.defaults = { unit: '', label: 'Courbe', extremes: false, goal: null, gaps: false };
   LineChart.cls = [];
 
   /* ------------------------------------------------------------------ */
@@ -169,6 +195,7 @@
       if (Array.isArray(o.series) && o.series.length) { // barres empilées : une série = un empilement (valeurs ≥ 0)
         stack = o.series.map((s, k) => ({
           name: String(s.name != null ? s.name : this.t('series') + ' ' + (k + 1)),
+          key: s.key, // identifiant libre, renvoyé tel quel à onPick (seriesKey)
           color: s.color || Charts.palette[k % Charts.palette.length],
           values: (Array.isArray(s.values) ? s.values : []).map((v) => Math.max(0, finite(v, 0)))
         }));
@@ -249,6 +276,30 @@
         }, svg);
         ['pointerdown', 'focus'].forEach((ev) => hit.addEventListener(ev, () => select(i)));
         hit.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') select(i); });
+        // onPick : barre simple -> { kind:'bar', index, label, short, key, value } ; barres empilées : le segment touché
+        // (seriesIndex, seriesName, seriesKey, segmentValue), ou seriesIndex null si on touche à côté d'un segment ou au clavier
+        this.bindPick(hit, (e) => {
+          const info = { kind: 'bar', index: i, label: full[i], short: labels[i], key: this.keyAt(i), value: values[i] };
+          if (stack) {
+            let k = null;
+            const vy = this.clickY(e, svg, H);
+            if (vy != null) {
+              const v = range.min + (1 - (vy - P.t) / (base - P.t)) * (range.max - range.min);
+              let cum = 0;
+              for (let q = 0; q < stack.length; q++) {
+                const sv = stack[q].values[i];
+                if (sv && v >= cum && v <= cum + sv) { k = q; break; }
+                cum += sv;
+              }
+            }
+            info.seriesIndex = k;
+            info.seriesName = k == null ? undefined : stack[k].name;
+            info.seriesKey = k == null ? undefined : stack[k].key;
+            info.segmentValue = k == null ? null : stack[k].values[i];
+            info.series = stack.map((se) => ({ name: se.name, key: se.key, value: se.values[i] }));
+          }
+          return info;
+        });
       });
 
       const note = $h('div', 'ch-note', wrap);

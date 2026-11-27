@@ -115,11 +115,21 @@
       const unit = o.unit == null ? '' : o.unit;
       const svg = $s('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': (o.label || 'Jauge') + ' : ' + this.num(finite(o.value, min)) + unit }, $h('div', 'ch-wrap', this.root));
 
+      // onPick : toucher une zone de l'arc (ou sa ligne dans la liste), ou l'arc de la valeur (zone de la valeur actuelle)
+      // -> { kind:'gauge', index (zone), label (nom de la zone, sinon celui de la jauge), from, to, color, value (valeur actuelle) }
+      const zoneInfo = (k) => ({
+        kind: 'gauge', index: k, label: zs[k].label || o.label || 'Jauge', key: this.keyAt(k), from: k ? zs[k - 1].to : min, to: zs[k].to, color: zs[k].color, value: finite(o.value, min)
+      });
+      const zoneOfValue = () => { const k = zs.findIndex((z) => finite(o.value, min) <= z.to); return k < 0 ? zs.length - 1 : k; };
       let from = min;
-      zs.forEach((z) => {
+      zs.forEach((z, k) => {
         const f0 = frac(from), f1 = frac(z.to);
         from = z.to;
-        if (f1 - f0 > 0.013) $s('path', { d: arc(f0 + 0.006, f1 - 0.006), fill: 'none', stroke: z.color, 'stroke-width': T, class: 'ch-gz' }, svg);
+        if (f1 - f0 > 0.013) {
+          const zp = $s('path', { d: arc(f0 + 0.006, f1 - 0.006), fill: 'none', stroke: z.color, 'stroke-width': T, class: 'ch-gz' }, svg);
+          if (this.pickable) zp.setAttribute('aria-label', (z.label || o.label || 'Jauge') + ' : ' + this.num(k ? zs[k - 1].to : min) + '–' + this.num(z.to) + unit);
+          this.bindPick(zp, () => zoneInfo(k));
+        }
       });
       for (let k = 0; k <= 10; k++) {
         const a = pos(k / 10, R - T / 2 - 8), b = pos(k / 10, R - T / 2 - (k % 5 ? 12 : 17));
@@ -128,6 +138,10 @@
       const val = $s('path', { d: arc(0, 1), fill: 'none', 'stroke-width': T, pathLength: 100, class: 'ch-gval' }, svg);
       val.style.strokeDasharray = '0 100';
       const knob = $s('circle', { r: T / 2 + 4, class: 'ch-gknob' }, svg);
+      [val, knob].forEach((n) => {
+        if (this.pickable) n.setAttribute('aria-label', (o.label || 'Jauge') + ' : ' + this.num(finite(o.value, min)) + unit);
+        this.bindPick(n, () => zoneInfo(zoneOfValue()));
+      });
       const big = $s('text', { x: cx, y: cy - 24, class: 'ch-gnum', 'text-anchor': 'middle' }, svg);
       const cap = $s('text', { x: cx, y: cy + 4, class: 'ch-gcap', 'text-anchor': 'middle' }, svg);
       $s('text', { x: cx - R, y: cy + 24, class: 'ch-axis', 'text-anchor': 'middle' }, svg).textContent = this.num(min);
@@ -164,12 +178,13 @@
       if (named.length) {
         const lg = $h('ul', 'ch-zones', this.root);
         let lo = min;
-        zs.forEach((z) => {
+        zs.forEach((z, k) => {
           if (z.label) {
             const s = $h('li', 'ch-zone', lg);
             s.style.setProperty('--c', z.color);
             $h('i', '', s); $h('b', '', s, z.label);
             $h('span', '', s, this.num(lo) + '–' + this.num(z.to));
+            this.bindPick(s, () => zoneInfo(k));
           }
           lo = z.to;
         });
