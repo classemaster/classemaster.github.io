@@ -1,0 +1,34 @@
+/* Fiche d'un élève (js/etab-fiche.js) : panneau qui monte du bas sur téléphone, fenêtre centrée sur grand écran. Suit le thème de la page. */
+html.ef-lock{overflow:hidden}
+.ef{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center}
+.ef-bg{position:absolute;inset:0;background:rgba(10,18,34,.55)}
+.ef-p{position:relative;width:100%;max-width:640px;max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--surface);color:var(--ink);
+  border-radius:18px 18px 0 0;padding:18px 16px calc(24px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 30px rgba(10,18,34,.25)}
+.ef-x{position:sticky;top:0;float:right;margin:-6px -6px 0 8px;width:44px;height:44px;border:0;border-radius:12px;background:var(--soft);color:var(--ink);font-size:1.5rem;line-height:1;cursor:pointer;z-index:1}
+.ef-h h2{margin:0;font-size:1.2rem;line-height:1.25;overflow-wrap:anywhere}
+.ef-c{margin:2px 0 12px;color:var(--mute);font-size:.9rem}
+.ef-ks{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:0 0 6px}
+.ef-k{background:var(--soft);border-radius:12px;padding:10px 12px;min-width:0}
+.ef-k b{display:block;font-size:1.15rem}.ef-k span{color:var(--mute);font-size:.8rem}
+.ef-k.bad b{color:var(--a)}
+.ef-s{margin-top:18px;border-top:1px solid var(--line);padding-top:12px}
+.ef-s h3{margin:0 0 8px;font-size:1rem}
+.ef-w{overflow-x:auto}
+.ef-t{width:100%;border-collapse:collapse;font-size:.9rem}
+.ef-t th,.ef-t td{padding:8px 6px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
+.ef-t thead th{border-top:0;color:var(--mute);font-weight:600;font-size:.8rem}
+.ef-t th:first-child{text-align:left;white-space:normal;font-weight:600}
+.ef-t th small{display:block;color:var(--mute);font-weight:400;font-size:.78rem}
+.ef-t td.bad{color:var(--a);font-weight:700}
+.ef-m{margin:8px 0 0;color:var(--mute);font-size:.82rem;line-height:1.45}
+.ef-e{margin:14px 0 0;padding:10px 12px;border-radius:12px;background:var(--soft);font-size:.9rem}
+@media (min-width:700px){.ef{align-items:center}.ef-p{border-radius:18px;max-height:86vh}}
+@media (prefers-reduced-motion:no-preference){.ef-p{animation:ef-up .18s ease-out}@keyframes ef-up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
+.ef-n{display:inline-block;min-width:22px;padding:0 6px;margin-left:4px;border-radius:999px;background:var(--soft);color:var(--mute);font-size:.78rem;font-weight:600;text-align:center}
+.ef-more{margin-top:2px}
+.ef-more summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:600;color:var(--accent);font-size:.9rem}
+.ef-s .dr small{overflow-wrap:anywhere}
+.ef-h4{margin:14px 0 2px;font-size:.92rem;color:var(--ink)}
+.ef-s .ef-e{margin:0 0 8px}
+.ef-d{border-top:1px solid var(--line)}.ef-d:first-of-type{border-top:0}.ef-d .dr{border-top:0}
+.ef-tx{margin:-2px 0 10px;font-size:.9rem;line-height:1.45;overflow-wrap:anywhere;white-space:pre-wrap}

@@ -1,0 +1,8 @@
+/* Page Programmes (v139) : leçons par niveau, matière et mois */
+.pg-mois{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:16px 0 4px;font-size:.9rem;font-weight:700}
+.pg-mois .sub{margin:0;font-size:.8rem;font-weight:500}
+.pg-nb{color:var(--mute);font-weight:600}
+details.pg>summary b{font-weight:700}
+details.pg>summary small{display:block;color:var(--mute);font-size:.8rem;font-weight:500}
+.pg-b{flex:none;min-height:36px;padding:0 12px;font-size:.8rem}
+.pg-act{display:flex;gap:6px;flex:none;margin-left:auto}

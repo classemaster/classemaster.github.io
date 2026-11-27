@@ -5,6 +5,7 @@
 .k-cmp{background:var(--rbg);color:var(--r)}
 .k-dif{background:var(--abg);color:var(--a)}
 .k-aut{background:var(--soft);color:var(--accent)}
+.k-avt{background:var(--abg);color:var(--a);box-shadow:inset 0 0 0 1px var(--a)}
 .k-inc{background:var(--abg);color:var(--a)}
 .k-grv{background:var(--a);color:var(--surface)}
 textarea{width:100%;resize:vertical}
