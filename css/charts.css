@@ -294,3 +294,8 @@
   .ch-row:hover, .ch-row.is-active, .dc-item:hover, .dc-item.is-active, .has-active .dc-pill { background: var(--ch-soft); }
   .dc-seg.is-active, .dc-seg:focus-visible { filter: none; }
 }
+
+/* Rappel au clic (étape 17) : ces règles ne s'appliquent que si le graphique a reçu onPick */
+.ch .is-pickable { cursor: pointer; }
+.ch .ch-gz.is-pickable:focus-visible, .ch .ch-gval.is-pickable:focus-visible, .ch .ch-gknob.is-pickable:focus-visible { outline: 2px solid var(--ch-muted); outline-offset: 2px; }
+.ch .ch-zone.is-pickable:focus-visible { outline: 2px solid var(--ch-muted); outline-offset: 2px; }

@@ -8,3 +8,21 @@
 .ge>*{min-width:0}
 .ge .card{margin:0;overflow:hidden}
 .ge-card .sub{margin:-4px 0 14px;font-size:.85rem}
+
+/* Répartition des moyennes : choix de la matière et liste des élèves */
+.ge-sel{display:flex;align-items:center;gap:10px;margin:0 0 6px;font-size:.88rem;color:var(--mute)}
+.ge-sel select{flex:1;min-width:0;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+.ge-who{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.ge-hint{margin:0;color:var(--mute);font-size:.85rem}
+.ge-wh{display:flex;align-items:center;gap:8px;margin:0 0 4px;font-size:.95rem}
+.ge-dot{width:12px;height:12px;border-radius:4px;flex:none}
+
+/* « Comment c'est calculé ? » : petit texte repliable sous chaque graphique */
+.ge-how{margin-top:12px;border-top:1px solid var(--line);padding-top:8px;font-size:.85rem;color:var(--mute)}
+.ge-how summary{cursor:pointer;font-weight:600;color:var(--ink);min-height:32px;display:flex;align-items:center}
+.ge-how p{margin:6px 0 0;line-height:1.5}
+
+/* Rappel du périmètre sous chaque graphique */
+.ge-scope{margin:10px 0 0;font-size:.82rem;color:var(--mute)}
+.ge-scope b{color:var(--ink);font-weight:600}
+.ge-more{margin-top:8px}

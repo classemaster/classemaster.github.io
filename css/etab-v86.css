@@ -72,3 +72,9 @@ a.dr{text-decoration:none}
 .xtab .xb{color:#b42318;font-weight:700}
 .xtab .xo{font-weight:600}
 .xtab .xe{opacity:.5}
+
+/* Carte « Filtrer » : reste visible en haut de l'écran pendant qu'on lit les graphiques (v118) */
+#rfilt{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;gap:6px;padding:8px 10px;box-shadow:0 2px 8px rgba(10,18,34,.12)}
+#rfilt .rf{flex:1 1 96px}
+#rfilt .rf select{min-height:38px}
+#rfilt .rf span{white-space:nowrap}
