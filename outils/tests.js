@@ -594,9 +594,9 @@ t("v89 : indicateurs du socle (cumul par élève, classe, enseignant, matière ;
   return M.N === 40 && M.A === 10 && etabCore.pc(M.N, M.A) === 75 && M.ids.length === 2 && M.gm === 11 && M.C["6e A"].fol === 2 && M.C["5e B"].fol === 0 &&
     M.T["M. X"].last === "2026-11-21T00:00:00Z" && M.SJ.Maths.v.length === 2 && M.SJ.Maths.ok === 1 && M.last === "2026-11-21T00:00:00Z";
 });
-t("v89 : menu commun — 8 rubriques, Accueil terminé ; depuis v90 Classes, Enseignants et Matières, depuis v91 Résultats et Vie scolaire, depuis v92 Fin d'année et Paramètres ont leur page", () => {
+t("v89 : menu commun — 9 rubriques, Accueil terminé ; depuis v90 Classes, Enseignants et Matières, depuis v91 Résultats et Vie scolaire, depuis v92 Fin d'année et Paramètres, depuis v139 Programmes ont leur page", () => {
   const ids = etabCore.pages.map((p) => p.id).join(",");
-  return ids === "accueil,classes,enseignants,matieres,resultats,vie,fin,parametres" && etabCore.pageOf("accueil").done === true && etabCore.href("accueil") === "etab-accueil.html" &&
+  return ids === "accueil,classes,enseignants,matieres,programmes,resultats,vie,fin,parametres" && etabCore.href("programmes") === "etab-programmes.html" && etabCore.pageOf("accueil").done === true && etabCore.href("accueil") === "etab-accueil.html" &&
     etabCore.href("matieres") === "etab-matieres.html" && etabCore.href("classes", { c: "6e A" }) === "etab-classes.html#c=6e%20A" && etabCore.href("resultats") === "etab-resultats.html" && etabCore.href("vie") === "etab-vie.html" && etabCore.href("fin") === "etab-fin.html" && etabCore.href("parametres") === "etab-parametres.html";
 });
 t("v89 : page Accueil — scripts dans l'ordre, aucun script en ligne, aucun code secret demandé, liens vers les rubriques", () => {
@@ -611,7 +611,7 @@ t("v99 : les pages etab-*.html et leurs scripts et styles sont gardés hors lign
   const pages = fs.readdirSync(root).filter((f) => /^etab-[a-z]+\.html$/.test(f));
   const need = pages.concat(...pages.map((p) => [...rd(p).matchAll(/(?:src|href)="((?:js|css)\/[^"]+)"/g)].map((m) => m[1])));
   const manque = need.filter((f) => !core.includes('"' + f + '"'));
-  return !manque.length && pages.length === 8 && pages.every((p) => rd(p).indexOf("js/etab-offline.js") >= 0 && rd(p).indexOf("js/etab-offline.js") < rd(p).indexOf("js/supabase.js")) && !/etab-\[a-z\]/.test(sw) && /admin\|etablissement\|contact/.test(sw) ? true : J(manque);
+  return !manque.length && pages.length === 9 && pages.every((p) => rd(p).indexOf("js/etab-offline.js") >= 0 && rd(p).indexOf("js/etab-offline.js") < rd(p).indexOf("js/supabase.js")) && !/etab-\[a-z\]/.test(sw) && /admin\|etablissement\|contact/.test(sw) ? true : J(manque);
 });
 t("v94 : etablissement.html n'est plus qu'une redirection (aucune logique, aucun accès aux données) ; jamais gardée sur l'appareil", () => {
   const e = rd("etablissement.html"), sw = rd("sw.js");
@@ -2156,5 +2156,744 @@ t("étape 24 : etab_eleve_fiche — les cinq blocs attendus, lectures sûres, li
   /limit 300/.test(sqlV105code) && /limit 400/.test(sqlV105code) && /limit 100/.test(sqlV105code) && /left\(coalesce\(e->>'t', ''\), 400\)/.test(sqlV105code) && /jsonb_typeof/.test(sqlV105code) && /if not found then return null/.test(sqlV105code) ? true : "blocs");
 t("étape 24 : mode d'emploi, cache et fiche de nouveautés", () => {
   const nv = path.join(__dirname, "..", "NOUVEAUTES-v126.md");
-  return /fiche-eleve-v105\.sql/.test(rd("supabase", "LISEZ-MOI.md")) && /cm-v126/.test(rd("sw.js")) && fs.existsSync(nv) && /fiche-eleve-v105\.sql/.test(fs.readFileSync(nv, "utf8")) ? true : "doc";
+  return /fiche-eleve-v105\.sql/.test(rd("supabase", "LISEZ-MOI.md")) && /cm-v1[0-9][0-9]/.test(rd("sw.js")) && fs.existsSync(nv) && /fiche-eleve-v105\.sql/.test(fs.readFileSync(nv, "utf8")) ? true : "doc";
+});
+/* ---- étape 25 : panneau « Fiche de l'élève » ---- */
+const fiche25 = (off) => {
+  const els = [], docL = {};
+  const mk = () => { const o = { _h: "", style: {}, children: [], className: "", attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, getAttribute(k) { return this.attrs[k] || null; }, addEventListener() {}, remove() { this.gone = true; }, focus() {}, contains: () => false, querySelector(s) { return s === ".ef-b" ? this._b || (this._b = mk()) : s === ".ef-x" ? mk() : null; }, get innerHTML() { return this._h; }, set innerHTML(v) { this._h = v; } }; return o; };
+  const doc = { createElement: () => { const e = mk(); els.push(e); return e; }, body: { appendChild() {} }, documentElement: { classList: { add() {}, remove() {} } }, addEventListener(k, f) { docL[k] = f; }, removeEventListener() {} };
+  const E = { TH: { moy: 10, pres: 80, abs: 3 } };
+  let resolve; const sb = { rpc: (n, a) => { sb.last = [n, a]; return new Promise((r) => { resolve = r; }); } };
+  const mod = new Function("document", "E", "sb", "navigator", "EtabOffline", rd("js", "etab-fiche.js") + ";return EtabFiche;")(doc, E, sb, { onLine: true }, off);
+  return { mod, els, docL, sb, res: (v) => resolve(v) };
+};
+const D25 = { student: { id: "s1", name: "Ada <b>Z</b>", class_label: "6e A" }, subjects: [
+  { subj: "Maths", teacher: "M. <i>K</i>", n: 20, a: 4, j: 1, r: 2, avg: 8, t1: 7.5, t2: 12, t3: null },
+  { subj: "Français", teacher: "Mme L", n: 20, a: 2, j: 2, r: 0, avg: 14, t1: 13, t2: 15, t3: 14 }], evals: [], abs: [], dis: [] };
+t("étape 25 : en-tête — nom et classe échappés, moyenne générale, présence, absences, retards, rouge sous les seuils", () => {
+  const { mod } = fiche25(); const h = mod.html(D25, { TH: { moy: 10, pres: 80, abs: 3 } });
+  const st = mod.stats(D25);
+  return st.gm === 11 && st.a === 6 && st.r === 2 && Math.round(st.p) === 85 && /Ada &lt;b&gt;Z&lt;\/b&gt;/.test(h) && !/<b>Z<\/b>/.test(h) && /6e A/.test(h) && /11 \/ 20/.test(h) && /85 %/.test(h) && !/ef-k bad/.test(h) ? true : J({ st, h });
+});
+t("étape 25 : en-tête — la moyenne sous le seuil est en rouge, une fiche sans suivi le dit", () => {
+  const { mod } = fiche25(); const H = { TH: { moy: 12, pres: 90, abs: 3 } };
+  const h = mod.html(D25, H), v = mod.html({ student: { name: "Bob", class_label: "" }, subjects: [] }, H);
+  return (h.match(/ef-k bad/g) || []).length === 2 && /Aucun enseignant n’a encore publié/.test(v) && /\(sans classe\)/.test(v) && /–/.test(v) ? true : J({ n: (h.match(/ef-k bad/g) || []).length, v });
+});
+t("étape 25 : moyennes par matière et trimestre — tableau T1 T2 T3 Moy., enseignant échappé, notes sous le seuil en rouge, trimestre vide « – »", () => {
+  const { mod } = fiche25(); const h = mod.html(D25, { TH: { moy: 10, pres: 80, abs: 3 } });
+  return /<th scope="col">T1<\/th><th scope="col">T2<\/th><th scope="col">T3<\/th><th scope="col">Moy\.<\/th>/.test(h) && /M\. &lt;i&gt;K&lt;\/i&gt;/.test(h) && /<td class="bad">7,5<\/td>/.test(h) && /<td class="bad">8<\/td>/.test(h) && /<td class="">12<\/td>/.test(h) && /<td class="">–<\/td>/.test(h) && /Français/.test(h) && /sous 10/.test(h) ? true : h;
+});
+t("étape 25 : toucher un élève ouvre la fiche, appelle etab_eleve_fiche avec son id et affiche la réponse", async () => {
+  const { mod, docL, sb, res, els } = fiche25();
+  mod.show("s1", "Ada", "6e A");
+  const wait = els[0]._b ? els[0]._b._h : "";
+  const call = sb.last; res({ data: D25 });
+  await new Promise((r) => setTimeout(r, 0));
+  const b = els[0].querySelector(".ef-b");
+  return call[0] === "etab_eleve_fiche" && call[1].p_student === "s1" && /Chargement/.test(wait) && /Ada/.test(wait) && /Maths/.test(b._h) && mod.open === "s1" && typeof docL.click === "function" && els[0].attrs.role === "dialog" && els[0].attrs["aria-modal"] === "true" ? true : J({ call, wait, b: b._h });
+});
+t("étape 25 : erreurs — non autorisé, fonction absente (script à exécuter), hors connexion, introuvable ; fermer libère le panneau", async () => {
+  const out = [];
+  for (const r of [{ error: { message: "not admin" } }, { error: { message: "Could not find the function public.etab_eleve_fiche" } }, { data: null }]) {
+    const { mod, res, els } = fiche25(); mod.show("s1", "Ada"); res(r); await new Promise((x) => setTimeout(x, 0)); out.push(els[0].querySelector(".ef-b")._h);
+  }
+  const { mod, els } = fiche25(); mod.show("s1", "Ada"); mod.close();
+  return /réservée au chef/.test(out[0]) && /fiche-eleve-v105\.sql/.test(out[1]) && /introuvable/.test(out[2]) && els[0].gone === true && mod.open === null ? true : J(out);
+});
+t("étape 25 : une réponse tardive d'un ancien élève n'écrase pas la fiche en cours", async () => {
+  const f = fiche25(); const resolvers = [];
+  f.sb.rpc = () => new Promise((r) => resolvers.push(r));
+  f.mod.show("s1", "Ada"); f.mod.show("s2", "Bob");
+  resolvers[0]({ data: D25 }); await new Promise((x) => setTimeout(x, 0));
+  const b = f.els[f.els.length - 1].querySelector(".ef-b")._h;
+  return !/Maths/.test(b) && /Bob/.test(b) && f.mod.open === "s2" ? true : b;
+});
+t("étape 25 : « À surveiller » de l'Accueil ouvre la fiche ; scripts, styles et cache branchés ; ligne toujours échappée", () => {
+  const a = rd("js", "etab-accueil.js"), h = rd("etab-accueil.html"), sw = rd("sw.js"), { mod } = fiche25();
+  const row = mod.row("a\"b", "Ada <b>", "6e A · moyenne 8", "moyenne", true);
+  const nv = path.join(__dirname, "..", "NOUVEAUTES-v127.md");
+  return /EtabFiche\.row\(i,r\.name,sub,tg,true\)/.test(a) && /js\/etab-fiche\.js/.test(h) && /css\/etab-fiche\.css/.test(h) && h.indexOf("etab-fiche.js") < h.indexOf("etab-accueil.js") &&
+    /js\/etab-fiche\.js/.test(sw) && /css\/etab-fiche\.css/.test(sw) && /cm-v1[0-9][0-9]/.test(sw) && /data-fiche="a&quot;b"/.test(row) && /Ada &lt;b&gt;/.test(row) && /class="tg bad"/.test(row) && fs.existsSync(nv) ? true : row;
+});
+/* ---- étape 26 : section Évaluations de la fiche ---- */
+const EV26 = (i, o) => Object.assign({ subj: "Maths", t: "Devoir " + i, d: "2026-11-" + String(10 + i).padStart(2, "0"), n: 14, m: 20, k: 1, c: 12.5 }, o || {});
+const h26 = (evals) => fiche25().mod.html({ student: { name: "Ada" }, subjects: [], evals }, { TH: { moy: 10, pres: 80, abs: 3 } });
+t("étape 26 : évaluations — titre, matière, date jj/mm/aaaa, note sur barème, moyenne de la classe, de la plus récente à la plus ancienne", () => {
+  const h = h26([EV26(1), EV26(5, { t: "Composition", n: 15.5, m: 20, c: 11 })]);
+  return /<h3>Évaluations <span class="ef-n">2<\/span><\/h3>/.test(h) && h.indexOf("Composition") < h.indexOf("Devoir 1") && /Maths · 15\/11\/2026 · classe 11/.test(h) && /Maths · 11\/11\/2026 · classe 12,5/.test(h) && /15,5 \/ 20/.test(h) && /14 \/ 20/.test(h) && !/coef\./.test(h) ? true : h;
+});
+t("étape 26 : évaluations — rouge sous le seuil ramené sur 20, coefficient affiché, barème 10, texte échappé, date absente", () => {
+  const h = h26([EV26(1, { n: 4, m: 10, k: 2, t: "Test <b>x</b>", d: "" }), EV26(2, { n: 9, m: 10 }), EV26(3, { n: 8, m: 20 }), EV26(4, { n: null, c: null })]);
+  return /class="tg bad">4 \/ 10</.test(h) && !/class="tg bad">9 \/ 10</.test(h) && /class="tg bad">8 \/ 20</.test(h) && /coef\. 2/.test(h) && /sans date/.test(h) && /Test &lt;b&gt;x&lt;\/b&gt;/.test(h) && !/<b>x<\/b>/.test(h) && /class="tg">– \/ 20</.test(h) ? true : h;
+});
+t("étape 26 : évaluations — 10 affichées, le reste dans « Voir les N autres » ; une seule restante : « l’autre »", () => {
+  const many = Array.from({ length: 14 }, (_, i) => EV26(i + 1, { d: "2026-10-" + String(i + 1).padStart(2, "0") }));
+  const h = h26(many), one = h26(many.slice(0, 11));
+  const open = h.split('<details class="ef-more">')[0];
+  return (open.match(/class="dr"/g) || []).length === 10 && /Voir les 4 autres/.test(h) && (h.split('<details class="ef-more">')[1].match(/class="dr"/g) || []).length === 4 && /Voir l’autre/.test(one) && !/ef-more/.test(h26(many.slice(0, 10))) ? true : h;
+});
+t("étape 26 : évaluations — aucune évaluation : message ; fiche sans champ evals : pas d'erreur", () => {
+  const { mod } = fiche25(), H = { TH: { moy: 10 } };
+  const a = mod.html({ student: { name: "Ada" }, subjects: [], evals: [] }, H), b = mod.html({ student: { name: "Ada" }, subjects: [] }, H);
+  return /Aucune évaluation notée/.test(a) && /Aucune évaluation notée/.test(b) && /Aucun enseignant/.test(a) ? true : J({ a, b });
+});
+t("étape 26 : section branchée, styles, cache et fiche de nouveautés", () => {
+  const nv = path.join(__dirname, "..", "NOUVEAUTES-v128.md");
+  return /me\.sections=\[grades,evals[,\]]/.test(rd("js", "etab-fiche.js")) && /\.ef-more summary/.test(rd("css", "etab-fiche.css")) && /cm-v1[0-9][0-9]/.test(rd("sw.js")) && fs.existsSync(nv) && /Voir les N autres/.test(fs.readFileSync(nv, "utf8")) ? true : "manque";
+});
+/* ---- étape 27 : sections Assiduité et Devoirs de la fiche ---- */
+const NOW27 = Date.UTC(2026, 10, 27, 12);
+const F27 = (o, H) => fiche25().mod.html(Object.assign({ student: { name: "Ada" }, subjects: [], evals: [], abs: [], dis: [] }, o), Object.assign({ TH: { moy: 10, pres: 80, abs: 3 }, now: NOW27 }, H));
+const SUB27 = [{ subj: "Maths", n: 20, a: 6, j: 2, r: 1, hw: { r: 5, l: 1, n: 2 } }, { subj: "Français <i>", n: 10, a: 0, j: 0, r: 3, hw: { r: 4, l: 0, n: 0 } }];
+t("étape 27 : assiduité — chiffres par matière, présence en rouge sous le seuil, totaux", () => {
+  const h = F27({ subjects: SUB27 });
+  return /30 appels · 6 absences dont 2 justifiées · 4 retards/.test(h) && /<th scope="col">Prés\.<\/th>/.test(h) && /<td class="bad">70 %<\/td>/.test(h) && /<td class="">100 %<\/td>/.test(h) && /Français &lt;i&gt;/.test(h) && !/<i>/.test(h) ? true : h;
+});
+t("étape 27 : absences et retards — récents d'abord, étiquettes, motif échappé, « Voir les autres »", () => {
+  const A = [{ subj: "Maths", d: "2026-10-01", v: "a", j: false, m: "" }, { subj: "Maths", d: "2026-11-20", v: "a", j: true, m: "Rdv <b>médecin</b>" }, { subj: "Fr", d: "2026-11-25", v: "r", m: "" }];
+  const h = F27({ subjects: SUB27, abs: A });
+  const many = F27({ subjects: SUB27, abs: Array.from({ length: 13 }, (_, i) => ({ subj: "Maths", d: "2026-09-" + String(i + 1).padStart(2, "0"), v: "a", j: false })) });
+  return h.indexOf("25/11/2026") < h.indexOf("20/11/2026") && h.indexOf("20/11/2026") < h.indexOf("01/10/2026") && /class="tg">retard</.test(h) && /class="tg ok">justifiée</.test(h) && /class="tg bad">non justifiée</.test(h) && /Rdv &lt;b&gt;médecin&lt;\/b&gt;/.test(h) && !/<b>médecin/.test(h) && /Voir les 3 autres/.test(many) ? true : h;
+});
+t("étape 27 : alerte quand le seuil d'absences sur 14 jours est atteint (retards et absences anciennes exclus)", () => {
+  const rec = (d, v) => ({ subj: "Maths", d, v: v || "a", j: false });
+  const A3 = [rec("2026-11-14"), rec("2026-11-20"), rec("2026-11-26")];
+  const yes = F27({ subjects: SUB27, abs: A3 }), no = F27({ subjects: SUB27, abs: [rec("2026-11-13"), rec("2026-11-20"), rec("2026-11-26", "r")] });
+  const low = F27({ subjects: SUB27, abs: A3 }, { TH: { moy: 10, pres: 80, abs: 4 } });
+  return /⚠ 3 absences sur les 14 derniers jours \(seuil : 3\)/.test(yes) && !/⚠/.test(no) && !/⚠/.test(low) ? true : J({ yes: /⚠/.test(yes), no: /⚠/.test(no), low: /⚠/.test(low) });
+});
+t("étape 27 : assiduité — sans appel ni absence : message", () => /Aucun appel n’a encore été transmis/.test(F27({ subjects: [{ subj: "Maths", n: 0, a: 0, j: 0, r: 0 }] })) ? true : F27({}));
+t("étape 27 : devoirs — totaux et tableau par matière, non rendus en rouge, matières sans devoir omises, cas vide", () => {
+  const h = F27({ subjects: SUB27.concat([{ subj: "EPS", hw: { r: 0, l: 0, n: 0 } }]) }), v = F27({ subjects: [{ subj: "EPS", hw: { r: 0, l: 0, n: 0 } }, { subj: "SVT" }] });
+  const dev = h.slice(h.indexOf("<h3>Devoirs</h3>"));
+  return /9 rendus · 1 en retard · 2 non rendus/.test(dev) && /<td class="bad">2<\/td>/.test(dev) && /<td class="">0<\/td>/.test(dev) && !/EPS/.test(dev) && /Aucun devoir suivi/.test(v) ? true : dev;
+});
+t("étape 27 : fiche sans champs abs ni hw : pas d'erreur ; sections branchées, cache et fiche de nouveautés", () => {
+  const nv = path.join(__dirname, "..", "NOUVEAUTES-v129.md");
+  const h = fiche25().mod.html({ student: { name: "Ada" }, subjects: [{ subj: "Maths", n: 4, a: 1 }] }, { TH: { moy: 10, pres: 80, abs: 3 } });
+  return /<h3>Assiduité<\/h3>/.test(h) && /Aucun devoir suivi/.test(h) && /me\.sections=\[grades,evals,attend,homework[,\]]/.test(rd("js", "etab-fiche.js")) && /cm-v1[0-9][0-9]/.test(rd("sw.js")) && fs.existsSync(nv) ? true : h;
+});
+/* ---- v130 : étape 28 — fiche élève : Avertissements et incidents ---- */
+const D28 = [{ subj: "Maths", teacher: "M. <i>K</i>", d: "2026-10-02", k: "inc", t: "Bavardage <b>répété</b>" }, { subj: "EPS", teacher: "Mme L", d: "2026-11-20", k: "grv", t: "Bagarre" }, { subj: "Fr", d: "2026-11-05", k: "inc", t: "" }];
+t("étape 28 : incidents — récents d'abord, grave en rouge, texte et enseignant échappés, total et graves", () => {
+  const h = F27({ dis: D28 }), s = h.slice(h.indexOf("<h3>Avertissements et incidents"));
+  return s.indexOf("20/11/2026") < s.indexOf("05/11/2026") && s.indexOf("05/11/2026") < s.indexOf("02/10/2026") && /class="tg bad">incident grave</.test(s) && (s.match(/class="tg">incident</g) || []).length === 2 &&
+    /3 incidents transmis dont 1 grave/.test(s) && /Bavardage &lt;b&gt;répété&lt;\/b&gt;/.test(s) && /M\. &lt;i&gt;K&lt;\/i&gt;/.test(s) && !/<b>répété<\/b>/.test(s) && !/<i>K/.test(s) ? true : s;
+});
+t("étape 28 : incidents — « Voir les autres » au-delà de 10, cas vide, champ dis absent sans erreur", () => {
+  const many = F27({ dis: Array.from({ length: 13 }, (_, i) => ({ subj: "Maths", d: "2026-09-" + String(i + 1).padStart(2, "0"), k: "inc", t: "x" })) });
+  const none = F27({ dis: [] }), abs = fiche25().mod.html({ student: { name: "Ada" }, subjects: [] }, { TH: { moy: 10, pres: 80, abs: 3 } });
+  return /Voir les 3 autres/.test(many) && /Aucun avertissement ni incident/.test(none) && /Aucun avertissement ni incident/.test(abs) ? true : J({ many: /Voir/.test(many), none: /Aucun/.test(none) });
+});
+t("étape 28 : section branchée, style, cache et fiche de nouveautés", () => {
+  const nv = path.join(__dirname, "..", "NOUVEAUTES-v130.md");
+  return /me\.sections=\[grades,evals,attend,homework,disc\]/.test(rd("js", "etab-fiche.js")) && /\.ef-tx/.test(rd("css", "etab-fiche.css")) && /cm-v1[0-9][0-9]/.test(rd("sw.js")) && fs.existsSync(nv) ? true : "doc";
+});
+/* ---- v131 : étape 29 — la fiche s'ouvre aussi depuis Résultats, Vie scolaire et les panneaux des graphiques ---- */
+t("étape 29 : pages Résultats, Vie scolaire, Finances et Accueil chargent la fiche avant leur script ; styles identiques", () => {
+  const bad = [["etab-resultats.html", "etab-resultats.js"], ["etab-vie.html", "etab-vie.js"], ["etab-fin.html", "etab-fin.js"], ["etab-accueil.html", "etab-accueil.js"]].filter(([h, j]) => {
+    const x = rd(h); return !(/css\/etab-fiche\.css/.test(x) && x.indexOf("js/etab-fiche.js") > -1 && x.indexOf("js/etab-fiche.js") < x.indexOf("js/" + j) && x.indexOf("js/etab-core.js") < x.indexOf("js/etab-fiche.js"));
+  });
+  return bad.length === 0 ? true : J(bad);
+});
+t("étape 29 : Etab.stu — ligne d'élève cliquable (échappée) avec la fiche, ligne simple sans elle", () => {
+  const core = rd("js", "etab-core.js"), m = /E\.stu=function\(id,t,s,tag,bad\)\{return id&&typeof EtabFiche!==\"undefined\"\?EtabFiche\.row\(id,t,s,tag,bad\):dr\(t,s,tag,undefined,bad\);\};/.test(core);
+  const res = rd("js", "etab-resultats.js"), vie = rd("js", "etab-vie.js");
+  return m && (res.match(/E\.stu\(i,r\.name,/g) || []).length === 3 && /E\.stu\(i,r\.name,/.test(vie) && !/E\.dr\(r\.name,/.test(res) && !/E\.dr\(r\.name,/.test(vie) ? true : "branchement";
+});
+t("étape 29 : panneaux des graphiques — chaque ligne d'élève porte son id et ouvre la fiche ; sans fiche, ligne simple échappée", () => {
+  const g = rd("js", "graph-etab.js");
+  const pushes = (g.match(/push\(\{id:id,name:r\.name/g) || []).length, maps = (g.match(/return\{id:e\.id,name:e\.name,cls:e\.cls,tag:/g) || []).length;
+  const mk = (withFiche) => new Function("EtabFiche", g.slice(0, g.indexOf("var GE_BANDS")) + ";return geWho;")(withFiche ? { row: (id, n, c, tg) => `<button data-fiche="${id}">${n}|${c}|${tg}</button>` } : undefined);
+  const box = { innerHTML: "" };
+  mk(true)(box).show({ title: "T", rows: [{ id: "s1", name: "Ada", cls: "6e A", tag: "8 / 20" }, { name: "Sans id", cls: "6e B", tag: "x" }] });
+  const a = box.innerHTML; mk(false)(box).show({ title: "T", rows: [{ id: "s1", name: "A<b>", cls: "6e A", tag: "8" }] });
+  return pushes === 8 && maps === 7 && /data-fiche="s1">Ada\|6e A\|8 \/ 20/.test(a) && /<div class="dr"><span><b>Sans id/.test(a) && /A&lt;b&gt;/.test(box.innerHTML) && !/data-fiche/.test(box.innerHTML) ? true : J({ pushes, maps, a, b: box.innerHTML });
+});
+t("étape 29 : fiche — seuils lus depuis Etab si E n'existe pas ; cache cm-v131 et fiche de nouveautés", () => {
+  const nv = path.join(__dirname, "..", "NOUVEAUTES-v131.md");
+  return /typeof Etab!==\"undefined\"&&Etab&&Etab\.TH/.test(rd("js", "etab-fiche.js")) && /cm-v1[0-9][0-9]/.test(rd("sw.js")) && fs.existsSync(nv) ? true : "doc";
+});
+/* ---- v132 : étape 30 — consultation hors ligne de la fiche élève ---- */
+t("étape 30 : la fiche d'un élève est copiée comme les autres lectures (sans code ni téléphone) et rendue sans réseau, avec la date de la copie", async () => {
+  const h = T99(), body = JSON.stringify({ p_student: "s1" }), call = (b) => h.O.fetch("https://x/rest/v1/rpc/etab_eleve_fiche", { method: "POST", body: b, headers: { Authorization: "Bearer jeton" } }).then((r) => r.text(), () => "ERR");
+  h.net.body = JSON.stringify({ student: { id: "s1", name: "Ada" }, subjects: [] }); const on = await call(body); const kept = h.db.size;
+  h.net.down = true; const off = await call(body), autre = await call(JSON.stringify({ p_student: "s2" }));
+  const hit = h.O.hit;
+  return /Ada/.test(on) && kept === 1 && /Ada/.test(off) && autre === "ERR" && hit && hit.n === "etab_eleve_fiche" && /s1/.test(hit.b) && hit.at > 0 && h.O.used ? true : J({ on, kept, off, autre, hit });
+});
+t("étape 30 : la fiche dit « copie enregistrée le … » seulement quand ses chiffres viennent d'une copie de cet élève", async () => {
+  const mk = (hit) => { const off = { hit: undefined, enabled: () => true }; const f = fiche25(off); f.sb.rpc = (n, a) => { off.hit = hit; return Promise.resolve({ data: D25 }); }; f.mod.show("s1", "Ada"); return f; };
+  const at = new Date(2026, 10, 20, 8, 5).getTime(), res = [];
+  for (const hit of [{ n: "etab_eleve_fiche", b: '{"p_student":"s1"}', at }, { n: "etab_eleve_fiche", b: '{"p_student":"s2"}', at }, { n: "admin_dashboard", b: "", at }, null]) { const f = mk(hit); await new Promise((r) => setTimeout(r, 0)); res.push(/Copie enregistrée le 20\/11\/2026 à 08:05/.test(f.els[0].querySelector(".ef-b")._h)); }
+  return res.join() === "true,false,false,false" ? true : res.join();
+});
+t("étape 30 : sans réseau — message selon que la consultation hors ligne est activée ou non ; élève jamais ouvert", async () => {
+  const out = [];
+  for (const en of [false, true]) { const f = fiche25({ hit: null, enabled: () => en }); f.sb.rpc = () => Promise.reject(new TypeError("Failed to fetch")); f.mod.show("s1", "Ada"); await new Promise((r) => setTimeout(r, 0)); out.push(f.els[0].querySelector(".ef-b")._h); }
+  return /Garder les données sur cet appareil/.test(out[0]) && /pas encore été ouverte avec du réseau/.test(out[1]) && !/Garder les données/.test(out[1]) ? true : J(out);
+});
+t("étape 30 : textes d'aide, cache cm-v132 et fiche de nouveautés", () => {
+  const nv = path.join(__dirname, "..", "NOUVEAUTES-v132.md");
+  return /etab_eleve_fiche/.test(rd("js", "etab-offline.js")) && /chaque fiche d’élève utile/.test(rd("js", "etab-parametres.js")) && /chaque fiche d’élève utile/.test(rd("aide-etablissement.html")) && /cm-v1[0-9][0-9]/.test(rd("sw.js")) && fs.existsSync(nv) ? true : "doc";
+});
+/* ---- v133 : étape 31 — type « Avertissement » côté enseignant ---- */
+t("étape 31 : le type « Avertissement » existe (transmis à l'administration), s'affiche sans la mention entre parenthèses et a sa couleur", () => {
+  const keys = run("OBK.map(function(x){return x[0];}).join()"), nom = run('obName("avt")'), tag = run('obTag("avt")'), sel = run('OBK.filter(function(x){return x[0]==="avt";})[0][1]');
+  return keys === "pos,cmp,dif,aut,avt,inc,grv" && nom === "Avertissement" && /class="tg k-avt">Avertissement</.test(tag) && /transmis à l’administration/.test(sel) && /\.k-avt\{/.test(rd("css", "features.css")) ? true : J({ keys, nom, tag });
+});
+t("étape 31 : le résumé publié pour l'administration contient les avertissements, incidents et incidents graves, pas les autres observations", () => {
+  const out = run(`(function(){
+    var c={id:"c1",name:"6e A",subj:"Maths",students:[{id:"s1",name:"Ada"}],records:{},notes:{},ev:[],tt:[],th:{a:3,r:3},
+      ob:[{id:"1",s:"s1",d:"2026-11-20",k:"avt",t:"Dernier avertissement"},{id:"2",s:"s1",d:"2026-11-21",k:"inc",t:"Bagarre"},{id:"3",s:"s1",d:"2026-11-22",k:"grv",t:"Violence"},
+        {id:"4",s:"s1",d:"2026-11-23",k:"cmp",t:"Bavard"},{id:"5",s:"s1",d:"2026-11-24",k:"pos",t:"Bravo"},{id:"6",s:"s2",d:"2026-11-25",k:"avt",t:"Autre élève"}]};
+    var o=shSnap(c,c.students[0]);return __j(o.dis||null);})()`);
+  const d = JSON.parse(out);
+  return d && d.length === 3 && d.map((x) => x.k).sort().join() === "avt,grv,inc" && !/Bavard|Bravo|Autre élève/.test(out) && d.every((x) => x.d && x.t) ? true : out;
+});
+t("étape 31 : sans avertissement ni incident, le résumé n'a pas de champ dis ; texte de la fiche élève mis à jour ; cache et fiche de nouveautés", () => {
+  const out = run(`(function(){var c={id:"c1",name:"6e A",subj:"Maths",students:[{id:"s1",name:"Ada"}],records:{},notes:{},ev:[],tt:[],th:{a:3,r:3},ob:[{id:"1",s:"s1",d:"2026-11-23",k:"cmp",t:"Bavard"}]};return __j(shSnap(c,c.students[0]).dis===undefined);})()`);
+  const nv = path.join(__dirname, "..", "NOUVEAUTES-v133.md");
+  return out === "true" && /Seuls les <b>avertissements<\/b> et les <b>incidents<\/b>/.test(rd("js", "observations.js")) && /cm-v1[0-9][0-9]/.test(rd("sw.js")) && fs.existsSync(nv) ? true : out;
+});
+/* ---- v134 : étape 32 — les avertissements dans la fiche élève, finitions ---- */
+t("étape 32 : fiche — avertissements et incidents distingués (étiquettes, totaux, « dont graves » pour les incidents seulement)", () => {
+  const D = [{ subj: "Maths", d: "2026-11-02", k: "avt", t: "Dernier <b>avertissement</b>" }, { subj: "Fr", d: "2026-11-03", k: "avt", t: "Bavardage" }, { subj: "EPS", d: "2026-11-10", k: "inc", t: "Dispute" }, { subj: "EPS", d: "2026-11-20", k: "grv", t: "Bagarre" }];
+  const h = F27({ dis: D }), s = h.slice(h.indexOf("<h3>Avertissements et incidents"));
+  const seul = F27({ dis: [D[0]] }), inc = F27({ dis: [D[3]] });
+  return /2 avertissements · 2 incidents transmis dont 1 grave/.test(s) && (s.match(/class="tg">avertissement</g) || []).length === 2 && (s.match(/class="tg">incident</g) || []).length === 1 && /class="tg bad">incident grave</.test(s) &&
+    /<span class="ef-n">4<\/span>/.test(s) && /Dernier &lt;b&gt;avertissement&lt;\/b&gt;/.test(s) && !/<b>avertissement<\/b>/.test(s) && /1 avertissement transmis(?! dont)/.test(seul) && !/incident/.test(seul.slice(seul.indexOf("transmis") - 30, seul.indexOf("transmis") + 9)) && /1 incident transmis dont 1 grave/.test(inc) ? true : s;
+});
+t("étape 32 : « Vie scolaire » et les graphiques ne comptent que les incidents — les avertissements sont écartés au chargement (aucun SQL)", () => {
+  const core = rd("js", "etab-core.js"), a = core.indexOf("E.loadDiscipline=function(done){"), src = core.slice(a, core.indexOf("};", core.indexOf("failed to fetch", a)) + 2);
+  const rows = [{ k: "avt", d: "2026-11-01" }, { k: "inc", d: "2026-11-02" }, { k: "grv", d: "2026-11-03" }, { d: "2026-11-04" }];
+  const E = {}; let got = null; new Function("E", "sb", "ep", src)(E, { rpc: () => Promise.resolve({ data: rows }) }, () => ({}));
+  const err = {}; let gotErr = null; new Function("E", "sb", "ep", src)(err, { rpc: () => Promise.resolve({ error: { message: "x" } }) }, () => ({}));
+  E.loadDiscipline((d) => { got = d; }); err.loadDiscipline((d, e) => { gotErr = e; });
+  return new Promise((r) => setTimeout(r, 0)).then(() => got && got.map((x) => x.k || "-").join() === "inc,grv,-" && gotErr && gotErr.message === "x" && /avertissements se lisent dans la fiche/.test(rd("js", "etab-vie.js")) ? true : J({ got, gotErr }));
+});
+t("étape 32 : aide, cache cm-v134 et fiche de nouveautés", () => {
+  const nv = path.join(__dirname, "..", "NOUVEAUTES-v134.md"), a = rd("aide-etablissement.html");
+  return /<b>Fiche d’un élève<\/b>/.test(a) && /Les avertissements et les incidents de discipline ne leur sont pas visibles/.test(a) && /cm-v1[0-9][0-9]/.test(rd("sw.js")) && fs.existsSync(nv) ? true : "doc";
+});
+/* ---- v135 : étape 33 — la table des programmes du chef ---- */
+const sqlV106 = rd("supabase", "programmes-v106.sql");
+const sqlV106code = sqlV106.split("\n").filter((l) => !/^\s*--/.test(l)).join("\n");
+t("étape 33 : etab_programmes — colonnes, rattachement à l'établissement, mois de septembre à juin, limites de longueur", () => {
+  const T = sqlV106code.slice(sqlV106code.indexOf("create table if not exists public.etab_programmes"), sqlV106code.indexOf("create unique index"));
+  return /etab_id\s+uuid\s+not null references public\.etablissements \(id\) on delete cascade/.test(T) && /niveau\s+text\s+not null check \(char_length\(btrim\(niveau\)\) between 1 and 40\)/.test(T) &&
+    /matiere\s+text\s+not null check \(char_length\(btrim\(matiere\)\) between 1 and 60\)/.test(T) && /titre\s+text\s+not null check \(char_length\(btrim\(titre\)\) between 1 and 200\)/.test(T) &&
+    /mois\s+text\s+not null check \(mois in \('09', '10', '11', '12', '01', '02', '03', '04', '05', '06'\)\)/.test(T) && /ordre\s+integer\s+not null default 0/.test(T) && !/matiere[^,\n]*references/.test(T) ? true : T;
+});
+t("étape 33 : etab_programmes — une leçon n'existe qu'une fois, index de lecture", () =>
+  /create unique index if not exists etab_programmes_uq\s+on public\.etab_programmes \(etab_id, lower\(btrim\(niveau\)\), lower\(btrim\(matiere\)\), mois, lower\(btrim\(titre\)\)\)/.test(sqlV106code) && /create index if not exists etab_programmes_lecture_idx/.test(sqlV106code) ? true : "index");
+t("étape 33 : etab_programmes — aucun accès direct (sécurité par ligne sans règle, droits retirés) ; partie « table » additive et rejouable", () => {
+  const tab = sqlV106code.slice(0, sqlV106code.indexOf("create or replace function"));   /* les fonctions de l'étape 34 ont leurs propres tests */
+  const sansTexte = tab.replace(/'[^']*'/g, "''").replace(/on delete (cascade|set null)/gi, "");
+  return /alter table public\.etab_programmes enable row level security/.test(tab) && /revoke all on public\.etab_programmes from anon, authenticated/.test(tab) && !/create policy|grant /i.test(tab) && !/grant .* on public\.etab_programmes/i.test(sqlV106code) &&
+    !/\b(alter table public\.(?!etab_programmes)|drop |delete |update |truncate)/i.test(sansTexte) && /create table if not exists/.test(tab) && /create (unique )?index if not exists/.test(tab) ? true : "droits";
+});
+t("étape 33 : le mois suit le format du cahier de l'enseignant (09 à 12, 01 à 06) ; mode d'emploi, cache et fiche de nouveautés", () => {
+  const cah = rd("js", "cahier.js"), nv = path.join(__dirname, "..", "NOUVEAUTES-v135.md");
+  return /\\"09\\"\.\.\\"06\\"|"09"\.\."06"/.test(cah) && /programmes-v106\.sql/.test(rd("supabase", "LISEZ-MOI.md")) && /cm-v1[0-9][0-9]/.test(rd("sw.js")) && fs.existsSync(nv) && /programmes-v106\.sql/.test(fs.readFileSync(nv, "utf8")) ? true : "doc";
+});
+/* ---- v138 : étapes 34 à 37 — le chef et les enseignants rattachés écrivent dans leur périmètre, chacun lit le sien ---- */
+const fnV106 = (nom) => { const a = sqlV106code.indexOf("create or replace function public." + nom + "("); if (a < 0) return ""; const e1 = sqlV106code.indexOf("end $$;", a), e2 = sqlV106code.indexOf("\n$$;", a); return sqlV106code.slice(a, Math.min(e1 >= 0 ? e1 + 7 : Infinity, e2 >= 0 ? e2 + 4 : Infinity)); };
+const fAu = fnV106("programme_autorise"), fAj = fnV106("etab_programme_ajouter"), fMd = fnV106("etab_programme_modifier"), fRe = fnV106("etab_programme_retirer"), fMo = fnV106("etab_programme_retirer_mois"), fLi = fnV106("etab_programmes_liste");
+const porteV106 = (f) => /declare\s+uid uuid := \(select auth\.uid\(\)\);\s+adm boolean := \(select public\.is_etab_admin\(p_etab\)\);/.test(f) &&
+  /if not adm and not exists \(\s+select 1 from public\.etab_membres m where m\.etab_id = p_etab and m\.user_id = uid and m\.statut = 'actif'\) then\s+raise exception 'not member';/.test(f);
+t("étapes 34 à 37 : chef ou enseignant actif seulement (« not member » sinon), security definer, chemin de recherche vide ; retirer un mois reste réservé au chef", () =>
+  [fAj, fMd, fRe, fLi].every((f) => f && /security definer set search_path = ''/.test(f) && porteV106(f)) && /security definer set search_path = ''/.test(fAu) &&
+  fMo && /begin\s+if not \(select public\.is_etab_admin\(p_etab\)\) then raise exception 'not admin'; end if;/.test(fMo) ? true : "accès");
+t("étapes 34 à 37 : droits — fonction interne fermée à tous, cinq fonctions retirées au public et aux anonymes puis données aux seuls comptes connectés", () => {
+  const cinq = ["etab_programme_ajouter(uuid, text, text, text, text[])", "etab_programme_modifier(uuid, uuid, text, text)", "etab_programme_retirer(uuid, uuid)", "etab_programme_retirer_mois(uuid, text, text, text)", "etab_programmes_liste(uuid)"];
+  const iR = sqlV106code.indexOf("revoke all on function\n"), iG = sqlV106code.indexOf("grant execute on function\n", iR), iF = sqlV106code.indexOf(";", iG), R = sqlV106code.slice(iR, iG), G = sqlV106code.slice(iG, iF + 1);
+  return iR > 0 && iG > iR && cinq.every((n) => R.includes("public." + n) && G.includes("public." + n)) && /from public, anon;$/.test(R.trim()) && /to authenticated;$/.test(G.trim()) && !/anon/.test(G) && !/programme_autorise/.test(G) &&
+    /revoke all on function public\.programme_autorise\(uuid, text, text\) from public, anon, authenticated;/.test(sqlV106code) && (sqlV106code.match(/grant execute/g) || []).length === 1 ? true : "droits";
+});
+t("étape 37 : périmètre de l'enseignant — membre actif, classe affectée non archivée, même niveau (non vide), même matière (ou affectation sans matière)", () =>
+  /returns boolean language sql stable security definer set search_path = ''/.test(fAu) && /m\.statut = 'actif'/.test(fAu) && /join public\.etab_classes c on c\.id = f\.classe_id and not c\.archivee/.test(fAu) && /left join public\.etab_matieres x on x\.id = f\.matiere_id/.test(fAu) &&
+  /f\.etab_id = p_etab and f\.teacher_id = \(select auth\.uid\(\)\)/.test(fAu) && /lower\(btrim\(c\.niveau\)\) = lower\(btrim\(coalesce\(p_niveau, ''\)\)\)/.test(fAu) && /btrim\(coalesce\(p_niveau, ''\)\) <> ''/.test(fAu) &&
+  /\(f\.matiere_id is null or lower\(btrim\(x\.nom\)\) = lower\(btrim\(coalesce\(p_matiere, ''\)\)\)\)/.test(fAu) ? true : "périmètre");
+t("étapes 34 et 37 : ajouter — erreurs de saisie rendues sans rien écrire ; l'enseignant reste dans ses niveaux et matières (out_of_scope)", () =>
+  ["bad_niveau", "bad_matiere", "bad_mois", "no_titles", "too_many", "title_too_long", "out_of_scope"].every((e) => fAj.includes("'err', '" + e + "'")) && /'ligne', ligne_longue/.test(fAj) && /char_length\(mo\) = 1 then mo := '0' \|\| mo/.test(fAj) && !/lpad/.test(fAj) &&
+  /cardinality\(p_titres\) > 200/.test(fAj) && /deja \+ n_titres > 300/.test(fAj) && /if not adm and not \(select public\.programme_autorise\(p_etab, nv, mt\)\) then return jsonb_build_object\('ok', false, 'err', 'out_of_scope'\)/.test(fAj) &&
+  ["out_of_scope", "title_too_long"].every((e) => fAj.indexOf("'err', '" + e + "'") < fAj.indexOf("insert into public.etab_programmes")) && fAj.indexOf("'err', 'too_many'", fAj.indexOf("deja + n_titres")) < fAj.indexOf("insert into public.etab_programmes") ? true : "validation");
+t("étapes 34 et 37 : ajouter — doublons ignorés, nouvelles leçons à la suite du mois, origine et auteur enregistrés, même clé que l'index d'unicité", () => {
+  const idx = /etab_programmes_uq\s+on public\.etab_programmes \((.*)\);/.exec(sqlV106code);
+  return idx && fAj.includes("on conflict (" + idx[1] + ") do nothing") && /distinct on \(lower\(src\.titre\)\)/.test(fAj) && /src\.titre <> ''/.test(fAj) && /regexp_replace\(btrim\(coalesce\(u\.x, ''\)\), '\\s\+', ' ', 'g'\)/.test(fAj) &&
+    /coalesce\(max\(e\.ordre\), -1\) \+ 1/.test(fAj) && /base \+ \(row_number\(\) over \(order by v\.ord\)\)::integer - 1/.test(fAj) && /'ajoutees', ajoutes, 'ignorees', n_titres - ajoutes/.test(fAj) &&
+    /insert into public\.etab_programmes \(etab_id, niveau, matiere, mois, titre, ordre, origine, cree_par\)/.test(fAj) && /case when adm then 'chef' else 'enseignant' end, uid/.test(fAj) ? true : "doublons";
+});
+t("étape 36 et 37 : modifier — titre et mois seulement ; le chef modifie tout, l'enseignant seulement ses propres notions et dans son périmètre ; doublon refusé", () => {
+  const upd = fMd.slice(fMd.indexOf("update public.etab_programmes"), fMd.indexOf("exception when"));
+  return ["bad_title", "bad_mois", "not_found", "not_yours", "exists"].every((e) => fMd.includes("'err', '" + e + "'")) &&
+    /if not adm and \(e\.origine <> 'enseignant' or e\.cree_par is distinct from uid or not \(select public\.programme_autorise\(p_etab, e\.niveau, e\.matiere\)\)\) then\s+return jsonb_build_object\('ok', false, 'err', 'not_yours'\)/.test(fMd) &&
+    /exception when unique_violation then\s+return jsonb_build_object\('ok', false, 'err', 'exists'\)/.test(fMd) && /set titre = t, mois = mo,/.test(upd) && !/origine|cree_par|niveau =|matiere =/.test(upd.replace(/x\.niveau|x\.matiere|y\.\w+/g, "")) &&
+    /where x\.id = p_lecon and x\.etab_id = p_etab;/.test(upd) && fMd.indexOf("'err', 'not_yours'") < fMd.indexOf("update public.etab_programmes") && /perform public\.journaliser\(p_etab, 'programme_modifie'/.test(fMd) ? true : upd;
+});
+t("étapes 34 et 37 : retirer — le chef retire tout, l'enseignant seulement ses propres notions ; limité à l'établissement, inscrit au journal (retirer un mois : chef seulement)", () =>
+  /if not adm and \(e\.origine <> 'enseignant' or e\.cree_par is distinct from uid\) then\s+return jsonb_build_object\('ok', false, 'err', 'not_yours'\)/.test(fRe) && /select \* into e from public\.etab_programmes x where x\.id = p_lecon and x\.etab_id = p_etab/.test(fRe) &&
+  /delete from public\.etab_programmes x where x\.id = p_lecon and x\.etab_id = p_etab/.test(fRe) && fRe.indexOf("'err', 'not_yours'") < fRe.indexOf("delete from") && /'err', 'not_found'/.test(fRe) &&
+  /delete from public\.etab_programmes e\s+where e\.etab_id = p_etab and lower\(btrim\(e\.niveau\)\) = lower\(nv\) and lower\(btrim\(e\.matiere\)\) = lower\(mt\) and e\.mois = mo/.test(fMo) && /'err', 'not_found'/.test(fMo) && /'retirees', n/.test(fMo) &&
+  ["programme_ajoute", "programme_modifie", "programme_retire", "programme_mois_retire"].every((ev) => sqlV106code.includes("'" + ev + "'")) && (sqlV106code.match(/public\.journaliser\(p_etab,/g) || []).length === 4 ? true : "retrait");
+t("étapes 35 et 37 : lecture — le chef lit tout, l'enseignant son périmètre ; champs rendus (origine, auteur sans adresse e-mail, mienne), ordre de l'année scolaire, 5 000 leçons au plus", () => {
+  const champs = [...fLi.matchAll(/'(\w+)', q\.(\w+)/g)].map((m) => m[1] + ":" + m[2]).join();
+  return champs === "id:id,niveau:niveau,matiere:matiere,mois:mois,titre:titre,ordre:ordre,origine:origine,auteur:auteur,mienne:mienne" && /and \(adm or \(select public\.programme_autorise\(p_etab, e\.niveau, e\.matiere\)\)\)/.test(fLi) && /where e\.etab_id = p_etab/.test(fLi) &&
+    /split_part\(u\.email, '@', 1\)/.test(fLi) && !/'email'/.test(fLi) && /case when e\.origine = 'enseignant'/.test(fLi) && /coalesce\(e\.cree_par = uid, false\) as mienne/.test(fLi) && /case when e\.mois in \('09', '10', '11', '12'\) then 0 else 1 end as rang/.test(fLi) &&
+    /order by lower\(q\.niveau\), lower\(q\.matiere\), q\.rang, q\.ordre, q\.titre/.test(fLi) && /limit 5000/.test(fLi) && !/created_at/.test(fLi) && !/\b(insert|update|delete|truncate|alter|drop)\b/i.test(fLi) ? true : champs;
+});
+t("étape 36 : etab_programmes — colonne « origine » (chef ou enseignant), ajoutée aussi à une table déjà créée par une version précédente", () => {
+  const T = sqlV106code.slice(sqlV106code.indexOf("create table if not exists public.etab_programmes"), sqlV106code.indexOf("create unique index"));
+  return /origine\s+text\s+not null default 'chef' check \(origine in \('chef', 'enseignant'\)\)/.test(T) && /alter table public\.etab_programmes add column if not exists origine text not null default 'chef' check \(origine in \('chef', 'enseignant'\)\);/.test(sqlV106code) ? true : T;
+});
+t("étapes 34 à 37 : script additif et rejouable — seule la table des leçons est écrite, aucune règle, six fonctions", () => {
+  const sansTexte = sqlV106code.replace(/'[^']*'/g, "''").replace(/on delete (cascade|set null)/gi, "");
+  const ecrit = [...sansTexte.matchAll(/\b(insert into|delete from|update|alter table|truncate(?: table)?|drop \w+)\s+(?:if exists\s+)?([\w.]+)/gi)].map((m) => m[2].toLowerCase());
+  return ecrit.length > 0 && ecrit.every((x) => x === "public.etab_programmes") && !/create policy/i.test(sqlV106code) && !/create function/i.test(sqlV106code) && (sqlV106code.match(/create or replace function/g) || []).length === 6 ? true : J(ecrit);
+});
+t("étapes 34 à 37 : contrôle final en une seule requête (table et six fonctions) ; mode d'emploi, cache et fiche de nouveautés", () => {
+  const nv = path.join(__dirname, "..", "NOUVEAUTES-v138.md"), fin = sqlV106code.slice(sqlV106code.lastIndexOf("select 'table' as objet"));
+  const noms = ["etab_programme_ajouter", "etab_programme_modifier", "etab_programme_retirer", "etab_programme_retirer_mois", "etab_programmes_liste", "programme_autorise"];
+  return (sqlV106code.match(/^select /gm) || []).length === 2 && /union all/.test(fin) && noms.every((n) => fin.includes("'" + n + "'")) && /etab_programme_modifier/.test(rd("supabase", "LISEZ-MOI.md")) && /cm-v1[0-9][0-9]/.test(rd("sw.js")) &&
+    fs.existsSync(nv) && /etab_programme_modifier/.test(fs.readFileSync(nv, "utf8")) && /not_yours/.test(fs.readFileSync(nv, "utf8")) ? true : "doc";
+});
+
+/* ---- v139 : étape 38 — la rubrique « Programmes » du chef (page, menu, liste par niveau, matière et mois, repère « ajoutée par un enseignant ») ---- */
+const progJ = rd("js", "etab-programmes.js");
+const progL = (id, niveau, matiere, mois, titre, ordre, origine, auteur) => ({ id, niveau, matiere, mois, titre, ordre, origine: origine || "chef", auteur: auteur || "", mienne: false });
+const progRows = [
+  progL("l1", "6e", "Français", "10", "La phrase simple", 0), progL("l2", "6e", "Français", "09", "L'alphabet et les sons", 1), progL("l3", "6e", "Français", "09", "Les noms propres", 0),
+  progL("l4", "6e", "Français", "01", "Le passé composé", 0, "enseignant", "Mme Diallo"), progL("l5", "6e", "Mathématiques", "09", "Les nombres entiers", 0),
+  progL("l6", "5e", "Français", "09", "Le texte narratif", 0), progL("l7", "Terminale", "Philosophie", "11", "<b>La liberté</b>", 0, "enseignant", "x<y"),
+];
+const progPage = (rows, extra) => fauxPage(Object.assign({ scripts: ["js/etab-core.js", "js/etab-programmes.js"], tables: {}, rpc: Object.assign({}, T93.base, { etab_programmes_liste: rows }) }, extra || {}));
+t("étape 38 : page Programmes — scripts dans l'ordre, aucun script en ligne, aucun code secret, menu actif, feuille de style, mise en cache et fiche de nouveautés", () => {
+  const h = rd("etab-programmes.html"), sw = rd("sw.js"), nv = path.join(root, "NOUVEAUTES-v139.md");
+  return h.indexOf("js/etab-offline.js") > 0 && h.indexOf("js/etab-offline.js") < h.indexOf("js/supabase.js") && h.indexOf("js/etab-core.js") > 0 && h.indexOf("js/etab-core.js") < h.indexOf("js/etab-programmes.js") && !/<script>[\s\S]*?<\/script>/.test(h) &&
+    /css\/etab-v86\.css/.test(h) && /css\/etab-programmes\.css/.test(h) && /page:"programmes"/.test(progJ) && etabCore.pageOf("programmes").done === true && fs.existsSync(path.join(root, "css", "etab-programmes.css")) &&
+    ["etab-programmes.html", "css/etab-programmes.css", "js/etab-programmes.js"].every((f) => sw.includes('"' + f + '"')) && /VERSION="cm-v1(39|[4-9]\d)"/.test(sw) && fs.existsSync(nv) && /Programmes/.test(fs.readFileSync(nv, "utf8")) && /Programmes/.test(rd("aide-etablissement.html")) ? true : "page";
+});
+t("étape 38 : page Programmes — écritures seulement par les quatre fonctions serveur d'ajout, de modification et de retrait ; aucun accès direct à la table, aucune adresse e-mail", () =>
+  /sb\.rpc\("etab_programmes_liste",\{p_etab:E\.ET\.id\}\)/.test(progJ) && (progJ.match(/E\.call\("([a-z_]+)"/g) || []).join() === 'E.call("etab_programme_ajouter",E.call("etab_programme_modifier",E.call("etab_programme_retirer",E.call("etab_programme_retirer_mois"' && !/sb\.from\(/.test(progJ) && !/\.(insert|update|upsert|delete)\(/.test(progJ) &&
+  !/\bemail\b/i.test(progJ) && !/\blocalStorage\b/.test(progJ) ? true : "écriture");
+t("étape 38 : page Programmes — niveaux dans l'ordre scolaire, matières alphabétiques, mois de septembre à juin même quand le serveur les mélange, leçons par ordre", async () => {
+  const h = progPage(progRows); await h.settle();
+  const v = h.els.view.innerHTML, pos = (x) => v.indexOf(x);
+  const niv = pos(">6e <") > 0 && pos(">6e <") < pos(">5e <") && pos(">5e <") < pos(">Terminale <");
+  const mat = pos("<b>Français</b>") < pos("<b>Mathématiques</b>");
+  const mois = pos("Septembre") < pos("Octobre") && pos("Octobre") < pos("Janvier");
+  const ordre = pos("Les noms propres") > 0 && pos("Les noms propres") < pos("L&#39;alphabet et les sons");   /* ordre 0 avant ordre 1 dans septembre */
+  const kp = /<b>7<\/b><span>leçons<\/span>/.test(v) && /<b>3<\/b><span>niveaux<\/span>/.test(v) && /<b>2<\/b><span>ajoutées par des enseignants<\/span>/.test(v);
+  return niv && mat && mois && ordre && kp && h.calls.some((x) => x[0] === "etab_programmes_liste" && x[1].p_etab === "e1") ? true : J({ niv, mat, mois, ordre, kp });
+});
+t("étape 38 : page Programmes — repère « ajoutée par un enseignant » avec le nom de l'auteur, rien sur les leçons du chef ; texte des leçons protégé", async () => {
+  const h = progPage(progRows); await h.settle();
+  const v = h.els.view.innerHTML, n = (v.match(/ajoutée par un enseignant<\/span>/g) || []).length;
+  const resume = /1 ajoutée par un enseignant<\/small>/.test(v);
+  const rep = /<b>Le passé composé<\/b><small>Par Mme Diallo<\/small><\/span><span class="tg">ajoutée par un enseignant/.test(v);
+  const chef = /<b>Les nombres entiers<\/b><small><\/small><\/span><span class="pg-act"><button type="button" class="btn ghost pg-b" data-edit="l5"/.test(v);
+  const xss = v.indexOf("<b>La liberté</b>") < 0 && v.indexOf("&lt;b&gt;La liberté&lt;/b&gt;") > 0 && v.indexOf("Par x<y") < 0 && v.indexOf("Par x&lt;y") > 0;
+  return n === 2 && resume && rep && chef && xss ? true : J({ n, resume, rep, chef, xss });
+});
+t("étape 38 : page Programmes — quelques leçons par mois et « Voir tout » (puis « Réduire »)", async () => {
+  const rows = Array.from({ length: 7 }, (_, i) => progL("m" + i, "6e", "Histoire", "09", "Leçon " + i, i));
+  const h = progPage(rows); await h.settle();
+  const v1 = h.els.view.innerHTML, vis1 = (v1.match(/<div class="dr">/g) || []).length, btn = /data-all="6e\|histoire\|09">Voir tout \(7\)</.test(v1) && /7 leçons/.test(v1);
+  h.els.view.querySelectorAll("[data-all]")[0].onclick(); const v2 = h.els.view.innerHTML, vis2 = (v2.match(/<div class="dr">/g) || []).length;
+  const red = />Réduire</.test(v2) && v2.indexOf("Leçon 6") > 0;
+  h.els.view.querySelectorAll("[data-all]")[0].onclick(); const vis3 = (h.els.view.innerHTML.match(/<div class="dr">/g) || []).length;
+  const peu = progPage(rows.slice(0, 4)); await peu.settle();
+  return vis1 === 4 && btn && vis2 === 7 && red && vis3 === 4 && !/data-all/.test(peu.els.view.innerHTML) ? true : J({ vis1, btn, vis2, red, vis3 });
+});
+t("étape 38 : page Programmes — niveaux et matières écrits différemment (majuscules, espaces) regroupés ; noms réservés sans effet ; mois inconnu en dernier", async () => {
+  const rows = [progL("a", "6e", "Français", "09", "A", 0), progL("b", " 6E ", "français ", "09", "B", 1), progL("c", "constructor", "__proto__", "05", "C", 0), progL("d", "6e", "Français", "", "D", 0)];
+  const h = progPage(rows); await h.settle();
+  const v = h.els.view.innerHTML;
+  return (v.match(/<details/g) || []).length === 2 && /3 leçons · 2 mois/.test(v) && /<b>__proto__<\/b>/.test(v) && /<b>3<\/b><span>leçons<\/span><\/div>|<b>4<\/b><span>leçons<\/span>/.test(v) && v.indexOf("Sans mois") > v.indexOf("Septembre") ? true : v.slice(0, 600);
+});
+t("étape 38 : page Programmes — aucune leçon, installation manquante, panne réseau, refus : message clair, jamais de page blanche", async () => {
+  const vide = progPage([]); await vide.settle();
+  const absent = progPage(null, { rpcErr: { etab_programmes_liste: { code: "PGRST202", message: "Could not find the function public.etab_programmes_liste" } } }); await absent.settle();
+  const refus = progPage(null, { rpcErr: { etab_programmes_liste: { code: "P0001", message: "not member" } } }); await refus.settle();
+  const a = vide.els.view.innerHTML, b = absent.els.view.innerHTML, c = refus.els.view.innerHTML;
+  return /Aucune leçon pour le moment/.test(a) && !/class="kpis"/.test(a) && /programmes-v106\.sql/.test(b) && /pas encore installés/.test(b) && !/Aucune leçon/.test(b) && /Échec/.test(c) && /Programmes/.test(c) && !/Chargement/.test(a + b + c) ? true : J({ a: a.slice(0, 200), b: b.slice(0, 300), c: c.slice(0, 300) });
+});
+t("étape 38 : page Programmes — une réponse tardive d'un autre établissement n'écrase pas l'affichage", async () => {
+  const src = progJ;
+  return /var me=\+\+seq;/.test(src) && /if\(me!==seq\)return;/.test(src) && /function reset\(\)\{seq\+\+;/.test(src) ? true : "jeton";
+});
+
+
+/* ---- v139 : étape 39 — le chef ajoute des leçons (une par ligne) et modifie le titre et le mois ---- */
+const progAdd = (extra, rows) => progPage(rows || progRows, Object.assign({ rpc: Object.assign({}, T93.base, { etab_programmes_liste: rows || progRows, etab_matieres_liste: [{ id: "m1", nom: "Français" }, { id: "m2", nom: "Histoire" }], etab_programme_ajouter: { ok: true, ajoutees: 3, ignorees: 1 }, etab_programme_modifier: { ok: true } }, (extra && extra.rpc) || {}) }, extra && extra.opt));
+t("étape 39 : page Programmes — formulaire d'ajout (niveau, matière, mois, une leçon par ligne) avec propositions tirées des classes, des matières et des leçons", async () => {
+  const h = progAdd(); await h.settle();
+  const v = h.els.view.innerHTML, dl = (id) => { const e = h.els[id], src = e && typeof e.innerHTML === "string" && e.innerHTML ? e.innerHTML : ((v.match(new RegExp('<datalist id="' + id + '">([\\s\\S]*?)</datalist>')) || ["", ""])[1]); return (src.match(/value="([^"]*)"/g) || []).join(); };
+  return ["pn", "pm", "pmo", "pt", "padd"].every((i) => v.indexOf('id="' + i + '"') > 0) && /maxlength="40"/.test(v) && /maxlength="60"/.test(v) && dl("pnl") === 'value="6e",value="5e",value="Terminale"' && dl("pml") === 'value="Français",value="Histoire",value="Mathématiques",value="Philosophie"' &&
+    /<option value="09" selected>|<option value="\d\d" selected>/.test(v) && h.calls.some((x) => x[0] === "etab_classes_liste") && h.calls.some((x) => x[0] === "etab_matieres_liste") ? true : J({ n: dl("pnl"), m: dl("pml") });
+});
+t("étape 39 : ajouter — appel de la fonction serveur avec les lignes (vides gardées pour le serveur qui les ignore), message avec les doublons ignorés, matière ouverte, formulaire vidé, liste rechargée sans écran d'attente", async () => {
+  const h = progAdd(); await h.settle();
+  h.els.pn.value = " 6e "; h.els.pm.value = "Français "; h.els.pmo.value = "10"; h.els.pt.value = "La phrase\r\n\r\n  Le verbe  \n";
+  const nb = h.calls.filter((x) => x[0] === "etab_programmes_liste").length;
+  h.els.padd.onclick(); await h.settle();
+  const c = h.calls.filter((x) => x[0] === "etab_programme_ajouter");
+  const a = c.length === 1 && c[0][1].p_etab === "e1" && c[0][1].p_niveau === "6e" && c[0][1].p_matiere === "Français" && c[0][1].p_mois === "10" && c[0][1].p_titres.filter((x) => x.trim()).map((x) => x.trim()).join("|") === "La phrase|Le verbe";
+  const msg = /3 leçons ajoutées · 1 déjà présente, ignorée\./.test(h.els.msg.textContent);
+  const rel = h.calls.filter((x) => x[0] === "etab_programmes_liste").length === nb + 1;
+  const v = h.els.view.innerHTML, vide = /<textarea[^>]*>\s*<\/textarea>/.test(v) && /id="pn"[^>]*value="6e"/.test(v) && /id="pm"[^>]*value="Français"/.test(v) && /<option value="10" selected>/.test(v);
+  const ouv = /<details class="card pg" data-pg="6e\|français" open>/.test(v) && !/Chargement/.test(v);
+  return a && msg && rel && vide && ouv ? true : J({ a, msg: h.els.msg.textContent, rel, vide, ouv });
+});
+t("étape 39 : ajouter — niveau, matière ou leçons manquants : un message et aucun appel ; hors ligne : refusé", async () => {
+  const h = progAdd(); await h.settle();
+  const essai = (n, m, tx) => { h.els.pn.value = n; h.els.pm.value = m; h.els.pt.value = tx; h.els.padd.onclick(); return h.els.msg.textContent; };
+  const m1 = essai("", "Français", "A"), m2 = essai("6e", "  ", "A"), m3 = essai("6e", "Français", " \n \r\n");
+  await h.settle();
+  const aucun = !h.calls.some((x) => x[0] === "etab_programme_ajouter");
+  return /niveau/.test(m1) && /matière/.test(m2) && /au moins une leçon/.test(m3) && aucun ? true : J([m1, m2, m3, aucun]);
+});
+t("étape 39 : ajouter — refus du serveur (niveau trop long, leçon trop longue, trop de leçons) : message clair, ce qui est écrit reste, rien n'est rechargé", async () => {
+  const sortie = {};
+  for (const err of ["bad_niveau", "bad_matiere", "bad_mois", "no_titles", "too_many", "title_too_long", "out_of_scope"]) {
+    const h = progAdd({ rpc: { etab_programme_ajouter: { ok: false, err } } }); await h.settle();
+    h.els.pn.value = "6e"; h.els.pm.value = "Français"; h.els.pt.value = "Une leçon"; const nb = h.calls.filter((x) => x[0] === "etab_programmes_liste").length;
+    h.els.padd.onclick(); await h.settle();
+    sortie[err] = h.els.msg.textContent.length > 15 && !/Action impossible/.test(h.els.msg.textContent) && h.calls.filter((x) => x[0] === "etab_programmes_liste").length === nb && h.els.pt.value === "Une leçon";
+  }
+  return Object.values(sortie).every(Boolean) ? true : J(sortie);
+});
+t("étape 39 : ce qui est écrit dans le formulaire survit à un nouveau dessin de la page (touche « Voir tout » ou rechargement)", async () => {
+  const rows = Array.from({ length: 6 }, (_, i) => progL("m" + i, "6e", "Histoire", "09", "Leçon " + i, i));
+  const h = progAdd({}, rows); await h.settle();
+  h.els.pn.value = "5e"; h.els.pn.oninput(); h.els.pm.value = "Maths"; h.els.pm.oninput(); h.els.pt.value = "L1\nL2"; h.els.pt.oninput(); h.els.pmo.value = "03"; h.els.pmo.onchange();
+  h.els.view.querySelectorAll("[data-all]")[0].onclick();
+  const v = h.els.view.innerHTML;
+  return /id="pn"[^>]*value="5e"/.test(v) && /id="pm"[^>]*value="Maths"/.test(v) && />L1\nL2<\/textarea>/.test(v) && /<option value="03" selected>/.test(v) ? true : v.slice(0, 900);
+});
+t("étape 39 : modifier — le formulaire de la leçon (titre, mois) remplace la ligne ; enregistrer appelle la fonction serveur, annuler ne fait rien", async () => {
+  const h = progAdd(); await h.settle();
+  h.els.view.querySelectorAll("[data-edit]").filter((b) => b.getAttribute("data-edit") === "l4")[0].onclick();
+  let v = h.els.view.innerHTML;
+  const form = /id="pe-t"[^>]*maxlength="200"[^>]*value="Le passé composé"/.test(v) && /<option value="01" selected>/.test(v) && (v.match(/id="pe-t"/g) || []).length === 1 && /data-esave="l4"/.test(v) && /data-ecancel/.test(v);
+  h.els.view.querySelectorAll("[data-ecancel]")[0].onclick(); const annule = h.els.view.innerHTML.indexOf('id="pe-t"') < 0 && !h.calls.some((x) => x[0] === "etab_programme_modifier");
+  h.els.view.querySelectorAll("[data-edit]").filter((b) => b.getAttribute("data-edit") === "l4")[0].onclick();
+  h.els.pe_t = null; h.el("pe-t").value = "  Le passé simple "; h.el("pe-m").value = "02";
+  h.els.view.querySelectorAll("[data-esave]")[0].onclick(); await h.settle();
+  const c = h.calls.filter((x) => x[0] === "etab_programme_modifier");
+  const ok = c.length === 1 && c[0][1].p_etab === "e1" && c[0][1].p_lecon === "l4" && c[0][1].p_titre === "Le passé simple" && c[0][1].p_mois === "02" && /Leçon modifiée/.test(h.els.msg.textContent) && h.els.view.innerHTML.indexOf('id="pe-t"') < 0;
+  return form && annule && ok ? true : J({ form, annule, ok, c });
+});
+t("étape 39 : modifier — titre vide : message et aucun appel ; refus du serveur (leçon d'un collègue, titre déjà pris, leçon disparue) : message clair et le formulaire reste ouvert avec la saisie", async () => {
+  const h = progAdd(); await h.settle();
+  const ouvre = () => h.els.view.querySelectorAll("[data-edit]").filter((b) => b.getAttribute("data-edit") === "l1")[0].onclick();
+  ouvre(); h.el("pe-t").value = "   "; h.els.view.querySelectorAll("[data-esave]")[0].onclick();
+  const vide = /titre/.test(h.els.msg.textContent) && !h.calls.some((x) => x[0] === "etab_programme_modifier");
+  const sortie = { vide };
+  for (const err of ["not_yours", "exists", "not_found", "bad_mois", "bad_title"]) {
+    const g = progAdd({ rpc: { etab_programme_modifier: { ok: false, err } } }); await g.settle();
+    g.els.view.querySelectorAll("[data-edit]").filter((b) => b.getAttribute("data-edit") === "l1")[0].onclick();
+    g.el("pe-t").value = "Nouveau titre"; g.el("pe-t").oninput(); g.els.view.querySelectorAll("[data-esave]")[0].onclick(); await g.settle();
+    sortie[err] = g.els.msg.textContent.length > 15 && !/Action impossible/.test(g.els.msg.textContent) && /id="pe-t"/.test(g.els.view.innerHTML) && g.el("pe-t").value === "Nouveau titre" && g.calls.filter((x) => x[0] === "etab_programmes_liste").length === 1;
+  }
+  return Object.values(sortie).every(Boolean) ? true : J(sortie);
+});
+t("étape 39 : modifier et ajouter — texte des leçons et des champs protégé ; suggestions et champs sans balise active", async () => {
+  const rows = [progL("x1", "6e", "Fr\"><script>", "09", "\"><img src=x onerror=1>", 0, "enseignant", "<i>Z</i>")];
+  const h = progAdd({}, rows); await h.settle();
+  h.els.view.querySelectorAll("[data-edit]")[0].onclick();
+  const v = h.els.view.innerHTML;
+  return !/<img |<script|<i>Z/.test(v) && /value="&quot;&gt;&lt;img src=x onerror=1&gt;"/.test(v) ? true : v.slice(0, 700);
+});
+t("étape 39 : messages d'erreur du socle pour les leçons (niveau, matière, mois, titres, périmètre, leçon d'un autre) ; fiche de nouveautés et mode d'emploi à jour", () => {
+  const c = rd("js", "etab-core.js"), nv = fs.readFileSync(path.join(root, "NOUVEAUTES-v140.md"), "utf8");
+  return ["bad_niveau", "bad_matiere", "bad_mois", "no_titles", "too_many", "title_too_long", "bad_title", "out_of_scope", "not_yours"].every((k) => c.indexOf(k + ":") >= 0) && /ajouter/i.test(nv) && /Modifier/.test(nv) && /étape 39/i.test(nv) && /étape 39/.test(rd("supabase", "LISEZ-MOI.md")) ? true : "doc";
+});
+
+/* ---- v141 : étape 40 — le chef retire une leçon ou un mois entier (avec confirmation) ---- */
+const progBtn = (h, attr, val) => h.els.view.querySelectorAll("[" + attr + "]").filter((b) => b.getAttribute(attr) === val)[0];
+const progRm = (extra, rows) => progAdd(Object.assign({ rpc: Object.assign({ etab_programme_retirer: { ok: true }, etab_programme_retirer_mois: { ok: true, retirees: 2 } }, (extra && extra.rpc) || {}) }, { opt: extra && extra.opt }), rows);
+t("étape 40 : retirer une leçon — confirmation avec le titre, niveau et matière ; appel de la fonction serveur ; message ; liste rechargée sans écran d'attente", async () => {
+  const h = progRm(); await h.settle();
+  const nb = h.calls.filter((x) => x[0] === "etab_programmes_liste").length;
+  progBtn(h, "data-del", "l2").onclick(); await h.settle();
+  const c = h.calls.filter((x) => x[0] === "etab_programme_retirer"), cf = h.confirms.slice(-1)[0] || "";
+  return c.length === 1 && c[0][1].p_etab === "e1" && c[0][1].p_lecon === "l2" && /L'alphabet et les sons/.test(cf) && /6e · Français/.test(cf) && /définitive/.test(cf) && h.els.msg.textContent === "Leçon retirée." &&
+    h.calls.filter((x) => x[0] === "etab_programmes_liste").length === nb + 1 && !/Chargement/.test(h.els.view.innerHTML) ? true : J({ c, cf, m: h.els.msg.textContent });
+});
+t("étape 40 : retirer — confirmation refusée : aucun appel ; refus du serveur (leçon d'un autre, leçon disparue) : message clair, rien de rechargé", async () => {
+  const h = progRm({ opt: { confirmAnswer: false } }); await h.settle();
+  progBtn(h, "data-del", "l2").onclick(); progBtn(h, "data-delmois", "6e|français|09").onclick(); await h.settle();
+  const refus = !h.calls.some((x) => x[0] === "etab_programme_retirer" || x[0] === "etab_programme_retirer_mois") && h.confirms.length === 2;
+  const sortie = { refus };
+  for (const [fn, err, btn] of [["etab_programme_retirer", "not_found", ["data-del", "l2"]], ["etab_programme_retirer", "not_yours", ["data-del", "l2"]], ["etab_programme_retirer_mois", "not_found", ["data-delmois", "6e|français|09"]], ["etab_programme_retirer_mois", "bad_mois", ["data-delmois", "6e|français|09"]]]) {
+    const g = progRm({ rpc: { [fn]: { ok: false, err } } }); await g.settle();
+    progBtn(g, btn[0], btn[1]).onclick(); await g.settle();
+    sortie[fn + err] = g.els.msg.textContent.length > 15 && !/Action impossible/.test(g.els.msg.textContent) && g.calls.filter((x) => x[0] === "etab_programmes_liste").length === 1;
+  }
+  return Object.values(sortie).every(Boolean) ? true : J(sortie);
+});
+t("étape 40 : retirer un mois — bouton seulement pour un mois de septembre à juin ; confirmation qui compte les leçons et signale les notions des enseignants ; niveau et matière tels que saisis", async () => {
+  const rows = progRows.concat([progL("z1", "6e", "Français", "", "Sans mois", 0)]);
+  const h = progRm({}, rows); await h.settle();
+  const v = h.els.view.innerHTML, cles = [...v.matchAll(/data-delmois="([^"]*)"/g)].map((m) => m[1]);
+  const seul = cles.includes("6e|français|09") && cles.includes("6e|français|01") && cles.every((k) => /\|(0[1-9]|1[0-2])$/.test(k)) && !cles.some((k) => /\|$/.test(k)) && />Retirer ce mois \(2\)</.test(v);
+  progBtn(h, "data-delmois", "6e|français|09").onclick(); await h.settle();
+  const c1 = h.calls.filter((x) => x[0] === "etab_programme_retirer_mois"), cf1 = h.confirms.slice(-1)[0];
+  const a = c1.length === 1 && c1[0][1].p_etab === "e1" && c1[0][1].p_niveau === "6e" && c1[0][1].p_matiere === "Français" && c1[0][1].p_mois === "09" && /Retirer les 2 leçons de Septembre \(6e · Français\) \?/.test(cf1) && !/enseignant/.test(cf1) && /définitive/.test(cf1) && h.els.msg.textContent === "2 leçons retirées.";
+  progBtn(h, "data-delmois", "6e|français|01").onclick(); await h.settle();
+  const cf2 = h.confirms.slice(-1)[0];
+  const c2 = h.calls.filter((x) => x[0] === "etab_programme_retirer_mois").slice(-1)[0][1], mois2 = c2.p_mois === "01" && c2.p_niveau === "6e" && c2.p_matiere === "Français";
+  return seul && a && mois2 && /Retirer la leçon de Janvier \(6e · Français\)/.test(cf2) && !/les 1 leçons/.test(cf2) && /1 notion ajoutée par un enseignant sera retirée aussi/.test(cf2) ? true : J({ seul, cles, a, cf1, cf2 });
+});
+t("étape 40 : retirer un mois — le formulaire de modification d'une leçon de ce mois se ferme ; celui d'un autre mois reste", async () => {
+  const h = progRm(); await h.settle();
+  progBtn(h, "data-edit", "l4").onclick(); progBtn(h, "data-delmois", "6e|français|09").onclick(); await h.settle();
+  const reste = h.els.view.innerHTML.indexOf('id="pe-t"') > 0;
+  progBtn(h, "data-delmois", "6e|français|01").onclick(); await h.settle();
+  const ouvert = reste;
+  return ouvert && h.els.view.innerHTML.indexOf('id="pe-t"') < 0 ? true : "formulaire";
+});
+t("étape 40 : fiche de nouveautés v141, mode d'emploi et cache à jour", () => {
+  const nv = fs.readFileSync(path.join(root, "NOUVEAUTES-v141.md"), "utf8");
+  return /retirer/i.test(nv) && /définitive/i.test(nv) && /étape 40/i.test(nv) && /étape 40/i.test(rd("supabase", "LISEZ-MOI.md")) && /VERSION="cm-v14[1-9]"/.test(rd("sw.js")) ? true : "doc";
+});
+
+/* ---- v142 : étape 41 — corrections de détail de la page Programmes + programme de l'établissement en lecture côté enseignant ---- */
+t("étape 41 : titre déjà pris dans le mois — message précis ; leçon disparue (modifier, retirer, retirer le mois) — message précis à chaque fois", async () => {
+  const h = progAdd({ rpc: { etab_programme_modifier: { ok: false, err: "exists" } } }); await h.settle();
+  progBtn(h, "data-edit", "l1").onclick(); h.els["pe-t"].value = "Autre"; progBtn(h, "data-esave", "l1").onclick(); await h.settle();
+  const ex = /Une autre leçon de ce mois porte déjà ce titre/.test(h.els.msg.textContent);
+  const sortie = { ex };
+  for (const [fn, btn, re] of [["etab_programme_retirer", ["data-del", "l2"], /n’existe plus : elle a déjà été retirée/], ["etab_programme_retirer_mois", ["data-delmois", "6e|français|09"], /n’a plus de leçons/]]) {
+    const g = progRm({ rpc: { [fn]: { ok: false, err: "not_found" } } }); await g.settle();
+    progBtn(g, btn[0], btn[1]).onclick(); await g.settle();
+    sortie[fn] = re.test(g.els.msg.textContent);
+  }
+  return Object.values(sortie).every(Boolean) ? true : J(sortie);
+});
+t("étape 41 : propositions de niveaux et matières — les listes se remplissent sur place, la page n'est plus redessinée à leur arrivée (le curseur de la saisie reste)", () => {
+  return /function refreshOpts\(\)/.test(progJ) && /refreshOpts\(\);\},function\(\)\{\}\);/.test(progJ) && !/mats=r\.error\|\|!Array\.isArray\(r\.data\)\?\[\]:r\.data;E\.render\(\)/.test(progJ) && !/cls=r\.error\|\|!Array\.isArray\(r\.data\)\?\[\]:r\.data;E\.render\(\)/.test(progJ) ? true : "source";
+});
+t("étape 41 : espaces doublés dans la matière saisie — après l'ajout, la bonne matière (écrite avec un seul espace par le serveur) s'ouvre", async () => {
+  const rows2 = progRows.concat([progL("n1", "6e", "Sciences physiques", "10", "La lumière", 0)]);
+  const h = progAdd({ rpc: { etab_programme_ajouter: { ok: true, ajoutees: 1, ignorees: 0 } } }, rows2); await h.settle();
+  h.els.pn.value = " 6e "; h.els.pm.value = "Sciences   physiques"; h.els.pmo.value = "10"; h.els.pt.value = "La lumière";
+  h.els.padd.onclick(); await h.settle();
+  return /data-pg="6e\|sciences physiques"[^>]*open/.test(h.els.view.innerHTML) ? true : "pas ouverte";
+});
+const pgeSrc = rd("js", "programmes-ens.js");
+const pgeRun = (code, ctx0) => {
+  const base = { ME: { id: "u" }, GUEST: false, sb: {}, ETAB: { loaded: true, list: [{ id: "e1", role: "enseignant", membre_statut: "actif" }], cur: "e1" }, navigator: { onLine: true }, view: "progs", render() {}, esc: (x) => String(x == null ? "" : x).replace(/&/g, "&amp;").replace(/</g, "&lt;"), window: { scrollY: 0, scrollTo() {} },
+    document: { getElementById: () => ({ addEventListener() {} }) },
+    etabCur: () => base.ETAB.list[0], etabMembreAttente: (e) => !!e && e.role !== "admin" && e.membre_statut === "en_attente",
+    CX_MOIS: ["09", "10", "11", "12", "01", "02", "03", "04", "05", "06"], CX_NOM: { "09": "Septembre", "10": "Octobre", "01": "Janvier" },
+    cxMoisNow: () => "10", cxIsOpen: (k, d) => d, pgList: (c) => c.pg || (c.pg = []), ctList: (c) => c.ct || (c.ct = []), nrm: (x) => String(x).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(), isArch: (c) => !!(c && c.th && c.th.ar), uid: (() => { let n = 0; return () => "u" + (++n); })(), save() {}, toast(m, l, f) { base.TOASTS.push([m, l, f]); }, TOASTS: [], pgDone: (c, l) => l.x === true || (c.ct || []).some((s) => s.p === l.id), CONFIRMS: [], confirmOui: true, confirm(m) { base.CONFIRMS.push(m); return base.confirmOui; }, TRASH: [], trashAdd(k, lb, cid, d) { base.TRASH.push({ k, lb, cid, d: JSON.parse(JSON.stringify(d)) }); return "t" + base.TRASH.length; }, undoTrash(id) { base.UNDONE = id; }, cxMonth: (k, t, s, o, b) => "[" + t + "|" + s + "|" + (o ? "ouvert" : "ferme") + "]" + b, cl: () => base.classe,
+    nivParse: (n) => { const m = /^(\d)(?:e|ème|eme)?\b/i.exec(String(n).trim()); return m ? { k: m[1] } : null; }, classe: { name: "6e A", subj: "Français" } };
+  const c = Object.assign(base, ctx0 || {});
+  return new Function(...Object.keys(c), pgeSrc + ";" + code)(...Object.values(c));
+};
+const pgeRows0 = [
+  { id: "a", niveau: "6e", matiere: "Français", mois: "09", titre: "Le nom", ordre: 0, origine: "chef" },
+  { id: "b", niveau: "6ème", matiere: "français ", mois: "10", titre: "Le verbe", ordre: 0, origine: "enseignant", auteur: "Awa", mienne: false },
+  { id: "c", niveau: "6e", matiere: "Mathématiques", mois: "10", titre: "Les fractions", ordre: 0, origine: "chef" },
+  { id: "d", niveau: "5e", matiere: "Français", mois: "01", titre: "Le récit", ordre: 0, origine: "chef" }];
+t("étape 41 : enseignant — la classe n'affiche que son niveau (6e = 6ème) et sa matière (sans majuscules ni espaces superflus) ; « tous » montre le reste ; sans matière : toutes celles du niveau", () => {
+  const r = pgeRun('PGE.rows=ROWS;return [pgeRows(classe,false).map(x=>x.id).join(),pgeRows(classe,true).length,pgeRows({name:"6e A",subj:""},false).map(x=>x.id).join(),pgeRows({name:"Atelier",subj:"Français"},false).length].join("|")', { ROWS: pgeRows0 });
+  return r === "a,b|4|a,b,c|4" ? true : r;
+});
+t("étape 41 : enseignant — aucun champ de saisie ni bouton de modification, aucune écriture serveur, mois classés, mois en cours ouvert, auteur d'une notion de collègue signalé, jamais d'e-mail", () => {
+  const r = pgeRun('PGE.rows=ROWS;PGE.st="ok";PGE.etab="e1";return renderProgs()', { ROWS: pgeRows0.concat([{ id: "e", niveau: "6e", matiere: "Français", mois: "10", titre: "Mon ajout", ordre: 1, origine: "enseignant", auteur: "Moi", mienne: true }]) });
+  const ecrit = /data-edit|data-del|<textarea|<input|etab_programme_(ajouter|modifier|retirer)/.test(r);
+  return !ecrit && /\[Septembre\|1 leçon · 1 à ajouter\|ferme\]/.test(r) && /\[Octobre\|2 leçons · 2 à ajouter\|ouvert\]/.test(r) && r.indexOf("Septembre") < r.indexOf("Octobre") && /Ajoutée par Awa/.test(r) && /Ajoutée par vous/.test(r) && !/@/.test(r) && !/etab_programme_(ajouter|modifier|retirer)/.test(pgeSrc.replace(/\/\*[\s\S]*?\*\//g, "")) ? true : J({ ecrit, r });
+});
+t("étape 41 : enseignant — messages clairs (pas membre, installation incomplète, hors ligne, aucun programme, aucune leçon pour cette classe) ; invité ou demande en attente : pas de carte", () => {
+  const e = (o) => pgeRun("return pgeErr(E)", { E: o });
+  const ok1 = /membre actif/.test(e({ message: "not member" })) && /programmes-v106\.sql/.test(e({ code: "PGRST202" })) && /indisponible/.test(e({ message: "boom" }));
+  const vide = pgeRun('PGE.rows=[];PGE.st="ok";PGE.etab="e1";return renderProgs()');
+  const autre = pgeRun('PGE.rows=ROWS;PGE.st="ok";PGE.etab="e1";return renderProgs()', { ROWS: [pgeRows0[3]] });
+  const carte = pgeRun("return pgeCard()"), inv = pgeRun("return pgeCard()", { GUEST: true });
+  const att = pgeRun("return pgeCard()", { ETAB: { loaded: true, list: [{ id: "e1", role: "enseignant", membre_statut: "en_attente" }], cur: "e1" } });
+  return ok1 && /pas encore saisi de programme/.test(vide) && /Aucune leçon n’est prévue pour cette classe/.test(autre) && /data-go="progs"/.test(carte) && inv === "" && att === "" ? true : J({ ok1, vide, autre, carte, inv, att });
+});
+t("étape 41 : branchement — vue « progs » (navigation, retour au cahier, en-tête masqué), carte dans le cahier, script chargé et mis en cache", () => {
+  const nav = rd("js", "nav.js"), cah = rd("js", "cahier.js"), idx = rd("index.html"), sw = rd("sw.js");
+  return /view==="progs"\?renderProgs\(\)/.test(nav) && /progs:"home"/.test(nav) && /progs:'<button class="lnk" data-go="cahier">/.test(nav) && /view==="cahier"\|\|view==="progs"/.test(nav) && /pgeCard\(\)/.test(cah) && /js\/programmes-ens\.js/.test(idx) && /"js\/programmes-ens\.js"/.test(sw) && idx.indexOf("js/cahier.js") < idx.indexOf("js/programmes-ens.js") ? true : "branchement";
+});
+t("étape 41 : fiche de nouveautés v142, mode d'emploi et cache à jour", () => {
+  const nv = fs.readFileSync(path.join(root, "NOUVEAUTES-v142.md"), "utf8");
+  return /lecture seule/i.test(nv) && /étape 41/i.test(nv) && /étape 41/i.test(rd("supabase", "LISEZ-MOI.md")) && /VERSION="cm-v14[2-9]"/.test(rd("sw.js")) ? true : "doc";
+});
+
+/* ---- v143 : étape 42 — l'enseignant ajoute les leçons de l'établissement à son cahier (sans doublon, sans toucher à ses propres leçons) ---- */
+const pgeRowsB = [
+  { id: "a", niveau: "6e", matiere: "Français", mois: "09", titre: "Le nom", ordre: 0, origine: "chef" },
+  { id: "b", niveau: "6e", matiere: "Français", mois: "09", titre: "Le verbe", ordre: 1, origine: "chef" },
+  { id: "c", niveau: "6ème", matiere: "français", mois: "10", titre: "L’adjectif", ordre: 0, origine: "chef" },
+  { id: "d", niveau: "6e", matiere: "Français", mois: "", titre: "Sans mois", ordre: 0, origine: "chef" }];
+t("étape 42 : déjà dans le cahier = même repère OU même leçon écrite par l'enseignant (titre sans accents ni majuscules ni espaces superflus, même mois) ; même titre un autre mois = nouvelle ; ordre : mois puis ordre du chef", () => {
+  const r = pgeRun('const c={name:"6e A",pg:[{id:"p1",t:"Titre renommé par le chef",e:"a",m:"09"},{id:"p2",t:"  l\'ADJECTIF ",m:"10"},{id:"p3",t:"Le verbe",m:"11"}]};return [pgeNouvelles(c,ROWS).map(x=>x.id).join(),pgeNouvelles(c,ROWS,"09").map(x=>x.id).join(),pgeDeja(c,ROWS[0]),pgeDeja(c,ROWS[2]),pgeDeja(c,ROWS[1])].join("|")', { ROWS: pgeRowsB });
+  return r === "b,d|b|true|true|false" ? true : r;
+});
+t("étape 42 : ajouter — chaque leçon garde son repère « e » et son mois ; les leçons déjà dans le cahier ne sont ni modifiées ni dupliquées, même au deuxième clic ; leçon sans mois valide : sans mois", () => {
+  const r = pgeRun('const mien={id:"p3",t:"Le verbe",m:"11",x:true,w:1};const c={name:"6e A",pg:[mien]};const avant=JSON.stringify(c.pg[0]);const ids=pgeAjoute(c,pgeNouvelles(c,ROWS));const ids2=pgeAjoute(c,ROWS);return {avant:avant===JSON.stringify(c.pg[0]),n:c.pg.length,ids:ids.length,ids2:ids2.length,l:c.pg.slice(1).map(l=>[l.t,l.e,l.m===undefined?"-":l.m].join("/")).join("|")}', { ROWS: pgeRowsB });
+  return r.avant && r.n === 5 && r.ids === 4 && r.ids2 === 0 && r.l === "Le nom/a/09|Le verbe/b/09|L’adjectif/c/10|Sans mois/d/-" ? true : J(r);
+});
+t("étape 42 : annuler un ajout — retire seulement les leçons créées par lui ; garde celle déjà liée à une séance ou cochée « faite » ; les leçons de l'enseignant ne bougent pas", () => {
+  const r = pgeRun('const c={name:"6e A",pg:[{id:"mien",t:"À moi",m:"09"}],ct:[]};const ids=pgeAjoute(c,ROWS);c.ct.push({id:"s",d:"2026-10-01",t:"x",p:c.pg[1].id});c.pg[2].x=true;const n=pgeAnnule(c,ids);return {n:n,restes:c.pg.map(l=>l.t).join("|")}', { ROWS: pgeRowsB });
+  return r.n === 2 && r.restes === "À moi|Le nom|Le verbe" ? true : J(r);
+});
+t("étape 42 : écran — bilan « déjà dans votre cahier / à ajouter », bouton global et bouton par mois avec leur nombre, repère « dans mon cahier » ; rien en mode « tous », ni pour une classe archivée", () => {
+  const go = (cls, extra) => pgeRun('PGE.rows=ROWS;PGE.st="ok";PGE.etab="e1";PGE.all=' + (extra || false) + ';return renderProgs()', { ROWS: pgeRowsB, classe: cls });
+  const c = { name: "6e A", subj: "Français", pg: [{ id: "p1", t: "Le nom", e: "a", m: "09" }] };
+  const r = go(c);
+  const tous = go({ name: "6e A", subj: "Français", pg: [] }, true), arch = go({ name: "6e A", subj: "Français", pg: [], th: { ar: 1 } });
+  return /4 leçons au programme · 1 déjà dans votre cahier · 3 à ajouter/.test(r) && /data-pgeadd="\*">Ajouter les 3 nouvelles à mon cahier/.test(r) && /data-pgeadd="6\|français\|09">Ajouter la nouvelle à mon cahier/.test(r) && /data-pgeadd="6\|français\|10">Ajouter la nouvelle/.test(r) &&
+    /\[Septembre\|2 leçons · 1 à ajouter/.test(r) && /dans mon cahier/.test(r) && !/data-pgeadd/.test(tous) && /revenez à « Seulement cette classe »/.test(tous) && !/data-pgeadd/.test(arch) && /archivée/.test(arch) ? true : J({ r, tous, arch });
+});
+t("étape 42 : clics — « tout » ajoute les nouvelles ; un mois n'ajoute que ce mois ; deuxième clic : « Rien à ajouter » ; « Annuler » retire seulement ce qui vient d'être ajouté", () => {
+  const r = pgeRun('PGE.rows=ROWS;PGE.st="ok";PGE.etab="e1";const c=classe;c.pg=[{id:"mien",t:"À moi",m:"09"}];pgeClic("6|français|10");const apresMois=c.pg.map(l=>l.t).join("|");pgeClic("*");const apresTout=c.pg.length;pgeClic("*");const undo=TOASTS[1][2];undo();const T=TOASTS.map(x=>x[0]);return {apresMois:apresMois,apresTout:apresTout,T:T,final:c.pg.map(l=>l.t).join("|")}', { ROWS: pgeRowsB, TOASTS: [], classe: { name: "6e A", subj: "Français" } });
+  return r.apresMois === "À moi|L’adjectif" && r.apresTout === 5 && /^1 leçon ajoutée/.test(r.T[0]) && /^3 leçons ajoutées/.test(r.T[1]) && /Rien à ajouter/.test(r.T[2]) && /^3 leçons retirées/.test(r.T[3]) && r.final === "À moi|L’adjectif" ? true : J(r);
+});
+t("étape 42 : sécurité — aucune écriture côté serveur depuis cet écran (lecture de la liste seulement) ; les ajouts passent par le cahier de la classe (save) ; clics ignorés en mode « tous » ou classe archivée", () => {
+  const src = pgeSrc.replace(/\/\*[\s\S]*?\*\//g, "");
+  const rpcs = [...src.matchAll(/sb\.rpc\("([^"]+)"/g)].map((m) => m[1]);
+  const bloque = pgeRun('PGE.rows=ROWS;PGE.st="ok";PGE.all=true;const c=classe;c.pg=[];pgeClic("*");return c.pg.length+"|"+TOASTS.length', { ROWS: pgeRowsB, TOASTS: [], classe: { name: "6e A", subj: "Français" } });
+  const arch = pgeRun('PGE.rows=ROWS;PGE.st="ok";PGE.all=false;const c=classe;c.pg=[];pgeClic("*");return c.pg.length+"|"+TOASTS.length', { ROWS: pgeRowsB, TOASTS: [], classe: { name: "6e A", subj: "Français", th: { ar: 1 } } });
+  return rpcs.length === 1 && rpcs[0] === "etab_programmes_liste" && /save\(\)/.test(src) && bloque === "0|0" && arch === "0|0" ? true : J({ rpcs, bloque, arch });
+});
+t("étape 42 : fiche de nouveautés v143, mode d'emploi et cache à jour", () => {
+  const nv = fs.readFileSync(path.join(root, "NOUVEAUTES-v143.md"), "utf8");
+  return /ajout/i.test(nv) && /étape 42/i.test(nv) && /repère/i.test(nv) && /étape 42/i.test(rd("supabase", "LISEZ-MOI.md")) && /VERSION="cm-v14[3-9]"/.test(rd("sw.js")) ? true : "doc";
+});
+
+t("étape 42 : apostrophes — « L’adjectif » (courbe, collée par le chef) et « L'adjectif » (droite, tapée par l'enseignant) sont la même leçon ; « 6e = 6ème » donne la même clé de bouton", () => {
+  const r = pgeRun(`const c={name:"6e A",pg:[{id:"p",t:"L'adjectif",m:"10"}]};return [pgeDeja(c,{id:"z",titre:"L\u2019adjectif",mois:"10"}),pgeDeja(c,{id:"z",titre:"L\u2019adjectif",mois:"11"}),pgeCle({niveau:"6ème",matiere:" Français "})===pgeCle({niveau:"6e",matiere:"français"})].join()`);
+  return r === "true,false,true" ? true : r;
+});
+
+t("étape 42 : deux appareils — le même programme ajouté des deux côtés avant la synchronisation donne une seule fois chaque leçon (identifiant stable) ; une leçon écrite à la main d'un côté est gardée", () => {
+  const mk = () => pgeRun('const c={name:"6e A",pg:[]};pgeAjoute(c,ROWS);return JSON.stringify(c.pg)', { ROWS: pgeRowsB });
+  const A = JSON.parse(mk()), B = JSON.parse(mk());
+  B.push({ id: "perso1", t: "Ma leçon", m: "09" });
+  ctx.__A = { pg: A }; ctx.__B = { pg: B };
+  const m = JSON.parse(run("__j(m3(undefined, __A, __B))"));
+  const ids = m.pg.map((l) => l.id);
+  return A.every((l) => /^e[a-d]$/.test(l.id) && l.e === l.id.slice(1)) && m.pg.length === 5 && new Set(ids).size === 5 && ids.includes("perso1") ? true : J({ ids, A: A.map((l) => l.id) });
+});
+t("étape 42 : ordre d'ajout — mois de septembre à juin, puis ordre du chef dans le mois, « sans mois » en dernier, quel que soit l'ordre reçu", () => {
+  const R = [pgeRowsB[3], pgeRowsB[2], pgeRowsB[1], pgeRowsB[0], { id: "e", niveau: "6e", matiere: "Français", mois: "01", titre: "Janvier", ordre: 0 }];
+  const r = pgeRun('return pgeNouvelles({name:"6e A",pg:[]},ROWS).map(x=>x.id).join()', { ROWS: R });
+  return r === "a,b,c,e,d" ? true : r;
+});
+
+/* ---- v144 : étape 43 — retirer du cahier les leçons que le chef a retirées du programme ---- */
+const pgeLiv = (extra) => Object.assign({ ROWS: [pgeRowsB[0], pgeRowsB[1]], TOASTS: [], CONFIRMS: [], TRASH: [], classe: { name: "6e A", subj: "Français" } }, extra || {});
+t("étape 43 : leçons retirées par le chef — seules celles qui portent un repère absent de la liste, non faites et au titre inchangé sont proposées ; faites, au titre changé et écrites à la main sont conservées", () => {
+  const r = pgeRun('PGE.rows=ROWS;PGE.st="ok";const c=classe;c.ct=[{id:"s",d:"2026-10-01",t:"x",p:"ec"}];c.pg=[{id:"ea",t:"Le nom",e:"a",o:"Le nom",m:"09"},{id:"ex",t:"Retirée 1",e:"x",o:"Retirée 1",m:"09"},{id:"ey",t:"Retirée 2",e:"y",m:"10"},{id:"ec",t:"Faite par séance",e:"z1",o:"Faite par séance"},{id:"ef",t:"Faite cochée",e:"z2",o:"Faite cochée",x:true},{id:"ep",t:"Mon titre",e:"z3",o:"Titre du chef"},{id:"main",t:"Écrite à la main",m:"09"}];const R=pgeRetirees(c);return [R.sur,R.aRetirer.map(l=>l.id).join(),R.faites.map(l=>l.id).join(),R.perso.map(l=>l.id).join()].join("|")', pgeLiv());
+  return r === "true|ex,ey|ec,ef|ep" ? true : r;
+});
+t("étape 43 : sécurité — rien n'est proposé tant que la liste du serveur n'est pas reçue sans erreur (chargement, erreur, hors ligne) ni si elle est tronquée (5 000 leçons)", () => {
+  const g = (st, rows) => pgeRun('PGE.rows=ROWS;PGE.st="' + st + '";const c=classe;c.pg=[{id:"ex",t:"Retirée",e:"x",o:"Retirée"}];const R=pgeRetirees(c);return R.sur+"|"+R.aRetirer.length', pgeLiv({ ROWS: rows }));
+  const gros = Array.from({ length: 5000 }, (_, i) => ({ id: "r" + i, niveau: "6e", matiere: "Français", mois: "09", titre: "L" + i, ordre: i }));
+  const r = [g("load", []), g("err", []), g("idle", []), g("ok", gros), g("ok", [])];
+  return r.join() === "false|0,false|0,false|0,false|0,true|1" ? true : r.join();
+});
+t("étape 43 : retirer — confirmation qui cite les leçons ; retrait groupé dans la corbeille du cahier (7 jours) avec l'ordre d'origine ; seules les leçons proposées partent ; « Annuler » rétablit ; refus de la confirmation : rien", () => {
+  const code = 'PGE.rows=ROWS;PGE.st="ok";const c=classe;c.pg=[{id:"main",t:"Écrite à la main"},{id:"ex",t:"Retirée 1",e:"x",o:"Retirée 1",m:"09"},{id:"ey",t:"Retirée 2",e:"y",o:"Retirée 2",m:"10"},{id:"ea",t:"Le nom",e:"a",o:"Le nom",m:"09"}];';
+  const oui = pgeRun(code + 'pgeClicRetire();return {pg:c.pg.map(l=>l.id).join(),T:TOASTS.map(x=>x[0]),conf:CONFIRMS[0],tr:TRASH,undo:TOASTS[0]&&TOASTS[0][2]}', pgeLiv());
+  const non = pgeRun(code + 'pgeClicRetire();return c.pg.length+"|"+TOASTS.length+"|"+TRASH.length', pgeLiv({ confirmOui: false }));
+  const tr = oui.tr[0];
+  return oui.pg === "main,ea" && /^2 leçons retirées du cahier de 6e A/.test(oui.T[0]) && /« Retirée 1 », « Retirée 2 »/.test(oui.conf) && /corbeille \(7 jours\)/.test(oui.conf) && oui.tr.length === 1 && tr.k === "cx" && tr.d.pg.map((l) => l.id).join() === "ex,ey" && tr.d.order.join() === "main,ex,ey,ea" && tr.d.ct.length === 0 && non === "4|0|0" && typeof oui.undo === "function" ? true : J({ oui, non });
+});
+t("étape 43 : écran — carte « Retirées du programme » avec les titres (5 au plus) et le bouton ; mention des leçons conservées ; aucune carte si rien à signaler ou si la classe est archivée", () => {
+  const go = (pg, cls) => pgeRun('PGE.rows=ROWS;PGE.st="ok";PGE.etab="e1";classe.pg=PG;return renderProgs()', pgeLiv({ PG: pg, classe: Object.assign({ name: "6e A", subj: "Français" }, cls || {}) }));
+  const six = Array.from({ length: 6 }, (_, i) => ({ id: "e" + i, t: "R" + i, e: "x" + i, o: "R" + i }));
+  const r = go(six.concat([{ id: "f", t: "Faite", e: "zz", x: true }, { id: "p", t: "Perso", e: "zy", o: "Autre" }]));
+  const rien = go([{ id: "ea", t: "Le nom", e: "a", o: "Le nom" }]), arch = go(six, { th: { ar: 1 } });
+  const seule = go([{ id: "f", t: "Faite", e: "zz", x: true }]);
+  return /Retirées du programme/.test(r) && /ces 6 leçons/.test(r) && /<li>R4/.test(r) && !/<li>R5/.test(r) && /… et 1 autre/.test(r) && /data-pgerm="1">Les retirer de mon cahier \(6\)/.test(r) && /Conservées : 1 leçon déjà faite et 1 leçon dont vous avez changé le titre/.test(r) &&
+    !/Retirées du programme/.test(rien) && !/Retirées du programme/.test(arch) && /Plus au programme, mais conservées : 1 leçon déjà faite/.test(seule) && !/data-pgerm/.test(seule) ? true : J({ r, rien, arch, seule });
+});
+t("étape 43 : une leçon ajoutée garde son titre d'origine « o » (pour reconnaître plus tard un titre changé) ; la leçon ajoutée par la v143 sans « o » reste retirable ; le retrait n'écrit rien côté serveur", () => {
+  const r = pgeRun('const c={name:"6e A",pg:[]};pgeAjoute(c,ROWS);return c.pg.map(l=>l.o===l.t&&l.e===l.id.slice(1)).join()', { ROWS: pgeRowsB });
+  const v143 = pgeRun('PGE.rows=[];PGE.st="ok";const c=classe;c.pg=[{id:"eq",t:"Ancienne",e:"q",m:"09"}];return pgeRetirees(c).aRetirer.length', pgeLiv());
+  const src = pgeSrc.replace(/\/\*[\s\S]*?\*\//g, ""), rpcs = [...src.matchAll(/sb\.rpc\("([^"]+)"/g)].map((m) => m[1]);
+  return r === "true,true,true,true" && v143 === 1 && rpcs.length === 1 && rpcs[0] === "etab_programmes_liste" ? true : J({ r, v143, rpcs });
+});
+t("étape 43 : fiche de nouveautés v144, mode d'emploi et cache à jour", () => {
+  const nv = fs.readFileSync(path.join(root, "NOUVEAUTES-v144.md"), "utf8");
+  return /retir/i.test(nv) && /étape 43/i.test(nv) && /corbeille/i.test(nv) && /étape 43/i.test(rd("supabase", "LISEZ-MOI.md")) && /VERSION="cm-v14[4-9]"/.test(rd("sw.js")) ? true : "doc";
+});
+
+/* ---- v145 : étape 44 — programme de l'établissement hors ligne ---- */
+const pgeLS = (init) => { const m = Object.assign({}, init || {}); return { m, getItem: (k) => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: (k) => { delete m[k]; }, key: (i) => Object.keys(m)[i] || null, get length() { return Object.keys(m).length; } }; };
+const pgeEtab = { loaded: true, list: [{ id: "e1", role: "enseignant", membre_statut: "actif" }], cur: "e1" };
+const pgeHorsDem = { loaded: false, list: [], cur: "" };   /* application ouverte sans réseau : la liste des établissements n'a pas pu être lue */
+const pgeCopieDe = (rows, at) => JSON.stringify({ etab: "e1", at: at === undefined ? Date.now() - 3600e3 : at, rows });
+const pgeAttend = () => new Promise((r) => setTimeout(r, 5));
+t("étape 44 : une liste reçue est gardée sur l'appareil (par compte, seulement les champs utiles) ; une copie trop vieille ou abîmée est ignorée", async () => {
+  const ls = pgeLS(), rows = pgeRows0.map((x) => Object.assign({ email: "x@y.z", secret: "s" }, x));
+  const r = await pgeRun('pgeLoad();return pgeAttend().then(()=>[PGE.st,PGE.copie,Object.keys(localStorage.m).join()].join("|"))', { localStorage: ls, pgeAttend, sb: { rpc: () => Promise.resolve({ data: rows }) } }).catch((e) => String(e));
+  const kept = JSON.parse(ls.m["cm-pge-u"] || "null");
+  const champs = kept ? [...new Set(kept.rows.flatMap((x) => Object.keys(x)))].sort().join() : "";
+  const lit = (v) => pgeRun("const o=pgeCopieLit();return o?o.rows.length:null", { localStorage: pgeLS(v === undefined ? {} : { "cm-pge-u": v }) });
+  return r === "ok|0|cm-pge-u" && kept && kept.etab === "e1" && kept.rows.length === 4 && champs === "auteur,id,matiere,mienne,mois,niveau,ordre,origine,titre" && !/x@y|secret/.test(ls.m["cm-pge-u"]) &&
+    lit(pgeCopieDe(pgeRows0)) === 4 && lit(pgeCopieDe(pgeRows0, Date.now() - 31 * 864e5)) === null && lit("{pas du json") === null && lit(undefined) === null ? true : J({ r, champs, kept: !!kept });
+});
+t("étape 44 : sans réseau, l'écran montre la dernière copie avec sa date ; sans copie, il explique comment la créer", async () => {
+  const off = { onLine: false };
+  const avec = await pgeRun('pgeLoad();const h=renderProgs();return [PGE.st,PGE.copie>0,h]', { navigator: off, localStorage: pgeLS({ "cm-pge-u": pgeCopieDe(pgeRows0) }) });
+  const sans = pgeRun('pgeLoad();return [PGE.st,PGE.err,renderProgs()]', { navigator: off, localStorage: pgeLS() });
+  const h = avec[2];
+  return avec[0] === "ok" && avec[1] && /<b>Copie du /.test(h) && /dernière liste reçue/.test(h) && /Le nom/.test(h) && /data-pgeadd="\*"/.test(h) && /seulement avec une liste à jour/.test(h) &&
+    sans[0] === "err" && /aucune copie/.test(sans[1]) && /aucune copie/.test(sans[2]) && /data-pgere/.test(sans[2]) ? true : J({ avec: avec.slice(0, 2), sans: sans.slice(0, 2) });
+});
+t("étape 44 : réseau coupé en cours de route ou très mauvais : la copie ; refus du serveur ou panne d'une autre nature : l'erreur, jamais la copie ; « not member » efface la copie", async () => {
+  const go = (rpc) => pgeRun('pgeLoad();return pgeAttend().then(()=>[PGE.st,PGE.copie>0,PGE.err,!!localStorage.m["cm-pge-u"]])', { pgeAttend, localStorage: pgeLS({ "cm-pge-u": pgeCopieDe(pgeRows0) }), sb: { rpc } });
+  const reseau = await go(() => Promise.resolve({ error: { message: "TypeError: Failed to fetch" } }));
+  const rejet = await go(() => Promise.reject(new TypeError("Failed to fetch")));
+  const boom = await go(() => Promise.resolve({ error: { message: "boom" } }));
+  const membre = await go(() => Promise.resolve({ error: { message: "not member" } }));
+  return reseau[0] === "ok" && reseau[1] && rejet[0] === "ok" && rejet[1] && boom[0] === "err" && !boom[1] && /indisponible/.test(boom[2]) && boom[3] && membre[0] === "err" && !membre[3] ? true : J({ reseau, rejet, boom, membre });
+});
+t("étape 44 : application ouverte sans réseau — la carte et l'écran marchent grâce à la copie (même sans liste d'établissements) ; sans copie ou en ligne sans liste, rien ne s'affiche", () => {
+  const cp = { "cm-pge-u": pgeCopieDe(pgeRows0) };
+  const horsAvec = pgeRun('return [pgeOk(),pgeCard().length>0,renderProgs(),PGE.etab].join("¤")', { ETAB: pgeHorsDem, etabCur: () => null, navigator: { onLine: false }, localStorage: pgeLS(cp) });
+  const horsSans = pgeRun("return [pgeOk(),pgeCard()].join('¤')", { ETAB: pgeHorsDem, etabCur: () => null, navigator: { onLine: false }, localStorage: pgeLS() });
+  const enLigneSansListe = pgeRun("return pgeOk()", { ETAB: pgeHorsDem, etabCur: () => null, navigator: { onLine: true }, localStorage: pgeLS(cp) });
+  const quitte = pgeRun("return pgeOk()", { ETAB: { loaded: true, list: [], cur: "" }, etabCur: () => null, navigator: { onLine: false }, localStorage: pgeLS(cp) });
+  const invite = pgeRun("return pgeOk()", { GUEST: true, ETAB: pgeHorsDem, etabCur: () => null, navigator: { onLine: false }, localStorage: pgeLS(cp) });
+  const [ok, carte, ecran, etab] = horsAvec.split("¤");
+  return ok === "true" && carte === "true" && /Copie du/.test(ecran) && /Le nom/.test(ecran) && etab === "e1" && horsSans === "false¤" && enLigneSansListe === false && quitte === false && invite === false ? true : J({ horsAvec: horsAvec.slice(0, 80), horsSans, enLigneSansListe, quitte, invite });
+});
+t("étape 44 : d'après une copie, aucun retrait n'est proposé ni possible ; les ajouts au cahier restent possibles", () => {
+  const r = pgeRun('PGE.rows=ROWS;PGE.st="ok";PGE.copie=Date.now();PGE.etab="e1";const c=classe;c.pg=[{id:"ex",t:"Retirée",e:"x",o:"Retirée"}];const R=pgeRetirees(c);pgeClicRetire();const h=renderProgs();pgeClic("*");return [R.sur,R.aRetirer.length,CONFIRMS.length,TRASH.length,/data-pgerm/.test(h),/Retirées du programme/.test(h),c.pg.length,c.pg.some(l=>l.e==="a")].join()', pgeLiv({ ROWS: [pgeRowsB[0], pgeRowsB[1]] }));
+  return r === "false,0,0,0,false,false,3,true" ? true : r;
+});
+t("étape 44 : déconnexion ou retrait du compte : toutes les copies du programme et la liste en mémoire sont effacées ; autres clés intouchées", () => {
+  const ls = pgeLS({ "cm-pge-u": "1", "cm-pge-v": "2", "autre": "3", "cm-etab-msg-lus-u": "4" });
+  const r = pgeRun('PGE.rows=ROWS;PGE.st="ok";PGE.copie=5;PGE.etab="e1";pgeReset();return [PGE.st,PGE.rows.length,PGE.copie,PGE.etab,Object.keys(localStorage.m).join()].join("|")', { localStorage: ls, ROWS: pgeRows0 });
+  const au = rd("js", "auth.js");
+  const lo = /function doLogout\(forced\)\{[^]*?pgeReset\(\)/.test(au) && /function removeUser\(u\)\{[^]*?pgeReset\(\)/.test(au);
+  return r === "idle|0|0||autre,cm-etab-msg-lus-u" && lo ? true : J({ r, lo });
+});
+t("étape 44 : côté chef — la liste des programmes est gardée pour la consultation hors ligne (copie par compte, relue sans réseau) ; « Voir tout » reste actif hors ligne ; écritures bloquées", async () => {
+  const h = T99(); h.net.body = '[{"id":"l1","titre":"Le nom"}]';
+  await h.call("rpc/etab_programmes_liste", "POST"); const gardee = h.db.size === 1; h.net.down = true;
+  const hors = await h.call("rpc/etab_programmes_liste", "POST"), ecrit = await h.call("rpc/etab_programme_ajouter", "POST");
+  const core = rd("js", "etab-core.js"), libre = /var LIBRE='[^']*\[data-all\]/.test(core);
+  const bloques = ["etab_programme_ajouter", "etab_programme_modifier", "etab_programme_retirer", "etab_programme_retirer_mois"].every((n) => !/"etab_programme_(ajouter|modifier|retirer|retirer_mois)"/.test(rd("js", "etab-offline.js").match(/var RPC=\[[^\]]*\]/)[0]) && n);
+  return gardee && /Le nom/.test(hors.t) && ecrit.err && libre && bloques ? true : J({ gardee, hors, ecrit, libre });
+});
+t("étape 44 : le programme hors ligne n'envoie rien au serveur de plus : une seule fonction lue, aucune écriture", () => {
+  const src = pgeSrc.replace(/\/\*[\s\S]*?\*\//g, ""), rpcs = [...src.matchAll(/sb\.rpc\("([^"]+)"/g)].map((m) => m[1]);
+  return rpcs.length === 1 && rpcs[0] === "etab_programmes_liste" && !/sb\.from|\.insert\(|\.update\(|\.delete\(/.test(src) ? true : J(rpcs);
+});
+t("étape 44 : fiche de nouveautés v145, mode d'emploi, scripts et cache à jour", () => {
+  const nv = fs.readFileSync(path.join(root, "NOUVEAUTES-v145.md"), "utf8"), sw = rd("sw.js");
+  return /hors ligne/i.test(nv) && /étape 44/i.test(nv) && /30 jours/.test(nv) && /étape 44/i.test(rd("supabase", "LISEZ-MOI.md")) && /VERSION="cm-v145"/.test(sw) && /js\/programmes-ens\.js/.test(sw) && /js\/etab-programmes\.js/.test(sw) ? true : "doc";
 });
