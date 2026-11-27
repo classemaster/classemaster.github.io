@@ -45,7 +45,8 @@
 <details>
 <summary>3. Au quotidien</summary>
 <ul>
-<li><b>Rubriques</b> (menu en haut de chaque page) : Accueil (indicateurs et alertes), Classes (élèves, codes, cartes QR, effectifs, transferts), Enseignants (demandes, affectations), Matières, Résultats et assiduité (avec filtres classe, matière et enseignant, tableau classe × matière et provenance des données), Vie scolaire (discipline, messages), Fin d’année, Paramètres (code de l’établissement, seuils, journal).</li>
+<li><b>Rubriques</b> (menu en haut de chaque page) : Accueil (indicateurs et alertes), Classes (élèves, codes, cartes QR, effectifs, transferts), Enseignants (demandes, affectations), Matières, Programmes (leçons prévues chaque mois, par niveau et par matière, en consultation), Résultats et assiduité (avec filtres classe, matière et enseignant, tableau classe × matière et provenance des données), Vie scolaire (discipline, messages), Fin d’année, Paramètres (code de l’établissement, seuils, journal).</li>
+<li><b>Fiche d’un élève</b> : touchez son nom (Accueil « À surveiller », Résultats et assiduité, Vie scolaire, listes sous les graphiques). Elle montre ses moyennes, ses évaluations, son assiduité, ses devoirs, et les <b>avertissements et incidents</b> que ses enseignants ont transmis. Cette fiche est réservée au chef de l’établissement.</li>
 <li><b>Affecter une classe à un enseignant</b> : rubrique « Enseignants » (classe et matière ; les anciens accès par e-mail et classe y restent listés). Sans affectation, l’enseignant ne peut pas afficher le code famille des élèves de cette classe.</li>
 <li><b>Lien unique pour une famille</b> : les parents ouvrent un seul lien qui regroupe toutes les matières de leur enfant.</li>
 <li><b>Fin d’année</b> : enregistrez ici les décisions de passage et préparez la rentrée.</li>
@@ -54,7 +55,7 @@
 
 <details>
 <summary>Consulter sans internet</summary>
-<p>Sur votre appareil personnel, ouvrez la rubrique « Paramètres » avec internet et cochez « Garder les données sur cet appareil ». Ouvrez ensuite chaque rubrique une fois (et chaque année utile dans « Fin d’année ») : elle sera consultable sans réseau.</p>
+<p>Sur votre appareil personnel, ouvrez la rubrique « Paramètres » avec internet et cochez « Garder les données sur cet appareil ». Ouvrez ensuite chaque rubrique une fois (et chaque année utile dans « Fin d’année », et chaque fiche d’élève utile) : elle sera consultable sans réseau. Une fiche d’élève ouverte hors ligne indique la date de sa copie.</p>
 <p>Hors ligne, un bandeau indique la date des données et les modifications sont désactivées. Les codes famille, les téléphones des parents et le code des enseignants ne sont pas gardés. Tout est effacé à la déconnexion, ou après 30 jours sans mise à jour. Ne l’activez pas sur un appareil partagé.</p>
 </details>
 
@@ -86,7 +87,7 @@
 <ul>
 <li>La clé publique de <code>js/supabase.js</code> est faite pour être publique : la protection vient des règles Supabase (RLS) installées par les scripts SQL.</li>
 <li>Ne partagez jamais la clé « service role » de Supabase ni le mot de passe de votre compte Supabase.</li>
-<li>Les parents n’ont accès qu’à la lecture, et seulement avec leur code famille. Les incidents de discipline ne leur sont pas visibles.</li>
+<li>Les parents n’ont accès qu’à la lecture, et seulement avec leur code famille. Les avertissements et les incidents de discipline ne leur sont pas visibles.</li>
 <li>Les noms et notes des élèves sont des données sensibles : n’envoyez pas de captures de la page d’administration par messagerie ouverte.</li>
 </ul>
 </details>
