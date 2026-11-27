@@ -68,7 +68,8 @@
     if(!risk.length)h+='<p class="sub">Aucun élève sous '+E.nf1(TH.moy)+' de moyenne ou sous '+E.nf1(TH.pres)+' % de présence.</p>';
     else{
       risk.slice(0,5).forEach(function(i){var s=M.S[i],r=M.byId[i],q=E.pc(s.n,s.a);
-        h+=E.dr(r.name,(r.class_label||"(sans classe)")+" · moyenne "+E.nf1(s.m)+" · présence "+(q===null?"–":E.nf1(q)+" %"),s.m!==null&&s.m<TH.moy?"moyenne":"absences",undefined,true);});
+        var sub=(r.class_label||"(sans classe)")+" · moyenne "+E.nf1(s.m)+" · présence "+(q===null?"–":E.nf1(q)+" %"),tg=s.m!==null&&s.m<TH.moy?"moyenne":"absences";
+        h+=typeof EtabFiche!=="undefined"?EtabFiche.row(i,r.name,sub,tg,true):E.dr(r.name,sub,tg,undefined,true);});
       if(risk.length>5){var hr=E.href("resultats");h+='<p class="sub">+ '+(risk.length-5)+' autre'+(risk.length-5>1?"s":"")+'.'+(hr?' <a href="'+esc(hr)+'">Voir les résultats et l’assiduité</a>.':"")+'</p>';}
     }
     h+='<h3 class="dh">Enseignants</h3>';

@@ -145,6 +145,7 @@ function renderCahier(){
   var c=cl(),P=pgList(c),S=ctList(c).slice().sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0});
   var h='<h1 style="text-transform:none">Cahier de textes</h1><p class="sub">'+esc(c.name)+(c.subj?' · '+esc(c.subj):'')+'</p>';
   h+='<div class="card"><h2>Progression du programme</h2>'+pgBar(c)+'</div>';
+  h+=typeof pgeCard==="function"?pgeCard():"";   /* programme de l'établissement, en lecture (v142) */
   h+='<div class="card"><h2>Nouvelle séance</h2><div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px"><label>Date <input type="date" id="cxd" value="'+today()+'"></label></div>'+
   '<select id="cxp" aria-label="Leçon du programme" style="width:100%;margin-bottom:8px"><option value="">Leçon : hors programme</option>'+cxLessonOpts(c,P)+'</select>'+
   '<textarea id="cxt" rows="3" placeholder="Contenu de la séance (ex. Le présent de l’indicatif : verbes du 1er groupe)" aria-label="Contenu de la séance"></textarea>'+

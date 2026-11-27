@@ -18,7 +18,7 @@ function geBand(a){return a>=16?0:a>=14?1:a>=12?2:a>=10?3:4;}
 function geEsc(t){return String(t==null?"":t).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 function geNf(v){return v===null||v===undefined||isNaN(v)?"–":String(Math.round(v*10)/10).replace(".",",");}
 /* Panneau « Qui est concerné ? » (étape 18) : composant commun aux cartes cliquables.
-   geWho(boîte).hint(texte) affiche l'invite ; .show({title, color, rows:[{name, cls, tag}], empty}) affiche le titre avec l'effectif puis une ligne par élève (60 au plus, le reste est compté). Tout est échappé. */
+   geWho(boîte).hint(texte) affiche l'invite ; .show({title, color, rows:[{id (facultatif : ouvre la fiche), name, cls, tag}], empty}) affiche le titre avec l'effectif puis une ligne par élève (60 au plus, le reste est compté). Tout est échappé. */
 var GE_WHO_MAX=60;
 function geWho(box){
   return{
@@ -27,7 +27,7 @@ function geWho(box){
       var r=o.rows||[],n=r.length;
       var h='<h3 class="ge-wh">'+(o.color?'<span class="ge-dot" style="background:'+geEsc(o.color)+'"></span>':'')+geEsc(o.title)+' · '+n+' élève'+(n>1?'s':'')+'</h3>';
       if(!n){box.innerHTML=h+'<p class="ge-hint">'+geEsc(o.empty||'Aucun élève concerné.')+'</p>';return;}
-      h+=r.slice(0,GE_WHO_MAX).map(function(e){return'<div class="dr"><span><b>'+geEsc(e.name)+'</b><small>'+geEsc(e.cls)+'</small></span><span class="tg">'+geEsc(e.tag)+'</span></div>';}).join('');
+      h+=r.slice(0,GE_WHO_MAX).map(function(e){return e.id&&typeof EtabFiche!=='undefined'?EtabFiche.row(e.id,e.name,e.cls,e.tag):'<div class="dr"><span><b>'+geEsc(e.name)+'</b><small>'+geEsc(e.cls)+'</small></span><span class="tg">'+geEsc(e.tag)+'</span></div>';}).join('');
       if(n>GE_WHO_MAX)h+='<p class="ge-hint ge-more">… et '+(n-GE_WHO_MAX)+' autre'+(n-GE_WHO_MAX>1?'s':'')+'.</p>';
       box.innerHTML=h;
     }
@@ -68,7 +68,7 @@ function geBuildMoy(el,c,x){
     M.ids.forEach(function(id){
       var st=M.S[id],r=M.byId[id],m=x.mean(st.av);
       if(m===null||!r)return;
-      var b=geBand(m);n[b]++;w[b].push({name:r.name||"(sans nom)",cls:r.class_label||"(sans classe)",m:m});
+      var b=geBand(m);n[b]++;w[b].push({id:id,name:r.name||"(sans nom)",cls:r.class_label||"(sans classe)",m:m});
     });
     w.forEach(function(l){l.sort(function(a,b){return b.m-a.m||a.name.localeCompare(b.name,"fr");});});
     return{n:n,w:w};
@@ -77,7 +77,7 @@ function geBuildMoy(el,c,x){
     if(!label||!cur){who.innerHTML='<p class="ge-hint">Touchez une part de l’anneau ou une ligne de la légende pour voir les élèves concernés.</p>';return;}
     var b=GE_BANDS.map(function(l){return l[0];}).indexOf(label),l=cur.w[b]||[];
     who.innerHTML='<h3 class="ge-wh"><span class="ge-dot" style="background:'+GE_BANDS[b][1]+'"></span>'+geEsc(label)+' · '+l.length+' élève'+(l.length>1?"s":"")+'</h3>'+
-      l.map(function(e){return'<div class="dr"><span><b>'+geEsc(e.name)+'</b><small>'+geEsc(e.cls)+'</small></span><span class="tg">'+geNf(e.m)+' / 20</span></div>';}).join("");
+      l.map(function(e){return e.id&&typeof EtabFiche!=='undefined'?EtabFiche.row(e.id,e.name,e.cls,geNf(e.m)+' / 20'):'<div class="dr"><span><b>'+geEsc(e.name)+'</b><small>'+geEsc(e.cls)+'</small></span><span class="tg">'+geNf(e.m)+' / 20</span></div>';}).join("");
   }
   function opts(){
     return{data:GE_BANDS.map(function(l,i){return{label:l[0],value:cur.n[i],color:l[1]};})};
@@ -101,10 +101,10 @@ function geClsRows(x,key){
   M.ids.forEach(function(id){
     var r=M.byId[id],m=x.mean(M.S[id].av);
     if(m===null||!r||(r.class_label||"")!==key)return;
-    rows.push({name:r.name||"(sans nom)",cls:r.class_label||"(sans classe)",m:geR1(m)});
+    rows.push({id:id,name:r.name||"(sans nom)",cls:r.class_label||"(sans classe)",m:geR1(m)});
   });
   rows.sort(function(a,b){return b.m-a.m||a.name.localeCompare(b.name,"fr");});
-  return rows.map(function(e){return{name:e.name,cls:e.cls,tag:geNf(e.m)+" / 20"};});
+  return rows.map(function(e){return{id:e.id,name:e.name,cls:e.cls,tag:geNf(e.m)+" / 20"};});
 }
 /* Rappel au toucher d'une classe : liste ses élèves dans le panneau ; un deuxième toucher sur la même classe referme ; after(info) complète le titre */
 function geClsPick(who,x,hint,after){
@@ -123,10 +123,10 @@ function geAbsRows(x,key){
   M.ids.forEach(function(id){
     var r=M.byId[id],s=M.S[id];
     if(!r||!s||!(s.a>0)||(r.class_label||"")!==key)return;
-    rows.push({name:r.name||"(sans nom)",cls:r.class_label||"(sans classe)",a:s.a,p:x.pc(s.n,s.a)});
+    rows.push({id:id,name:r.name||"(sans nom)",cls:r.class_label||"(sans classe)",a:s.a,p:x.pc(s.n,s.a)});
   });
   rows.sort(function(a,b){return b.a-a.a||(a.p===null?101:a.p)-(b.p===null?101:b.p)||a.name.localeCompare(b.name,"fr");});
-  return rows.map(function(e){return{name:e.name,cls:e.cls,tag:e.a+" absence"+(e.a>1?"s":"")+(e.p===null?"":" · "+Math.round(e.p)+" %")};});
+  return rows.map(function(e){return{id:e.id,name:e.name,cls:e.cls,tag:e.a+" absence"+(e.a>1?"s":"")+(e.p===null?"":" · "+Math.round(e.p)+" %")};});
 }
 
 /* Carte « Présence par classe » : toucher une barre liste les élèves de la classe qui ont des absences ; un deuxième toucher referme */
@@ -158,10 +158,10 @@ function geAbsKind(x,key,kind){
     var r=M.byId[id],s=M.S[id];
     if(!r||!s||(r.class_label||"")!==key)return;
     var v=K[2](s);if(!(v>0))return;
-    rows.push({name:r.name||"(sans nom)",cls:r.class_label||"(sans classe)",v:v});
+    rows.push({id:id,name:r.name||"(sans nom)",cls:r.class_label||"(sans classe)",v:v});
   });
   rows.sort(function(a,b){return b.v-a.v||a.name.localeCompare(b.name,"fr");});
-  return rows.map(function(e){return{name:e.name,cls:e.cls,tag:e.v+" "+(e.v>1?K[0]:K[1])};});
+  return rows.map(function(e){return{id:e.id,name:e.name,cls:e.cls,tag:e.v+" "+(e.v>1?K[0]:K[1])};});
 }
 
 /* Carte « Absences et retards » (barres empilées) : toucher un segment liste les élèves de la classe concernés ; même segment une deuxième fois = referme */
@@ -204,10 +204,10 @@ function geBuildJauge(el,c,x,C){
       var r=M.byId[id],s=M.S[id],p=r&&s?x.pc(s.n,s.a):null;
       if(p===null||p===undefined)return;
       p=geR1(p);
-      if(p>=info.from&&(p<info.to||(info.to>=100&&p<=info.to)))rows.push({name:r.name||"(sans nom)",cls:r.class_label||"(sans classe)",p:p,a:s.a});
+      if(p>=info.from&&(p<info.to||(info.to>=100&&p<=info.to)))rows.push({id:id,name:r.name||"(sans nom)",cls:r.class_label||"(sans classe)",p:p,a:s.a});
     });
     rows.sort(function(a,z){return a.p-z.p||z.a-a.a||a.name.localeCompare(z.name,"fr");});
-    tog(info.index,{title:info.label,color:info.color,empty:"Aucun élève dans cette zone.",rows:rows.map(function(e){return{name:e.name,cls:e.cls,tag:geNf(e.p)+" % · "+e.a+" absence"+(e.a>1?"s":"")};})});
+    tog(info.index,{title:info.label,color:info.color,empty:"Aucun élève dans cette zone.",rows:rows.map(function(e){return{id:e.id,name:e.name,cls:e.cls,tag:geNf(e.p)+" % · "+e.a+" absence"+(e.a>1?"s":"")};})});
   }
   try{GE.inst.push(new C(b.d,Object.assign({},c.o,{onPick:pick})));}catch(e){b.d.textContent="Graphique indisponible.";}
 }
@@ -223,10 +223,10 @@ function geBuildEvo(el,c,x,C){
     M.ids.forEach(function(id){
       var r=M.byId[id],s=M.S[id],m=r&&s&&s.t?x.mean(s.t[t]):null;
       if(m===null||m===undefined||(r.class_label||"")!==k)return;
-      rows.push({name:r.name||"(sans nom)",cls:r.class_label||"(sans classe)",m:geR1(m)});
+      rows.push({id:id,name:r.name||"(sans nom)",cls:r.class_label||"(sans classe)",m:geR1(m)});
     });
     rows.sort(function(a,z){return z.m-a.m||a.name.localeCompare(z.name,"fr");});
-    tog(k+"|"+t,{title:(info.seriesName||"?")+" · "+info.label+" · moyenne "+geNf(info.value),empty:"Aucun élève de cette classe n’a de moyenne ce trimestre.",rows:rows.map(function(e){return{name:e.name,cls:e.cls,tag:geNf(e.m)+" / 20"};})});
+    tog(k+"|"+t,{title:(info.seriesName||"?")+" · "+info.label+" · moyenne "+geNf(info.value),empty:"Aucun élève de cette classe n’a de moyenne ce trimestre.",rows:rows.map(function(e){return{id:e.id,name:e.name,cls:e.cls,tag:geNf(e.m)+" / 20"};})});
   }
   try{GE.inst.push(new C(b.d,Object.assign({},c.o,{onPick:pick})));}catch(e){b.d.textContent="Graphique indisponible.";}
 }
@@ -240,10 +240,10 @@ function geBuildSubj(el,c,x,C){
     M.ids.forEach(function(id){
       var r=M.byId[id],s=M.S[id],v=r&&s&&s.bs?s.bs[k]:null,m=v&&v.length?x.mean(v):null;
       if(m===null||m===undefined)return;
-      rows.push({name:r.name||"(sans nom)",cls:r.class_label||"(sans classe)",m:geR1(m)});
+      rows.push({id:id,name:r.name||"(sans nom)",cls:r.class_label||"(sans classe)",m:geR1(m)});
     });
     rows.sort(function(a,z){return z.m-a.m||a.name.localeCompare(z.name,"fr");});
-    tog(k,{title:info.label+" · moyenne "+geNf(info.value),empty:"Aucun élève n’a de moyenne dans cette matière.",rows:rows.map(function(e){return{name:e.name,cls:e.cls,tag:geNf(e.m)+" / 20"};})});
+    tog(k,{title:info.label+" · moyenne "+geNf(info.value),empty:"Aucun élève n’a de moyenne dans cette matière.",rows:rows.map(function(e){return{id:e.id,name:e.name,cls:e.cls,tag:geNf(e.m)+" / 20"};})});
   }
   try{GE.inst.push(new C(b.d,Object.assign({},c.o,{onPick:pick})));}catch(e){b.d.textContent="Graphique indisponible.";}
 }
@@ -262,11 +262,11 @@ function geBuildHist(el,c,x,C){
       var r=M.byId[id],m=x.mean(M.S[id].av);
       if(m===null||!r)return;
       var v=geR1(m);
-      if(v>=info.from&&(v<info.to||(info.last&&v<=info.to)))rows.push({name:r.name||"(sans nom)",cls:r.class_label||"(sans classe)",m:v});
+      if(v>=info.from&&(v<info.to||(info.last&&v<=info.to)))rows.push({id:id,name:r.name||"(sans nom)",cls:r.class_label||"(sans classe)",m:v});
     });
     rows.sort(function(a,b){return b.m-a.m||a.name.localeCompare(b.name,"fr");});
     who.show({title:"Moyenne de "+geNf(info.from)+(info.last?" à ":" à moins de ")+geNf(info.to),color:"#8b7cff",empty:"Aucun élève dans cette tranche.",
-      rows:rows.map(function(e){return{name:e.name,cls:e.cls,tag:geNf(e.m)+" / 20"};})});
+      rows:rows.map(function(e){return{id:e.id,name:e.name,cls:e.cls,tag:geNf(e.m)+" / 20"};})});
   }
   try{GE.inst.push(new C(dEl,Object.assign({},c.o,{onPick:pick})));}catch(e){dEl.textContent="Graphique indisponible.";}
 }

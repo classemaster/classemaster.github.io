@@ -140,6 +140,7 @@ function enter(u,fresh){
 }
 function removeUser(u){
   try{kvWipe(u.key);}catch(e){}
+  try{if(typeof pgeReset==="function")pgeReset();}catch(e){}
   ACC.users=ACC.users.filter(function(x){return x.id!==u.id});
   if(ACC.cur===u.id)ACC.cur=null;
   saveAcc();
@@ -147,6 +148,7 @@ function removeUser(u){
 }
 function doLogout(forced){
   if(typeof etabReset==="function")etabReset();
+  if(typeof pgeReset==="function")pgeReset();
   stopSync();ME=null;IS_ADMIN=false;ACC.cur=null;saveAcc();D=blank();KEY="";view="login";render();window.scrollTo(0,0);
   if(!forced&&sb)sb.auth.signOut({scope:"local"}).then(function(){},function(){});
 }

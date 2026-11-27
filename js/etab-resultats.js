@@ -54,10 +54,10 @@
       return crow(k,E.nf1(q)+" %",q<85,c.a+" abs. dont "+pl(njc,"non justifiée","non justifiées")+" · "+pl(c.r,"retard","retards"),q);
     }).join(""):nobody("Pas encore d’appel publié.");
     h+='<h3 class="dh">Risque de décrochage</h3><p class="sub">'+pl(TH.abs,"absence","absences")+' ou plus sur les 14 derniers jours.</p>';
-    h+=dec.length?dec.slice(0,8).map(function(i){var r=M.byId[i];return E.dr(r.name,(r.class_label||"(sans classe)")+" · "+pl(M.S[i].a,"absence","absences")+" au total",M.S[i].ra+" récentes",undefined,true);}).join(""):nobody("Aucun élève concerné.");
+    h+=dec.length?dec.slice(0,8).map(function(i){var r=M.byId[i];return E.stu(i,r.name,(r.class_label||"(sans classe)")+" · "+pl(M.S[i].a,"absence","absences")+" au total",M.S[i].ra+" récentes",undefined,true);}).join(""):nobody("Aucun élève concerné.");
     h+=more(dec.length-8);
     h+='<h3 class="dh">Retards répétés</h3><p class="sub">3 retards ou plus.</p>';
-    h+=rep.length?rep.slice(0,8).map(function(i){var r=M.byId[i];return E.dr(r.name,r.class_label||"(sans classe)",M.S[i].r+" retards",undefined,true);}).join(""):nobody("Aucun élève concerné.");
+    h+=rep.length?rep.slice(0,8).map(function(i){var r=M.byId[i];return E.stu(i,r.name,r.class_label||"(sans classe)",M.S[i].r+" retards",undefined,true);}).join(""):nobody("Aucun élève concerné.");
     h+=more(rep.length-8);
     return h;
   }
@@ -85,7 +85,7 @@
     }).join(""):nobody("Pas encore d’évaluations datées.");
     var dif=M.ids.filter(function(i){return M.S[i].m!==null&&M.S[i].m<TH.moy;}).sort(function(x,y){return M.S[x].m-M.S[y].m;});
     h+='<h3 class="dh">Élèves en difficulté</h3><p class="sub">Moyenne inférieure à '+E.nf1(TH.moy)+'.</p>';
-    h+=dif.length?dif.slice(0,10).map(function(i){var r=M.byId[i];return E.dr(r.name,r.class_label||"(sans classe)",E.nf1(M.S[i].m)+" / 20",undefined,true);}).join(""):nobody("Aucun élève sous "+E.nf1(TH.moy)+" de moyenne.");
+    h+=dif.length?dif.slice(0,10).map(function(i){var r=M.byId[i];return E.stu(i,r.name,r.class_label||"(sans classe)",E.nf1(M.S[i].m)+" / 20",undefined,true);}).join(""):nobody("Aucun élève sous "+E.nf1(TH.moy)+" de moyenne.");
     h+=more(dif.length-10,"Ouvrez la classe concernée.");
     return h;
   }

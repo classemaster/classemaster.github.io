@@ -45,8 +45,8 @@ function shSnap(c,s){
   var EV=[];
   evs(c).forEach(function(e){if(!(e.m>0)||!e.d)return;var g=0;c.students.forEach(function(x){if(e.s&&typeof e.s[x.id]==="number")g++;});EV.push([e.d,g]);});
   if(EV.length){EV.sort(function(x,y){return x[0]<y[0]?1:x[0]>y[0]?-1:0;});o.ev={ne:c.students.length,l:EV.slice(0,40)};}   /* évaluations : date, élèves notés */
-  var D=obList(c,s.id).filter(function(x){return x.k==="inc"||x.k==="grv";}).slice(0,20).map(function(x){return{d:x.d,k:x.k,t:String(x.t||"").slice(0,300)};});
-  if(D.length)o.dis=D;                                         /* incidents signalés à l'administration */
+  var D=obList(c,s.id).filter(function(x){return x.k==="avt"||x.k==="inc"||x.k==="grv";}).slice(0,20).map(function(x){return{d:x.d,k:x.k,t:String(x.t||"").slice(0,300)};});
+  if(D.length)o.dis=D;                                         /* avertissements et incidents signalés à l'administration */
   return o;
 }
 /* Empreinte d'un résumé : sert à ne renvoyer que les liens dont le contenu a changé */

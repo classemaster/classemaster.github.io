@@ -51,7 +51,7 @@
     R30.forEach(function(x){if(x.k==="grv")g30++;});
     var ids=Object.keys(S).filter(function(i){return S[i].n>0;}),rec=ids.filter(function(i){return S[i].n>=2;});
     var h='<div class="kpis">'+E.kp(R30.length,"incidents (30 j)")+E.kp(g30,"dont graves")+E.kp(ids.length,"élèves concernés")+E.kp(rec.length,"récidives (≥ 2)")+E.kp(R.length,"depuis le début")+'</div>';
-    h+='<p class="sub">Seuls les incidents que les enseignants transmettent depuis la fiche de l’élève apparaissent ici. Leurs autres observations restent privées, et les parents ne voient jamais ces incidents.</p>';
+    h+='<p class="sub">Seuls les incidents que les enseignants transmettent depuis la fiche de l’élève apparaissent ici (les avertissements se lisent dans la fiche de l’élève, en touchant son nom). Leurs autres observations restent privées, et les parents ne voient jamais ces incidents.</p>';
     if(!R.length)return h+'<p class="sub" style="margin-top:10px">Aucun incident transmis pour le moment.</p>';
     var ks=Object.keys(C).sort(function(a,b){return C[b].n-C[a].n||C[b].t-C[a].t||E.sortCls(a,b);}),mx=Math.max.apply(null,ks.map(function(k){return C[k].n||C[k].t;}))||1;
     var sv=ids.sort(function(a,b){return S[b].g-S[a].g||S[b].n-S[a].n;});
@@ -61,7 +61,7 @@
       return'<a class="dr" href="'+esc(hr)+'" style="display:block"><span style="display:flex;justify-content:space-between;gap:8px"><b>'+esc(k||"(sans classe)")+'</b><span class="tg'+(c.g?" bad":"")+'">'+c.n+' (30 j)</span></span><small>'+pl(c.t,"incident","incidents")+' au total'+(c.g?" · "+pl(c.g,"grave","graves")+" sur 30 j":"")+'</small>'+E.pbar((c.n||c.t)/mx*100,c.g>0)+'</a>';
     }).join("");
     h+='<h3 class="dh">Élèves concernés (30 jours)</h3>';
-    h+=sv.slice(0,12).map(function(i){var s=S[i],r=E.get(i);return E.dr(r.name,(r.class_label||"(sans classe)")+" · signalé par "+Object.keys(s.by).join(", "),s.g?"grave":pl(s.n,"incident","incidents"),undefined,s.g>0||s.n>=2);}).join("")||'<p class="sub">Aucun incident ces 30 derniers jours.</p>';
+    h+=sv.slice(0,12).map(function(i){var s=S[i],r=E.get(i);return E.stu(i,r.name,(r.class_label||"(sans classe)")+" · signalé par "+Object.keys(s.by).join(", "),s.g?"grave":pl(s.n,"incident","incidents"),undefined,s.g>0||s.n>=2);}).join("")||'<p class="sub">Aucun incident ces 30 derniers jours.</p>';
     if(sv.length>12)h+='<p class="sub">+ '+(sv.length-12)+' autre'+(sv.length-12>1?"s":"")+'. L’export Excel contient la liste complète.</p>';
     h+='<h3 class="dh">Derniers incidents</h3>';
     h+=R.slice(0,10).map(function(x){

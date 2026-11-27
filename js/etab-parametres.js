@@ -67,7 +67,7 @@
     var on=EtabOffline.enabled();
     return'<section class="card"><h2>Consultation hors ligne</h2>'+
       '<label for="koff" style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="koff" style="width:auto;min-height:0"'+(on?" checked":"")+(E.readOnly()?" disabled":"")+'> Garder les données sur cet appareil</label>'+
-      '<p class="sub" style="margin:8px 0 0">'+(on?"Activée"+(kept?" · dernier enregistrement : "+esc(E.fdt(kept)):"")+". Ouvrez chaque rubrique (et chaque année utile dans « Fin d’année ») une fois avec internet : elle sera ensuite consultable sans réseau.":"Désactivée.")+'</p>'+
+      '<p class="sub" style="margin:8px 0 0">'+(on?"Activée"+(kept?" · dernier enregistrement : "+esc(E.fdt(kept)):"")+". Ouvrez chaque rubrique (et chaque année utile dans « Fin d’année », et chaque fiche d’élève utile) une fois avec internet : elle sera ensuite consultable sans réseau.":"Désactivée.")+'</p>'+
       '<p class="sub" style="margin:8px 0 0">Les noms, présences, notes et incidents restent alors sur l’appareil : ne l’activez pas sur un téléphone ou un ordinateur partagé. Les codes famille, les téléphones des parents et le code des enseignants ne sont pas enregistrés. Tout est effacé à la déconnexion, ou après 30 jours sans mise à jour.</p></section>';
   }
   function choisirHorsLigne(box){

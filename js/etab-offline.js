@@ -8,7 +8,7 @@ var EtabOffline=(function(){
   var DB="cm-etab-offline",FLAG="cm-etab-offline",AUTH="appel-supabase-auth",MAXAGE=30*864e5,WAIT=8000;
   var TABLES=["registry_students","registry_log","registry_decisions"];
   var RPC=["is_admin","mes_etablissements","etab_membres_liste","admin_dashboard","admin_teaching","admin_discipline","etab_classes_liste",
-    "etab_matieres_liste","etab_affectations_liste","admin_assignments","etab_journal","etab_messages_liste","rentrees_liste"];
+    "etab_matieres_liste","etab_affectations_liste","admin_assignments","etab_journal","etab_messages_liste","rentrees_liste","etab_eleve_fiche","etab_programmes_liste"];
   var me={used:false,since:0,missing:false,onchange:null};
 
   function ls(k){try{return localStorage.getItem(k);}catch(e){return null;}}
@@ -65,23 +65,25 @@ var EtabOffline=(function(){
   function cmFetch(input,init){
     init=init||{};
     var url=String((input&&input.url)||input),method=String(init.method||"GET").toUpperCase(),name=readName(url,method),u=user();
+    /* me.hit : la dernière réponse rendue depuis une copie (rpc, paramètres, date de la copie) ; la fiche d'un élève s'en sert pour dire que ses chiffres viennent d'une copie */
+    function serve(v){me.hit={n:name,b:String(init.body||""),at:v.at};return fromCache(v);}
     if(!name||!u||!enabled())return fetch(input,init);
     var key=u.id+"|"+method+"|"+url+"|"+(init.body||""),auth=hdr(init.headers,"Authorization");
     /* une réponse obtenue sans session (clé publique seule) n'est ni enregistrée ni crue */
     var anon=!auth||auth==="Bearer "+SUPABASE_KEY;
     return get(key).then(function(v){
-      function fallback(e){if(v)return fromCache(v);me.missing=true;changed();throw e;}
+      function fallback(e){if(v)return serve(v);me.missing=true;changed();throw e;}
       var offline=new TypeError("Failed to fetch");
       if(navigator.onLine===false||(anon&&me.forced))return fallback(offline);
       var net=fetch(input,init);
       /* réseau très lent : au bout de quelques secondes, on montre la copie si elle existe */
       if(v)net=Promise.race([net,new Promise(function(_,rej){setTimeout(function(){rej(offline);},WAIT);})]);
       return net.then(function(r){
-        if(r.status>=500||r.status===408||r.status===429)return v?fromCache(v):r;
+        if(r.status>=500||r.status===408||r.status===429)return v?serve(v):r;
         if(!r.ok)return r;
-        if(anon)return v?fromCache(v):r;
+        if(anon)return v?serve(v):r;
         return r.clone().text().then(function(txt){
-          var d;try{d=JSON.parse(txt);}catch(e){return v?fromCache(v):r;}   /* page de connexion d'un réseau Wi-Fi, par exemple */
+          var d;try{d=JSON.parse(txt);}catch(e){return v?serve(v):r;}   /* page de connexion d'un réseau Wi-Fi, par exemple */
           /* accès retiré : on efface tout */
           if((name==="is_admin"&&d===false)||(name==="mes_etablissements"&&Array.isArray(d)&&!d.some(function(x){return x.role==="admin";})))return clear().then(function(){return r;});
           if(!enabled())return r;

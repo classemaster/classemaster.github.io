@@ -82,6 +82,7 @@ var Etab=(function(){
     {id:"classes",label:"Classes",href:"etab-classes.html",done:true},
     {id:"enseignants",label:"Enseignants",href:"etab-enseignants.html",done:true},
     {id:"matieres",label:"Matières",href:"etab-matieres.html",done:true},
+    {id:"programmes",label:"Programmes",href:"etab-programmes.html",done:true},
     {id:"resultats",label:"Résultats et assiduité",href:"etab-resultats.html",done:true},
     {id:"vie",label:"Vie scolaire",href:"etab-vie.html",done:true},
     {id:"fin",label:"Fin d’année",href:"etab-fin.html",done:true},
@@ -133,7 +134,7 @@ var Etab=(function(){
   function off(){return typeof EtabOffline!=="undefined"?EtabOffline:null;}
   function readOnly(){var O=off();return!!(O&&(O.used||(O.enabled()&&navigator.onLine===false)));}
   /* Hors ligne, seuls restent actifs les contrôles qui ne font qu'afficher ou exporter sans code secret */
-  var LIBRE='[role="tab"],[data-per],[data-fcl],[data-cls],#thr,#fsel,#rtay,#qs,#back,#jmore,#jless,#xjnl,#ex1,#rfilt select,#rfilt button,[id^="x-"],[id^="rf-"],[data-vue],#koff';
+  var LIBRE='[role="tab"],[data-per],[data-fcl],[data-cls],#thr,#fsel,#rtay,#qs,#back,#jmore,#jless,#xjnl,#ex1,#rfilt select,#rfilt button,[id^="x-"],[id^="rf-"],[data-vue],#koff,[data-all]';
   function lock(v){
     if(!readOnly()||!v||!v.querySelectorAll)return;
     v.querySelectorAll("button,input,select,textarea").forEach(function(x){if(x.matches&&!x.matches(LIBRE)){x.disabled=true;x.title="Indisponible hors ligne";}});
@@ -195,8 +196,15 @@ var Etab=(function(){
   function reloadMem(msg){loadMembres(function(){shell();E.render();if(msg)say(msg);if(E.cfg&&E.cfg.onMembres)E.cfg.onMembres();});}
 
   /* Appel d'une fonction d'écriture de l'établissement : un seul à la fois, message clair en cas de refus */
-  var ERR={last_admin:"Vous êtes le seul chef : nommez d’abord un autre chef.",not_member:"Cet enseignant n’est plus membre, ou sa demande a déjà été traitée.",bad_threshold:"Valeurs hors limites (moyenne 1 à 19, présence 10 à 100 %, absences 1 à 14).",bad_message:"Écrivez un titre (100 caractères max.) et un message (1 000 max.).",too_many_messages:"Limite atteinte : 20 messages par jour.",no_students:"Aucun élève à déplacer.",too_many_students:"Trop d’élèves à la fois (1 000 max.).",bad_name:"Le nom est vide ou trop long.",exists:"Cet élément existe déjà.",in_use:"Cette matière est encore donnée à un enseignant : retirez d’abord ses affectations.",not_found:"Élément introuvable : il a peut-être déjà été supprimé.",class_not_found:"Cette classe n’existe plus ou est archivée.",subject_not_found:"Cette matière n’existe plus.",already_applied:"Ce passage a déjà été appliqué. Annulez-le d’abord si vous voulez le refaire.",bad_year:"Année invalide.",bad_moves:"Passage invalide.",nothing:"Aucun passage à annuler."};
+  var ERR={last_admin:"Vous êtes le seul chef : nommez d’abord un autre chef.",not_member:"Cet enseignant n’est plus membre, ou sa demande a déjà été traitée.",bad_threshold:"Valeurs hors limites (moyenne 1 à 19, présence 10 à 100 %, absences 1 à 14).",bad_message:"Écrivez un titre (100 caractères max.) et un message (1 000 max.).",too_many_messages:"Limite atteinte : 20 messages par jour.",no_students:"Aucun élève à déplacer.",too_many_students:"Trop d’élèves à la fois (1 000 max.).",bad_name:"Le nom est vide ou trop long.",exists:"Cet élément existe déjà.",in_use:"Cette matière est encore donnée à un enseignant : retirez d’abord ses affectations.",not_found:"Élément introuvable : il a peut-être déjà été supprimé.",class_not_found:"Cette classe n’existe plus ou est archivée.",subject_not_found:"Cette matière n’existe plus.",already_applied:"Ce passage a déjà été appliqué. Annulez-le d’abord si vous voulez le refaire.",bad_year:"Année invalide.",bad_moves:"Passage invalide.",nothing:"Aucun passage à annuler.",bad_niveau:"Le niveau est vide ou trop long (40 caractères au plus).",bad_matiere:"La matière est vide ou trop longue (60 caractères au plus).",bad_mois:"Choisissez un mois de septembre à juin.",no_titles:"Écrivez au moins une leçon.",too_many:"Trop de leçons : 200 à la fois, et 300 au plus pour un même niveau, une matière et un mois.",title_too_long:"Une leçon dépasse 200 caractères : raccourcissez-la.",bad_title:"Le titre de la leçon est vide ou dépasse 200 caractères.",out_of_scope:"Ce niveau ou cette matière n’est pas celui de vos classes.",not_yours:"Cette leçon n’est pas la vôtre : vous ne pouvez pas la modifier."};
   /* ok(d) reçoit la réponse (objet, nombre ou liste) ; bad(erreur) peut renvoyer true pour écrire elle-même le message d'échec */
+  /* messages propres à une fonction du serveur (clé « fonction:code »), prioritaires sur ERR */
+  var ERR_FN={
+    "etab_programme_modifier:exists":"Une autre leçon de ce mois porte déjà ce titre.",
+    "etab_programme_modifier:not_found":"Cette leçon n’existe plus : elle a été retirée entre-temps.",
+    "etab_programme_retirer:not_found":"Cette leçon n’existe plus : elle a déjà été retirée.",
+    "etab_programme_retirer_mois:not_found":"Ce mois n’a plus de leçons : elles ont déjà été retirées."
+  };
   function call(fn,args,ok,bad){
     if(readOnly()){say("Hors ligne : modification impossible. Reconnectez-vous puis actualisez la page.");return;}
     if(E.busy)return;E.busy=true;
@@ -204,7 +212,7 @@ var Etab=(function(){
       E.busy=false;
       if(r.error){if(bad&&bad(r.error)===true)return;say(fail(r.error));return;}
       var d=r.data;
-      if(d&&d.ok===false){say(ERR[d.err]||"Action impossible pour le moment.");return;}
+      if(d&&d.ok===false){say(ERR_FN[fn+":"+d.err]||ERR[d.err]||"Action impossible pour le moment.");return;}
       ok(d===null||d===undefined?{}:d);
     },function(){E.busy=false;say("Pas d’internet.");});
   }
@@ -261,7 +269,7 @@ var Etab=(function(){
     sb.rpc("admin_teaching",ep()).then(function(r){if(r.error)done(null,r.error);else done(r.data||[]);},function(){done(null,{message:"failed to fetch"});});
   };
   E.loadDiscipline=function(done){
-    sb.rpc("admin_discipline",ep()).then(function(r){if(r.error)done(null,r.error);else done(r.data||[]);},function(){done(null,{message:"failed to fetch"});});
+    sb.rpc("admin_discipline",ep()).then(function(r){if(r.error)done(null,r.error);else done((Array.isArray(r.data)?r.data:[]).filter(function(x){return x&&x.k!=="avt";}));   /* les avertissements se lisent dans la fiche de l'élève (v134) */},function(){done(null,{message:"failed to fetch"});});
   };
 
   /* ---------- Indicateurs : un cumul par élève, par classe, par enseignant et par matière ---------- */
@@ -370,7 +378,7 @@ var Etab=(function(){
     },function(){login("Pas d’internet.");});
   };
 
-  E.esc=esc;E.nrm=nrm;E.plural=plural;E.nf1=nf1;E.pc=pc;E.mean=mean;E.ago=ago;E.kp=kp;E.dr=dr;E.pbar=pbar;
+  E.esc=esc;E.nrm=nrm;E.plural=plural;E.nf1=nf1;E.pc=pc;E.mean=mean;E.ago=ago;E.kp=kp;E.dr=dr;E.stu=function(id,t,s,tag,bad){return id&&typeof EtabFiche!=="undefined"?EtabFiche.row(id,t,s,tag,bad):dr(t,s,tag,undefined,bad);};E.pbar=pbar;
   E.fd=fd;E.fdt=fdt;E.csvNum=csvNum;E.csvLine=csvLine;E.tblCsv=tblCsv;E.download=download;
   E.dstrOf=dstrOf;E.todayS=todayS;E.schoolYear=schoolYear;E.etabCode=etabCode;
   E.lvl=lvl;E.lvlRank=lvlRank;E.sortCls=sortCls;
