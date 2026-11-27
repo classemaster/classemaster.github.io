@@ -1,9 +1,10 @@
 /* Page « Accueil » de l'établissement (v89) : indicateurs, alertes à traiter, vue par classe, élèves à surveiller, enseignants à relancer.
    Reprise de l'onglet « Aperçu » de l'ancienne page de gestion (remplacée par une redirection depuis la v94), sur le socle commun js/etab-core.js. */
 (function(){
-  var E=Etab,esc=E.esc,dash=null,tch=null,dsc=null,loaded=false,loadErr="",M=null;
+  var E=Etab,esc=E.esc,dash=null,tch=null,dsc=null,loaded=false,loadErr="",M=null,M0=null;
+  var FL=E.filters(function(){return Array.isArray(dash)?dash:[];});
 
-  function reset(){dash=null;tch=null;dsc=null;loaded=false;loadErr="";M=null;}
+  function reset(){dash=null;tch=null;dsc=null;loaded=false;loadErr="";M=null;M0=null;FL.reset();}
 
   /* ---------- Chargement : les élèves d'abord, puis les suivis en parallèle ---------- */
   function load(){
@@ -12,7 +13,7 @@
     E.loadStudents("id,name,class_label,ref,created_at",function(rows,err){
       if(err){loadErr=E.fail(err);loaded=true;E.render();return;}
       loaded=true;E.render();
-      E.loadDash(function(d,e){dash=e?{err:E.frErr(e)}:d;M=null;E.render();});
+      E.loadDash(function(d,e){dash=e?{err:E.frErr(e)}:d;M=null;M0=null;FL.reset();E.render();});
       E.loadTeaching(function(d,e){tch=e?{err:E.frErr(e)}:d;E.render();});
       E.loadDiscipline(function(d,e){dsc=e?{err:E.frErr(e)}:d;E.render();});
     });
@@ -40,17 +41,24 @@
     if(!loaded)return'<p class="sub" style="text-align:center;margin-top:30px">Chargement…</p>';
     if(loadErr)return'<div class="card"><p class="sub" style="margin:0">'+esc(loadErr)+'</p></div>'+alertes(null);
     if(!rows.length)return alertes(null)+'<div class="card"><h2>Aucun élève pour le moment</h2><p class="sub" style="margin:0">Ajoutez ou importez vos élèves dans la rubrique « Classes » : les indicateurs apparaîtront ici dès que les enseignants publieront leurs suivis.</p>'+(E.href("classes")?'<div class="bs"><a class="btn" href="'+esc(E.href("classes"))+'" style="text-decoration:none">Ouvrir « Classes »</a></div>':"")+'</div>';
-    if(dash&&!dash.err&&dash.length&&!M)M=E.model(rows,dash);
-    var h=alertes(M),ncl=classesOf(rows).length;
+    var withDash=dash&&!dash.err&&dash.length,fbar="";
+    if(withDash){var fo=FL.options();FL.check(fo);fbar=FL.bar(fo);}
+    var fv=withDash?FL.view():null;
+    if(withDash&&fv.dash.length&&!M)M=E.model(fv.rows,fv.dash);
+    if(withDash&&!M0)M0=E.model(rows,dash);
+    var h=alertes(withDash?M0:null),ncl=classesOf(rows).length;
+    if(withDash&&!fv.dash.length)return h+fbar+FL.note()+'<p class="sub" id="rf-none">Aucune donnée publiée pour ces filtres.</p>';
     if(!M){
-      h+='<div class="kpis">'+E.kp(rows.length,"élèves")+E.kp(ncl,"classes")+E.kp(E.MEM.filter(function(m){return m.role!=="admin"&&m.statut!=="en_attente";}).length,"enseignants inscrits")+'</div>';
+      h+='<div class="kpis">'+E.kp(rows.length,"élèves")+E.kp(ncl,ncl>1?"classes":"classe")+E.kp(E.MEM.filter(function(m){return m.role!=="admin"&&m.statut!=="en_attente";}).length,"enseignants inscrits")+'</div>';
       if(dash===null)return h+'<p class="sub">Chargement des statistiques…</p>';
       if(dash.err)return h+'<p class="sub">Statistiques indisponibles ('+esc(dash.err)+'). Exécutez <b>supabase/tableau-bord-admin.sql</b> dans Supabase (SQL Editor), puis rechargez cette page.</p>';
       return h+'<p class="sub">Aucun enseignant n’a encore publié de suivi pour vos élèves. Les statistiques apparaîtront ici dès les premières publications.</p>';
     }
-    var tn=Object.keys(M.T).length,p=E.pc(M.N,M.A);
-    h+='<div class="kpis">'+E.kp(rows.length,"élèves")+E.kp(ncl,"classes")+E.kp(tn,"enseignant"+(tn>1?"s":"")+" actif"+(tn>1?"s":""))+E.kp(Math.round(M.ids.length/rows.length*100)+" %","élèves suivis")+E.kp(p===null?"–":E.nf1(p)+" %","présence")+E.kp(E.nf1(M.gm),"moyenne /20")+'</div>';
+    var tn=Object.keys(M.T).length,p=E.pc(M.N,M.A),vrows=fv.rows;
+    h+=fbar+FL.note();
+    h+='<div class="kpis">'+E.kp(vrows.length,"élèves")+E.kp(classesOf(vrows).length,classesOf(vrows).length>1?"classes":"classe")+E.kp(tn,"enseignant"+(tn>1?"s":"")+" actif"+(tn>1?"s":""))+E.kp(Math.round(M.ids.length/vrows.length*100)+" %","élèves suivis")+E.kp(p===null?"–":E.nf1(p)+" %","présence")+E.kp(E.nf1(M.gm),FL.F.s?"moyenne /20":"moyenne générale /20")+'</div>';
     h+='<p class="sub">D’après les suivis publiés par les enseignants · dernière mise à jour '+esc(E.ago(M.last))+'.</p>';
+    h+=FL.generalNote();
     h+='<div class="gr ge" id="ge" data-t="apercu"></div>';
     h+='<h3 class="dh">Par classe</h3>';
     Object.keys(M.C).sort(E.sortCls).forEach(function(k){var c=M.C[k],q=E.pc(c.n,c.a);
@@ -72,8 +80,9 @@
 
   /* Les graphiques sont dessinés après chaque affichage (la bibliothèque js/graph-etab.js est facultative) */
   function after(){
+    FL.bind(function(){M=null;E.render();});
     if(!M||typeof geDraw!=="function")return;
-    try{geDraw({M:M,rows:E.rows,TH:E.TH,tch:Array.isArray(tch)?tch:null,dsc:Array.isArray(dsc)?dsc:null,fin:null,sortCls:E.sortCls,lvl:E.lvl,lvlRank:E.lvlRank,pc:E.pc,mean:E.mean,get:E.get,stat:E.tstat,tname:E.tname,dstrOf:E.dstrOf});}catch(e){}
+    try{geDraw({M:M,scope:FL.scope(),rows:FL.view().rows,TH:E.TH,tch:Array.isArray(tch)?tch:null,dsc:Array.isArray(dsc)?dsc:null,fin:null,sortCls:E.sortCls,lvl:E.lvl,lvlRank:E.lvlRank,pc:E.pc,mean:E.mean,get:E.get,stat:E.tstat,tname:E.tname,dstrOf:E.dstrOf});}catch(e){}
   }
 
   E.start({page:"accueil",load:load,reset:reset,render:render,after:after,onMembres:function(){}});

@@ -14,13 +14,13 @@ function ficheBulletin(c,s){
 /* Carte « Bulletins » de la page Notes */
 /* Relevé de la classe : au choix un trimestre, la moyenne annuelle, toutes les évaluations, ou UN devoir précis.
    Valeur du choix : « p:1 », « p:A », « p: » (toutes les évaluations) ou « e:<id> » (un devoir). */
-var brs=null;
+var brs=null,brPl=false,brCp=true;   /* relevé paysage : « Inclure les places » (décoché) et « Inclure les compositions » (coché) */
 function brsVal(){return brs===null?"p:"+bpOf():brs;}
 function brsOpts(c,sel){
   var E=evs(c).slice().sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0;});
   function o(v,t){return'<option value="'+v+'"'+(v===sel?" selected":"")+'>'+t+'</option>';}
   return'<optgroup label="Par période">'+o("p:","Toutes les évaluations (tous les trimestres)")+o("p:1","Trimestre 1")+o("p:2","Trimestre 2")+o("p:3","Trimestre 3")+o("p:A","Moyenne annuelle (T1 + T2 + T3)")+'</optgroup>'+
-    (E.length?'<optgroup label="Un devoir précis">'+E.map(function(e){return o("e:"+e.id,esc(e.t)+" · "+esc(fmt(e.d))+" · sur "+nf(e.m));}).join("")+'</optgroup>':"");
+    '<optgroup label="Relevé de notes en paysage (A4)">'+o("k:1","Relevé paysage · Trimestre 1")+o("k:2","Relevé paysage · Trimestre 2")+o("k:3","Relevé paysage · Trimestre 3")+o("k:","Relevé paysage · toutes les évaluations")+o("k:T","Relevé paysage · les 3 trimestres (3 sections)")+o("k:V","Cahier vierge (sans notes, à remplir à la main)")+'</optgroup>'+(E.length?'<optgroup label="Un devoir précis">'+E.map(function(e){return o("e:"+e.id,esc(e.t)+" · "+esc(fmt(e.d))+" · sur "+nf(e.m));}).join("")+'</optgroup>':"");
 }
 function bulletinsCard(c){
   var p=bpOf();
@@ -28,6 +28,7 @@ function bulletinsCard(c){
   '<div class="bar" style="margin:0"><button class="btn" id="ball">Tous les bulletins</button></div>'+
   '<h3 style="font-size:1rem;margin:16px 0 6px">Relevé de notes de la classe</h3><p class="sub" style="margin:0 0 8px">Choisissez une période, tous les trimestres, ou un seul devoir.</p>'+
   '<div class="flt"><select id="brsel" aria-label="Relevé : période ou devoir précis">'+brsOpts(c,brsVal())+'</select></div>'+
+  '<p class="sub" style="margin:0 0 4px">Pour le relevé paysage :</p><label for="brpl" style="display:flex;gap:10px;align-items:center;margin:0 0 4px"><input type="checkbox" id="brpl" style="width:auto;min-height:0"'+(brPl?" checked":"")+'> Inclure les places</label><label for="brcp" style="display:flex;gap:10px;align-items:center;margin:0 0 8px"><input type="checkbox" id="brcp" style="width:auto;min-height:0"'+(brCp?" checked":"")+'> Inclure les compositions</label>'+
   '<div class="bar" style="margin:0"><button class="btn ghost" id="brel">Télécharger le relevé</button></div><p class="sub" id="bmsg" role="status"></p></div>';
 }
 
@@ -212,6 +213,17 @@ document.getElementById("view").addEventListener("click",function(e){
       var ev=evs(c).find(function(x){return x.id===v.slice(2);});
       if(!ev){msg("Ce devoir n’existe plus.");return;}
       saveFile("releve-"+safe+"-"+fname(ev.t)+".pdf",function(){return releveDevoirPDF(c,ev);},"application/pdf",msg);
+      return;
+    }
+    if(v.indexOf("k:")===0){
+      var kp=v==="k:T"||v==="k:V"?"":trParse(v.slice(2));
+      if(!c.students.length){msg("Ajoutez d’abord des élèves à cette classe.");return;}
+      var kpl=document.getElementById("brpl"),kcp=document.getElementById("brcp");
+      if(kpl)brPl=kpl.checked;if(kcp)brCp=kcp.checked;
+      var ko={places:brPl,comps:brCp},kn="releve-paysage-"+safe+"-"+(typeof kp==="number"?"T"+kp:"toutes-evaluations");
+      if(v==="k:T"){ko.tous=true;kn="releve-paysage-"+safe+"-3-trimestres";}
+      if(v==="k:V"){ko.vierge=true;kn="cahier-vierge-"+safe;}
+      saveFile(kn+".pdf",function(){return releveCahierPDF(c,kp,ko);},"application/pdf",msg);
       return;
     }
     var rp=trParse(v.slice(2));

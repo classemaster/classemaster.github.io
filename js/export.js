@@ -74,7 +74,7 @@ function reportData(){
     head:["Élève","Absences","Justifiées","Retards","Présence"],
     rows:c.students.map(function(s){var t=tot[s.id];return[s.name,String(t.a),String(t.j),String(t.r),fr(rate(t))];})};
 }
-function pdfBytes(pages){
+function pdfBytes(pages,land){
   var o=[],n=pages.length,i,kids=[];
   for(i=0;i<n;i++)kids.push((5+i*2)+" 0 R");
   o[1]="<< /Type /Catalog /Pages 2 0 R >>";
@@ -82,7 +82,7 @@ function pdfBytes(pages){
   o[3]="<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";
   o[4]="<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>";
   for(i=0;i<n;i++){
-    o[5+i*2]="<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents "+(6+i*2)+" 0 R >>";
+    o[5+i*2]="<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+(land?"842 595":"595 842")+"] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents "+(6+i*2)+" 0 R >>";
     o[6+i*2]="<< /Length "+pages[i].length+" >>\nstream\n"+pages[i]+"\nendstream";
   }
   var out="%PDF-1.4\n",off=[];

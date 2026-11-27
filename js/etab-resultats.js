@@ -4,13 +4,14 @@
    Filtres (v95) : classe, matière et enseignant ; ils s'appliquent aux deux onglets et aux graphiques.
    Lecture seule : aucune écriture, aucun code secret demandé. Adresses : etab-resultats.html (Résultats), #ass (Assiduité). */
 (function(){
-  var E=Etab,esc=E.esc,pl=E.plural,dash=null,loaded=false,loadErr="",M=null,tab="res",F={c:"",s:"",t:""},V=null,NOCLS="~",NOTCH="(enseignant sans nom)";
+  var E=Etab,esc=E.esc,pl=E.plural,dash=null,loaded=false,loadErr="",M=null,tab="res";
+  var FL=E.filters(function(){return Array.isArray(dash)?dash:[];}),fr=FL.fr,NOTCH=FL.NOTCH;
 
   /* la page s'ouvre sur l'onglet demandé par l'adresse (#res ou #ass) */
   function fromHash(){var h=String(location.hash||"").slice(1);return h==="ass"||h==="res"?h:null;}
   tab=fromHash()||tab;
 
-  function reset(){dash=null;loaded=false;loadErr="";M=null;V=null;}
+  function reset(){dash=null;loaded=false;loadErr="";M=null;FL.reset();}
 
   /* ---------- Chargement : les élèves d'abord, puis les suivis publiés ---------- */
   function load(){
@@ -19,7 +20,7 @@
     E.loadStudents("id,name,class_label,ref",function(rows,err){
       if(err){loadErr=E.fail(err);loaded=true;E.render();return;}
       loaded=true;E.render();
-      E.loadDash(function(d,e){dash=e?{err:E.frErr(e)}:d;M=null;V=null;E.render();});
+      E.loadDash(function(d,e){dash=e?{err:E.frErr(e)}:d;M=null;FL.reset();E.render();});
     });
   }
 
@@ -90,40 +91,6 @@
   }
 
 
-  /* ---------- Filtres : classe, matière, enseignant ---------- */
-  function uniq(a){var o={};a.forEach(function(x){o[x]=1;});return Object.keys(o);}
-  function fr(a,b){return String(a).localeCompare(String(b),"fr");}
-  function optionsOf(){
-    var cs=uniq(E.rows.map(function(r){return r.class_label||NOCLS;})).sort(function(a,b){return a===NOCLS?1:b===NOCLS?-1:E.sortCls(a,b);}),
-        ss=uniq(dash.map(function(d){return d.subj||"—";})).sort(fr),ts=uniq(dash.map(function(d){return d.teacher||NOTCH;})).sort(fr);
-    return{c:cs,s:ss,t:ts};
-  }
-  /* un filtre dont la valeur n'existe plus (rechargement) est effacé */
-  function checkF(o){["c","s","t"].forEach(function(k){if(F[k]&&o[k].indexOf(F[k])<0)F[k]="";});}
-  function active(){return!!(F.c||F.s||F.t);}
-  function sel(id,label,list,val,fmt){
-    return'<label class="rf" for="'+id+'"><span>'+label+'</span><select id="'+id+'"><option value="">Tous</option>'+list.map(function(v){return'<option value="'+esc(v)+'"'+(v===val?" selected":"")+'>'+esc(fmt?fmt(v):v)+'</option>';}).join("")+'</select></label>';
-  }
-  function filterBar(o){
-    return'<section class="card" id="rfilt" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end"><p class="sub" style="width:100%;margin:0"><b>Filtrer</b></p>'+
-      sel("rf-c","Classe",o.c,F.c,function(v){return v===NOCLS?"(sans classe)":v;})+sel("rf-s","Matière",o.s,F.s,function(v){return v==="—"?"(sans matière)":v;})+sel("rf-t","Enseignant",o.t,F.t)+
-      (active()?'<button type="button" class="btn ghost" id="rf-x">Effacer les filtres</button>':"")+'</section>';
-  }
-  /* Élèves et suivis retenus par les filtres ; la classe filtre les élèves, la matière et l'enseignant filtrent les suivis publiés */
-  function view(){
-    if(V)return V;
-    var rows=E.rows.filter(function(r){return!F.c||(r.class_label||NOCLS)===F.c;}),keep={};
-    rows.forEach(function(r){keep[r.id]=1;});
-    var d=dash.filter(function(x){return keep[x.student_id]&&(!F.s||(x.subj||"—")===F.s)&&(!F.t||(x.teacher||NOTCH)===F.t);});
-    V={rows:rows,dash:d};return V;
-  }
-  function setF(k,v){F[k]=v;M=null;V=null;var y=window.scrollY;E.render();window.scrollTo(0,y);}
-  function filterNote(){
-    var a=[];if(F.c)a.push(F.c===NOCLS?"(sans classe)":F.c);if(F.s)a.push(F.s==="—"?"(sans matière)":F.s);if(F.t)a.push(F.t);
-    return a.length?'<p class="sub" id="rf-note">Filtres : '+esc(a.join(" · "))+'.</p>':"";
-  }
-
-
   /* ---------- v96 : classe × matière, et provenance des données ---------- */
   /* Moyenne des élèves pour chaque couple classe / matière (même source que « Par matière ») */
   function cross(v){
@@ -175,12 +142,12 @@
     if(dash===null)return h+'<p class="sub">Chargement des statistiques…</p>';
     if(dash.err)return h+'<p class="sub">Statistiques indisponibles ('+esc(dash.err)+'). Exécutez <b>supabase/tableau-bord-admin.sql</b> dans Supabase (SQL Editor), puis rechargez cette page.</p>';
     if(!dash.length)return h+'<p class="sub">Aucun enseignant n’a encore publié de suivi pour vos élèves. Les statistiques apparaîtront ici dès les premières publications.</p>';
-    var o=optionsOf();checkF(o);h+=filterBar(o);
-    var v=view();
-    if(!v.dash.length)return h+filterNote()+'<p class="sub" id="rf-none">Aucune donnée publiée pour ces filtres.</p>';
+    var o=FL.options();FL.check(o);h+=FL.bar(o);
+    var v=FL.view();
+    if(!v.dash.length)return h+FL.note()+'<p class="sub" id="rf-none">Aucune donnée publiée pour ces filtres.</p>';
     if(!M)M=E.model(v.rows,v.dash);
     var body=tab==="ass"?ass(M):res(M).replace("\u0002X",crossHtml(v));
-    return h+filterNote()+geWrap(body)+provHtml(v);
+    return h+FL.note()+(tab==="res"?FL.generalNote():"")+geWrap(body)+provHtml(v);
   }
 
   function setTab(t){
@@ -192,10 +159,9 @@
   /* Boutons des onglets, puis graphiques (la bibliothèque js/graph-etab.js est facultative) */
   function after(v){
     Array.prototype.forEach.call(v.querySelectorAll("[data-vue]"),function(b){b.onclick=function(){setTab(b.getAttribute("data-vue"));};});
-    [["rf-c","c"],["rf-s","s"],["rf-t","t"]].forEach(function(p){var e=document.getElementById(p[0]);if(e)e.onchange=function(){setF(p[1],e.value);};});
-    var x=document.getElementById("rf-x");if(x)x.onclick=function(){F.c=F.s=F.t="";M=null;V=null;E.render();};
+    FL.bind(function(){M=null;E.render();});
     if(!M||typeof geDraw!=="function")return;
-    try{geDraw({M:M,rows:view().rows,TH:E.TH,tch:null,dsc:null,fin:null,sortCls:E.sortCls,lvl:E.lvl,lvlRank:E.lvlRank,pc:E.pc,mean:E.mean,get:E.get,stat:E.tstat,tname:E.tname,dstrOf:E.dstrOf});}catch(e){}
+    try{geDraw({M:M,scope:FL.scope(),rows:FL.view().rows,TH:E.TH,tch:null,dsc:null,fin:null,sortCls:E.sortCls,lvl:E.lvl,lvlRank:E.lvlRank,pc:E.pc,mean:E.mean,get:E.get,stat:E.tstat,tname:E.tname,dstrOf:E.dstrOf});}catch(e){}
   }
 
   window.addEventListener("hashchange",function(){var t=fromHash();if(t)setTab(t);});

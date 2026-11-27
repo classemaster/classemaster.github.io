@@ -5,12 +5,12 @@
    (etab_renommer, etab_nouveau_code, etab_ouvrir, etab_seuils ; supabase/etablissements-v60.sql et gestion-v71.sql). Le journal est en lecture seule.
    Aucun code secret d'élève demandé. */
 (function(){
-  var E=Etab,esc=E.esc,jnl=null,D=null,S=null;
+  var E=Etab,esc=E.esc,jnl=null,D=null,S=null,jOpen=false,jN=10,kept=0;
 
   /* Libellés du journal des actions (supabase/gestion-v71.sql) */
   var JL={depart:"Départ d’un élève",transfert:"Transfert d’élèves",retrait_enseignant:"Enseignant retiré",role:"Rôle modifié",code:"Nouveau code",inscriptions:"Inscriptions",renommage:"Établissement renommé",seuils:"Seuils d’alerte",validation_enseignants:"Validation des enseignants",enseignant_demande:"Demande d’un enseignant",enseignant_accepte:"Enseignant accepté",enseignant_refuse:"Demande refusée",message:"Message envoyé",message_supprime:"Message retiré"};
 
-  function reset(){jnl=null;D=null;S=null;}
+  function reset(){jnl=null;D=null;S=null;jN=10;}
   /* brouillon du nom et de la ville : conservé quand la page se redessine */
   function draft(){return D||(D={nom:E.ET.nom||"",ville:E.ET.ville||""});}
 
@@ -19,7 +19,7 @@
       jnl=r.error?{err:E.frErr(r.error)}:(r.data||[]);E.render();
     },function(){jnl={err:"Pas d’internet."};E.render();});
   }
-  function load(){reset();E.render();loadJnl();}
+  function load(){reset();E.render();loadJnl();if(typeof EtabOffline!=="undefined")EtabOffline.saved().then(function(t){kept=t;E.render();});}
 
   /* ---------- Blocs ---------- */
   function ident(){
@@ -45,17 +45,38 @@
       '<label for="sa">Risque de décrochage : absences sur 14 jours à partir de</label><input id="sa" type="number" inputmode="numeric" min="1" max="14" step="1" value="'+T.abs+'">'+
       '<div class="bs"><button class="btn" id="eseuils">Enregistrer</button><button class="btn ghost" id="eseuils0">Valeurs d’origine (10 · 80 % · 3)</button></div></section>';
   }
+  /* Journal replié par défaut : 10 actions, puis « Voir plus » par paquets de 20 (60 au plus) */
   function journal(){
     var h='<section class="card"><h2>Journal des actions</h2>';
     if(jnl===null)return h+'<p class="sub" style="margin:0">Chargement…</p></section>';
     if(jnl.err)return h+'<p class="sub" style="margin:0">Journal indisponible ('+esc(jnl.err)+'). Exécutez <b>supabase/gestion-v71.sql</b> dans Supabase (SQL Editor), puis rechargez cette page.</p></section>';
     if(!jnl.length)return h+'<p class="sub" style="margin:0">Aucune action enregistrée pour le moment.</p></section>';
-    h+=jnl.map(function(j){
+    var n=Math.min(jN,jnl.length);
+    h='<details class="card" id="jnl"'+(jOpen?" open":"")+'><summary style="cursor:pointer;font-weight:700;font-size:1.1rem">Journal des actions <span class="sub" style="font-weight:400">· '+E.plural(jnl.length,"action","actions")+'</span></summary>';
+    h+=jnl.slice(0,n).map(function(j){
       return'<div class="dr" style="display:block"><b>'+esc(JL[j.event]||j.event)+'</b>'+(j.name?' · '+esc(j.name):'')+(j.class_label?' · '+esc(j.class_label):'')+'<small>'+esc(E.fdt(j.created_at))+(j.detail?' · '+esc(j.detail):'')+(j.acteur?' · par '+esc(j.acteur):'')+'</small></div>';
     }).join("");
-    return h+'<p class="sub" style="margin-top:6px">Les 60 dernières actions.</p><div class="bs"><button class="btn ghost" id="xjnl">Exporter le journal (Excel)</button></div></section>';
+    h+='<p class="sub" style="margin-top:6px">'+n+' sur '+jnl.length+' · les 60 dernières actions sont gardées.</p><div class="bs">'+
+      (n<jnl.length?'<button class="btn ghost" id="jmore">Voir plus</button>':(jN>10?'<button class="btn ghost" id="jless">Réduire</button>':""))+
+      '<button class="btn ghost" id="xjnl">Exporter le journal (Excel)</button></div></details>';
+    return h;
   }
-  function render(){return ident()+acces()+seuils()+journal();}
+  /* Consultation hors ligne (v99) : désactivée tant que le chef ne la coche pas, sur chaque appareil */
+  function horsLigne(){
+    if(typeof EtabOffline==="undefined")return"";
+    var on=EtabOffline.enabled();
+    return'<section class="card"><h2>Consultation hors ligne</h2>'+
+      '<label for="koff" style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="koff" style="width:auto;min-height:0"'+(on?" checked":"")+(E.readOnly()?" disabled":"")+'> Garder les données sur cet appareil</label>'+
+      '<p class="sub" style="margin:8px 0 0">'+(on?"Activée"+(kept?" · dernier enregistrement : "+esc(E.fdt(kept)):"")+". Ouvrez chaque rubrique (et chaque année utile dans « Fin d’année ») une fois avec internet : elle sera ensuite consultable sans réseau.":"Désactivée.")+'</p>'+
+      '<p class="sub" style="margin:8px 0 0">Les noms, présences, notes et incidents restent alors sur l’appareil : ne l’activez pas sur un téléphone ou un ordinateur partagé. Les codes famille, les téléphones des parents et le code des enseignants ne sont pas enregistrés. Tout est effacé à la déconnexion, ou après 30 jours sans mise à jour.</p></section>';
+  }
+  function choisirHorsLigne(box){
+    if(box.checked){
+      if(!EtabOffline.enable()){box.checked=false;E.say("Impossible d’activer sur cet appareil.");return;}
+      location.reload();   /* recharge pour enregistrer ce qui vient d'être lu */
+    }else EtabOffline.disable().then(function(){kept=0;E.render();E.say("Données effacées de cet appareil.");});
+  }
+  function render(){return ident()+acces()+seuils()+horsLigne()+journal();}
 
   /* ---------- Actions ---------- */
   function copier(){
@@ -106,8 +127,10 @@
     if(pn)pn.oninput=function(){draft().nom=pn.value;};
     if(pv)pv.oninput=function(){draft().ville=pv.value;};
     ["sm","sp","sa"].forEach(function(id){var i=document.getElementById(id);if(i)i.oninput=function(){var k={sm:"moy",sp:"pres",sa:"abs"}[id];S=S||{moy:E.TH.moy,pres:E.TH.pres,abs:E.TH.abs};S[k]=i.value;};});
+    var k=document.getElementById("koff");if(k)k.onchange=function(){choisirHorsLigne(k);};
     on("pren",renommer);on("ecp",copier);on("enc",nouveauCode);on("eop",inscriptions);
-    on("eseuils",lireSeuils);on("eseuils0",function(){enregistrerSeuils(10,80,3);});on("xjnl",exporter);
+    on("eseuils",lireSeuils);on("eseuils0",function(){enregistrerSeuils(10,80,3);});on("xjnl",exporter);on("jmore",function(){jN+=20;var y=window.scrollY;E.render();window.scrollTo(0,y);});on("jless",function(){jN=10;E.render();});
+    var dj=document.getElementById("jnl");if(dj)dj.ontoggle=function(){jOpen=!!dj.open;};
   }
 
   E.start({page:"parametres",load:load,reset:reset,render:render,after:after,onMembres:function(){}});

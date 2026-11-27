@@ -7,7 +7,7 @@ document.getElementById("view").addEventListener("click",function(e){
   if(t.id==="newev"){
     var ti=prompt("Titre de l’évaluation (ex. Devoir 1)");if(!ti||!ti.trim())return;
     var mx=parseFloat((prompt("Note sur combien ?","20")||"").replace(",","."));if(!(mx>0))mx=20;
-    var id=uid();evs(c).push({id:id,t:ti.trim(),d:today(),m:mx,k:1,s:{}});evid=id;save();view="eval";render();window.scrollTo(0,0);return;
+    var comp=confirm("Cette évaluation est-elle une composition ?\n\nOK = Composition · Annuler = Devoir"),ne={id:uid(),t:ti.trim(),d:today(),m:mx,k:1,s:{}};if(comp)ne.ty="c";var id=ne.id;evs(c).push(ne);evid=id;save();view="eval";render();window.scrollTo(0,0);return;
   }
   var eb=t.closest("[data-ev]");
   if(eb){evid=eb.dataset.ev;view="eval";render();window.scrollTo(0,0);return;}
@@ -26,6 +26,7 @@ document.getElementById("view").addEventListener("input",function(e){
   else if(t.id==="evd"){if(!t.value)return;ev.d=t.value;}
   else if(t.id==="evm"){var m=parseFloat(t.value);if(!(m>0))return;ev.m=m;}
   else if(t.id==="evk"){var k=parseFloat(t.value);if(!(k>=0))return;ev.k=k;}
+  else if(t.id==="evty"){if(t.value==="c")ev.ty="c";else delete ev.ty;}
   else if(t.id==="evtr"){if(t.value)ev.tr=+t.value;else delete ev.tr;}
   else return;
   save();var st=document.getElementById("evs");if(st)st.textContent=evLine(ev,c);var sx=document.getElementById("evst");if(sx)sx.innerHTML=evStatsHTML(ev,c);

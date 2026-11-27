@@ -80,7 +80,7 @@ function grArchOf(c){
   return a[0]||null;
 }
 /* Série « an passé » : même mois (ou même semaine ISO) de l'archive ; null si l'archive n'a pas assez de points */
-function grPastSeries(c,keys,mode,color){
+function grPastSeries(c,keys,mode,color,noFill){
   var ar=grArchOf(c);if(!ar||!evs(ar).length)return null;
   var raw=keys.map(function(k){
     return grR1(grMean(grStuAvgs(ar,function(e){
@@ -88,7 +88,7 @@ function grPastSeries(c,keys,mode,color){
     })));
   });
   if(raw.filter(function(v){return v!==null;}).length<2)return null;
-  return{name:c.name+" (an passé)",color:color,dashed:true,values:grFill(raw)};
+  return{name:c.name+" (an passé)",color:color,dashed:true,values:noFill?raw:grFill(raw)};
 }
 /* Calendrier d'assiduité : 22 semaines, élèves présents (présents + retards) par jour d'appel */
 function grHeat(c){
@@ -146,21 +146,28 @@ var GR_B={
     return o;
   },
   months:function(c,P){
-    var cs=[c].concat(liveCls().filter(function(x){return x!==c&&x.students.length&&evs(x).length;})).slice(0,3);
-    var ms=grMonths(cs),vals=[];
-    var series=cs.map(function(x,i){
-      var v=grFill(ms.map(function(m){return grR1(grMean(grStuAvgs(x,function(e){return grMonth(e.d)===m;})));}));
-      return{name:x.name,color:P[i],values:v};
-    }).filter(function(x){return x.values.some(function(y){return y!==null;});});
-    series.forEach(function(x,i){x.color=P[i];x.values.forEach(function(y){if(y!==null)vals.push(y);});});
-    var past2=grPastSeries(c,ms,"m",P[6]);
+    /* v100 : jusqu'à 6 classes ; un mois sans note reste vide (rien n'est recopié d'un autre mois) */
+    var cs=[c].concat(liveCls().filter(function(x){return x!==c&&x.students.length&&evs(x).length;})).slice(0,6);
+    var ms=grMonths(cs);
+    var raw=cs.map(function(x){return ms.map(function(m){return grR1(grMean(grStuAvgs(x,function(e){return grMonth(e.d)===m;})));});});
+    var keep=ms.map(function(m,i){return raw.some(function(r){return r[i]!==null;});});
+    var any=keep.some(Boolean);
+    var ms2=any?ms.filter(function(m,i){return keep[i];}):ms;
+    var vals=[],series=[];
+    cs.forEach(function(x,j){
+      var v=any?raw[j].filter(function(y,i){return keep[i];}):raw[j];
+      if(!v.some(function(y){return y!==null;}))return;
+      series.push({name:x.name,color:P[series.length],values:v});
+    });
+    series.forEach(function(x){x.values.forEach(function(y){if(y!==null)vals.push(y);});});
+    var past2=grPastSeries(c,ms2,"m",P[6],true);
     if(past2){past2.values.forEach(function(y){if(y!==null)vals.push(y);});series.push(past2);}
     var ob=th(c).o;
     if(ob!==null)vals.push(ob);
-    var o={unit:"/20",label:"Moyenne par mois et par classe",labels:ms.map(grMName),series:series,goal:ob!==null?{value:ob,label:"Objectif"}:{value:10,label:"Seuil"},extremes:true};
+    var o={unit:"/20",label:"Moyenne par mois et par classe",labels:ms2.map(grMName),series:series,gaps:true,goal:ob!==null?{value:ob,label:"Objectif"}:{value:10,label:"Seuil"},extremes:true};
     if(vals.length){o.min=Math.max(0,Math.min(Math.floor(Math.min.apply(null,vals))-1,9));o.max=Math.min(20,Math.max(Math.ceil(Math.max.apply(null,vals))+1,11));}
     if(!vals.length)o.empty="Pas encore de notes : la courbe apparaîtra dès que des évaluations seront saisies.";
-    else if(ms.length<2)o.empty="Pas assez de mois pour tracer une courbe : il en faut au moins 2 avec une note (pour l’instant : "+ms.map(grMName).join(", ")+").";
+    else if(ms2.length<2)o.empty="Notes sur un seul mois ("+ms2.map(grMName).join(", ")+") : "+series.filter(function(x){return!x.dashed;}).map(function(x){var k=x.values.length-1;while(k>0&&x.values[k]===null)k--;return x.name+" "+nf(x.values[k]);}).join(" · ")+". Il faut au moins 2 mois avec une note pour tracer une courbe.";
     return o;
   },
   bars:function(c,P){
@@ -292,8 +299,20 @@ var GR_R={
   },
   months:function(c,d){
     var s=d.series[0];if(!s||s.values.length<2)return null;
-    var v=s.values,n=v.length,up=d.series.filter(function(x){return!x.dashed&&x.values[n-1]>=10;}).length,tot=d.series.filter(function(x){return!x.dashed;}).length;
-    return[grB(s.name),' passe de ',grB(nf(v[0])),' à ',grB(nf(v[n-1])),' entre '+d.labels[0].toLowerCase()+' et '+d.labels[n-1].toLowerCase()+' ('+grSg(v[n-1]-v[0],1)+' pt). ',tot>1?up+' classe(s) sur '+tot+' au-dessus de 10 en '+d.labels[n-1].toLowerCase()+'.':"",grGoalTxt(d,v[n-1])];
+    var n=s.values.length,lb=function(i){return d.labels[i].toLowerCase();};
+    var pts=function(x){var r=[];x.values.forEach(function(y,i){if(y!==null)r.push(i);});return r;};
+    var live=d.series.filter(function(x){return!x.dashed;});
+    var p=pts(s),o=[];
+    if(p.length>=2){
+      var a=p[0],z=p[p.length-1];
+      o.push(grB(s.name),' passe de ',grB(nf(s.values[a])),' à ',grB(nf(s.values[z])),' entre '+lb(a)+' et '+lb(z)+' ('+grSg(s.values[z]-s.values[a],1)+' pt). ');
+    }else o.push(grB(s.name),p.length?' n’a des notes que sur un mois ('+lb(p[0])+'). ':' n’a pas de note sur cette période. ');
+    var last=live.filter(function(x){return x.values[n-1]!==null&&x.values[n-1]!==undefined;}),up=last.filter(function(x){return x.values[n-1]>=10;}).length;
+    if(last.length>1)o.push(up+' classe(s) sur '+last.length+' au-dessus de 10 en '+lb(n-1)+'. ');
+    var one=live.filter(function(x){return pts(x).length===1;}).map(function(x){return x.name;});
+    if(one.length)o.push('Un seul mois de notes : '+one.join(', ')+'. ');
+    if(p.length)o.push(grGoalTxt(d,s.values[p[p.length-1]]));
+    return o;
   },
   bars:function(c,d){
     var on=d.series[0].values,lt=d.series[1].values,best=-1,bi=-1,L=0;
@@ -364,7 +383,7 @@ function grAddTools(host,inst){
 /* Cartes : clé, titre, légende, classe du graphique */
 var GR_CARDS=[
   ["line","Moyenne par classe","Évolution hebdomadaire · notes sur 20","LineChart"],
-  ["months","Évolution mois par mois","Moyenne de chaque classe depuis la rentrée","LineChart"],
+  ["months","Évolution mois par mois","Moyenne de chaque classe · 6 derniers mois","LineChart"],
   ["bars","Présence de la semaine","Élèves présents par jour · semaine en cours","BarChart"],
   ["rings","Avancement","Leçons, devoirs rendus et évaluations notées","RingsChart"],
   ["donut","Répartition des moyennes","Élèves par niveau de moyenne","DonutChart"],
